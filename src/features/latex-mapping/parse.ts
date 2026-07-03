@@ -82,7 +82,13 @@ function degenerate(source: string): ParseResult {
     content:
       source === ""
         ? []
-        : [{ type: "rawLatexBlock", attrs: { latex: source, gapBefore: "" } }],
+        : [
+            {
+              type: "rawLatexBlock",
+              attrs: { gapBefore: "" },
+              content: [{ type: "text", text: source }],
+            },
+          ],
   };
   (doc as unknown as { attrs: Record<string, unknown> }).attrs = { gapAfter: "" };
   return { doc };
@@ -431,7 +437,10 @@ function promoteInlines(nodes: Node[], ctx: InlineCtx): PMNode[] | null {
 // ---------------------------------------------------------------------------
 
 function rawBlock(slice: string): PMNode {
-  return { type: "rawLatexBlock", attrs: { latex: slice } };
+  return {
+    type: "rawLatexBlock",
+    content: slice === "" ? [] : [{ type: "text", text: slice }],
+  };
 }
 
 function withVerify(candidate: PMNode, slice: string, cacheRawSource: boolean): PMNode {
@@ -661,12 +670,11 @@ function promoteCodeBlock(slice: string): PMNode {
   if (!match) return rawBlock(slice);
   const optionsRaw = match[1] ?? null;
   const languageMatch = optionsRaw?.match(/language=([^,\]]+)/);
+  const code = match[2] ?? "";
   const candidate: PMNode = {
     type: "codeBlock",
-    attrs: {
-      language: languageMatch?.[1] ?? null,
-      code: match[2] ?? "",
-    },
+    attrs: { language: languageMatch?.[1] ?? null },
+    content: code === "" ? [] : [{ type: "text", text: code }],
   };
   return withVerify(candidate, slice, true);
 }

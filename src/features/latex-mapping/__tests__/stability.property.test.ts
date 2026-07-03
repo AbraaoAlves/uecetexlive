@@ -184,7 +184,7 @@ const codeInclude: fc.Arbitrary<PMNode> = fc
 
 const rawLatexBlock: fc.Arbitrary<PMNode> = key.map((k) => ({
   type: "rawLatexBlock",
-  attrs: { latex: `\\newcommand{\\x${k.replace(/[^a-z]/g, "")}x}{y}` },
+  content: [{ type: "text", text: `\\newcommand{\\x${k.replace(/[^a-z]/g, "")}x}{y}` }],
 }));
 
 const block = fc.oneof(

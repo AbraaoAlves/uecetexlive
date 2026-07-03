@@ -102,6 +102,27 @@ describe("runFullBuild (§3.5 fixpoint)", () => {
     ]);
   });
 
+  it("strips redundant .bst extension from \\bibstyle before bibtex8", async () => {
+    // uecetex2 writes \bibliographystyle{lib/abntex2-alf.bst}; bibtex8
+    // appends .bst blindly → lib/abntex2-alf.bst.bst not found.
+    const { io, written } = makeFakeIO({
+      auxContent:
+        "\\bibdata{elementos-pos-textuais/referencias}\n\\bibstyle{lib/abntex2-alf.bst}\n",
+    });
+    await runFullBuild(io, { entry: "documento.tex" });
+    const aux = written["documento.aux"];
+    expect(aux).toBeDefined();
+    expect(new TextDecoder().decode(aux)).toContain("\\bibstyle{lib/abntex2-alf}");
+  });
+
+  it("leaves extension-less \\bibstyle untouched (no aux rewrite)", async () => {
+    const { io, written } = makeFakeIO({
+      auxContent: "\\bibdata{refs}\n\\bibstyle{plain}\n",
+    });
+    await runFullBuild(io, { entry: "documento.tex" });
+    expect(written["documento.aux"]).toBeUndefined();
+  });
+
   it("no-bib project skips bibtex8", async () => {
     const { io } = makeFakeIO({ auxContent: "\\relax\n" });
     const result = await runFullBuild(io, { entry: "documento.tex" });

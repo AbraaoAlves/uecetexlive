@@ -336,11 +336,12 @@ describe("code (§4.2)", () => {
     expect(roundTrip(src)).toBe(src);
   });
 
-  it("lstlisting env -> codeBlock", () => {
+  it("lstlisting env -> codeBlock with text content", () => {
     const src = "\\begin{lstlisting}[language=Java]\nint x = 1;\n\\end{lstlisting}";
     const node = first(src);
     expect(node.type).toBe("codeBlock");
     expect(node.attrs).toMatchObject({ language: "Java" });
+    expect(node.content?.[0]?.text).toBe("int x = 1;");
     expect(roundTrip(src)).toBe(src);
   });
 });
@@ -371,7 +372,10 @@ describe("unknown constructs stay rawLatex", () => {
     "\\newcommand{\\foo}{bar}",
     "\\trabalhoacademico{dissertacao}",
   ])("%s", (src) => {
-    expect(first(src).type).toBe("rawLatexBlock");
+    const node = first(src);
+    expect(node.type).toBe("rawLatexBlock");
+    // Raw blocks carry their bytes as editable text content (PM-native).
+    expect(node.content?.map((n) => n.text).join("")).toBe(src);
     expect(roundTrip(src)).toBe(src);
   });
 });

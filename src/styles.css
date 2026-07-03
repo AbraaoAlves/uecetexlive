@@ -1,5 +1,6 @@
 @import "tailwindcss" source(none);
 @import "tw-animate-css";
+@import "katex/dist/katex.min.css";
 @source "../src";
 @source "../.storybook";
 
@@ -116,4 +117,102 @@
     background-color: var(--accent-soft);
     color: var(--accent-strong);
   }
+}
+
+/* WYSIWYG surface (§4.4/§4.6) */
+.uecetex-editor {
+  font-size: 15px;
+  line-height: 1.7;
+}
+.uecetex-editor:focus {
+  outline: none;
+}
+.uecetex-editor h1 {
+  font-family: var(--font-display);
+  font-size: 1.8rem;
+  margin: 1.2em 0 0.5em;
+}
+.uecetex-editor h2 {
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  margin: 1.1em 0 0.4em;
+}
+.uecetex-editor h3 {
+  font-size: 1.15rem;
+  font-weight: 600;
+  margin: 1em 0 0.3em;
+}
+.uecetex-editor h4 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0.9em 0 0.3em;
+}
+.uecetex-editor p {
+  margin: 0.5em 0;
+}
+.uecetex-editor ul,
+.uecetex-editor ol {
+  padding-left: 1.5em;
+  margin: 0.5em 0;
+}
+.uecetex-editor ul {
+  list-style: disc;
+}
+.uecetex-editor ol {
+  list-style: decimal;
+}
+.uecetex-editor blockquote {
+  margin: 0.8em 0 0.8em 4cm; /* citação longa ABNT */
+  font-size: 0.85em;
+  color: var(--ink-muted);
+}
+.uecetex-editor code {
+  font-family: var(--font-mono);
+  font-size: 0.85em;
+  background: var(--surface);
+  padding: 0.1em 0.3em;
+  border-radius: 4px;
+}
+.uecetex-raw-block {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.5;
+  background: var(--surface);
+  border-left: 3px solid var(--warning);
+  border-radius: 6px;
+  padding: 0.6em 0.8em;
+  margin: 0.6em 0;
+  white-space: pre-wrap;
+  color: var(--ink-muted);
+}
+.uecetex-editor pre:not(.uecetex-raw-block) {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.6em 0.8em;
+  margin: 0.6em 0;
+  white-space: pre-wrap;
+}
+.uecetex-raw-inline {
+  font-family: var(--font-mono);
+  font-size: 0.85em;
+  background: var(--surface);
+  border-bottom: 1px dashed var(--warning);
+  padding: 0 0.2em;
+  color: var(--ink-muted);
+}
+.uecetex-comment {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--ink-subtle);
+  opacity: 0.8;
+}
+.uecetex-editor .is-empty::before {
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  color: var(--ink-subtle);
+  pointer-events: none;
 }

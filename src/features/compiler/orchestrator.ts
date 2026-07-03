@@ -91,15 +91,25 @@ export async function runFullBuild(
     await io.writeFile(`${job}.bbl`, precompiledBbl);
   } else if (aux.includes("\\bibdata")) {
     onProgress?.(0.35, "Compilando (2/6): bibliografia…");
+    // uecetex2 writes \bibliographystyle{lib/abntex2-alf.bst} (extension
+    // included); bibtex8 appends .bst unconditionally and fails on
+    // "….bst.bst". Normalize the aux before the pass.
+    const fixedAux = aux.replace(/\\bibstyle\{([^}]*)\.bst\}/g, "\\bibstyle{$1}");
+    if (fixedAux !== aux) {
+      await io.writeFile(`${job}.aux`, new TextEncoder().encode(fixedAux));
+    }
+    // --wolfgang: huge capacity — abntex2-alf.bst overflows default hashes
+    // (§3.5); --8bit: treat all 8-bit chars as letters (upstream default).
     const { exitCode, stdout, stderr } = await io.exec([
       "bibtex8",
+      "--wolfgang",
       "--8bit",
       `${job}.aux`,
     ]);
     passes.push("bibtex8");
     const blg = (await io.readText(`${job}.blg`)) ?? "";
     fullLog.push(
-      `$ bibtex8 --8bit ${job}.aux (exit ${exitCode})\n${stdout}\n${blg}\n${stderr}`,
+      `$ bibtex8 --wolfgang --8bit ${job}.aux (exit ${exitCode})\n${stdout}\n${blg}\n${stderr}`,
     );
   }
 

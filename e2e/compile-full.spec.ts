@@ -53,6 +53,10 @@ test("full build: uecetex2 with citations + glossary + index resolved", async ({
   // Pass sequence proves bibtex8 + makeindex ran (assert via the log pane).
   await page.getByTestId("preview-tab-log").click();
   const log = await page.getByTestId("raw-log").innerText();
+  const bibtexAt = log.indexOf("$ bibtex8");
+  console.log(
+    `[compile log tail] bibtex8 section:\n${log.slice(bibtexAt, bibtexAt + 3000)}`,
+  );
   expect(log).toContain("bibtex8");
   expect(log).toContain("makeindex");
   await page.getByTestId("preview-tab-pdf").click();
