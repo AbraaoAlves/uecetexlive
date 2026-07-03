@@ -42,7 +42,7 @@ const COMMANDS: CommandDef[] = [
   {
     id: "figura",
     label: "Figura do projeto",
-    run: (editor, range, options) => options.openPicker("figure", range),
+    run: (_editor, range, options) => options.openPicker("figure", range),
   },
   {
     id: "tabela",
@@ -66,7 +66,7 @@ const COMMANDS: CommandDef[] = [
   {
     id: "citacao",
     label: "Citação bibliográfica",
-    run: (editor, range, options) => options.openPicker("citation", range),
+    run: (_editor, range, options) => options.openPicker("citation", range),
   },
   {
     id: "citacao-longa",
@@ -77,7 +77,7 @@ const COMMANDS: CommandDef[] = [
   {
     id: "referencia",
     label: "Referência cruzada",
-    run: (editor, range, options) => options.openPicker("crossref", range),
+    run: (_editor, range, options) => options.openPicker("crossref", range),
   },
   {
     id: "equacao",
@@ -99,7 +99,7 @@ const COMMANDS: CommandDef[] = [
   {
     id: "codigo-arquivo",
     label: "Código de arquivo do projeto",
-    run: (editor, range, options) => options.openPicker("codeInclude", range),
+    run: (_editor, range, options) => options.openPicker("codeInclude", range),
   },
   {
     id: "nota",

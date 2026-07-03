@@ -3,7 +3,7 @@
  * latex-mapping's PM-JSON exactly — the editor is a projection of the LaTeX
  * source, parse on open / serialize on save.
  */
-import { Extension, Mark, mergeAttributes, Node } from "@tiptap/core";
+import { Extension, mergeAttributes, Node } from "@tiptap/core";
 import { Blockquote } from "@tiptap/extension-blockquote";
 import { Bold } from "@tiptap/extension-bold";
 import { Code } from "@tiptap/extension-code";

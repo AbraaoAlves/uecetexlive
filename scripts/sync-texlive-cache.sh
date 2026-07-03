@@ -137,12 +137,31 @@ PACKAGES=(
   symbol
   ifplatform
   catchfile
+  # --- draft-probe 404 iteration (Gate G4) ---
+  textcase
+  xpatch
+  enumitem
+  translator
+  ifoddpage
+  pdflscape
+  epstopdf-pkg
+  glossaries-portuges
+  xkeyval
+  rsfs
+  dvips          # 8r.enc lives here in TL2020
+  babel-english
+  babel-spanish
+  glossaries-english
+  glossaries-spanish
+  supertabular
+  float
+  wasysym
 )
 
 # File-extension → format-code map (only these are extracted)
 ext_to_fmt() {
   case "$1" in
-    sty|cls|def|cfg|clo|fd|ldf) echo 26 ;;
+    sty|cls|def|cfg|clo|fd|ldf|tex|sto) echo 26 ;;
     tfm)                         echo 3  ;;
     vf)                          echo 33 ;;
     pfb)                         echo 32 ;;
@@ -199,23 +218,80 @@ for pkg in "${PACKAGES[@]}"; do
     # Worker requests fonts WITHOUT extension (e.g. "cmr12" not "cmr12.tfm"),
     # so for font formats keep an extensionless duplicate alongside the named one.
     case "$ext" in
-      tfm|vf|enc) cp -f "$CACHE/pdftex/$fmt/$name" "$CACHE/pdftex/$fmt/${name%.*}" ;;
+      tfm|vf|enc|tex)
+        base="${name%.*}"
+        [[ -n "$base" && "$base" != "$name" ]] && cp -f "$CACHE/pdftex/$fmt/$name" "$CACHE/pdftex/$fmt/$base"
+        ;;
     esac
     count=$((count+1))
   done < <(find "$stage" -type f \
     -regextype posix-extended \
-    -regex '.*\.(sty|cls|def|cfg|clo|fd|ldf|tfm|vf|enc|map|pfb)$' \
-    -not -path '*/source/*')
+    -regex '.*\.(sty|cls|def|cfg|clo|fd|ldf|tex|sto|tfm|vf|enc|map|pfb)$' \
+    -not -path '*/source/*' -not -path '*/doc/*')
   rm -rf "$stage"
   printf "  ok        %-20s (%d files)\n" "$pkg" "$count"
   extracted_total=$((extracted_total+count))
+done
+
+# --- kernel-era overrides ---------------------------------------------------
+# tlnet-final 2020 ships package versions from LATE 2020, newer than the
+# .fmt's kernel (LaTeX2e 2020-02-02). Packages that adopted the 2020-10 hook
+# management (\AddToHook) break; fetch those from the TL *2019* archive.
+PACKAGES_2019=(
+  eso-pic
+)
+MIRROR_2019="https://ftp.tu-chemnitz.de/pub/tug/historic/systems/texlive/2019/tlnet-final/archive"
+for pkg in "${PACKAGES_2019[@]}"; do
+  tarball="$TMP/2019-$pkg.tar.xz"
+  if [[ ! -s "$tarball" ]]; then
+    code=$(curl -sk -o "$tarball" -w "%{http_code}" --max-time 60 -L "$MIRROR_2019/$pkg.tar.xz" || echo "000")
+    [[ "$code" == "200" ]] || { echo "  PKG-MISS (2019) $pkg"; rm -f "$tarball"; continue; }
+  fi
+  stage="$TMP/stage-2019-$pkg"
+  rm -rf "$stage"; mkdir -p "$stage"
+  tar -xJf "$tarball" -C "$stage" 2>/dev/null || { echo "  EXTRACT-FAIL (2019) $pkg"; continue; }
+  count=0
+  while IFS= read -r f; do
+    name="${f##*/}"
+    ext="${name##*.}"
+    fmt="$(ext_to_fmt "$ext")"
+    [[ -z "$fmt" ]] && continue
+    mv -f "$f" "$CACHE/pdftex/$fmt/$name"
+    count=$((count+1))
+  done < <(find "$stage" -type f \
+    -regextype posix-extended \
+    -regex '.*\.(sty|cls|def|cfg|clo|fd|ldf|tex|sto)$' \
+    -not -path '*/source/*' -not -path '*/doc/*')
+  rm -rf "$stage"
+  printf "  ok (2019) %-20s (%d files)\n" "$pkg" "$count"
 done
 
 # Synthesize unified pdftex.map. The engine asks for "pdftex.map" but TeX Live
 # ships per-encoding maps (cm.map, cm-super-t1.map, etc.). updmap normally
 # merges them at install time; we cat them.
 {
-  echo "% Papyru: synthesized pdftex.map (cat of per-encoding maps in pdftex/11/)"
+  echo "% UeceTexLive: synthesized pdftex.map (base35 URW embeds + per-encoding maps)"
+  # Base-35 embedding entries (URW clones we ship in pdftex/32/). These MUST
+  # come first: pdfTeX keeps the FIRST entry for a name, and psnfss.map has
+  # non-embedding printer-font lines for the same fonts (psyro etc.).
+  cat << 'BASE35'
+ptmr8r NimbusRomNo9L-Regu "TeXBase1Encoding ReEncodeFont" <8r.enc <utmr8a.pfb
+ptmb8r NimbusRomNo9L-Medi "TeXBase1Encoding ReEncodeFont" <8r.enc <utmb8a.pfb
+ptmri8r NimbusRomNo9L-ReguItal "TeXBase1Encoding ReEncodeFont" <8r.enc <utmri8a.pfb
+ptmbi8r NimbusRomNo9L-MediItal "TeXBase1Encoding ReEncodeFont" <8r.enc <utmbi8a.pfb
+ptmro8r NimbusRomNo9L-Regu ".167 SlantFont TeXBase1Encoding ReEncodeFont" <8r.enc <utmr8a.pfb
+ptmbo8r NimbusRomNo9L-Medi ".167 SlantFont TeXBase1Encoding ReEncodeFont" <8r.enc <utmb8a.pfb
+psyr StandardSymL <usyr.pfb
+psyro StandardSymL " .167 SlantFont " <usyr.pfb
+pcrr8r NimbusMonL-Regu "TeXBase1Encoding ReEncodeFont" <8r.enc <ucrr8a.pfb
+pcrb8r NimbusMonL-Bold "TeXBase1Encoding ReEncodeFont" <8r.enc <ucrb8a.pfb
+pcrro8r NimbusMonL-ReguObli "TeXBase1Encoding ReEncodeFont" <8r.enc <ucrro8a.pfb
+pcrbo8r NimbusMonL-BoldObli "TeXBase1Encoding ReEncodeFont" <8r.enc <ucrbo8a.pfb
+phvr8r NimbusSanL-Regu "TeXBase1Encoding ReEncodeFont" <8r.enc <uhvr8a.pfb
+phvb8r NimbusSanL-Bold "TeXBase1Encoding ReEncodeFont" <8r.enc <uhvb8a.pfb
+phvro8r NimbusSanL-ReguItal "TeXBase1Encoding ReEncodeFont" <8r.enc <uhvro8a.pfb
+phvbo8r NimbusSanL-BoldItal "TeXBase1Encoding ReEncodeFont" <8r.enc <uhvbo8a.pfb
+BASE35
   for m in "$CACHE"/pdftex/11/*.map; do
     [[ "$m" == *"/pdftex.map" ]] && continue
     [[ -f "$m" ]] || continue
