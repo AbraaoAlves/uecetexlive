@@ -4,11 +4,12 @@ dist/
 storybook-static/
 coverage/
 
-# vendored heavyweights (fetched by scripts/, never committed)
+# vendored heavyweights (fetched by scripts/, never committed).
+# The three SwiftLaTeX engine files ARE committed: the two .js carry mandatory
+# patches and the upstream distribution point is fragile (see docs/).
 public/wasm/busytex/*
 !public/wasm/busytex/manifest.json
 public/wasm/swiftlatex/texlive/
-public/wasm/swiftlatex/*.wasm
 
 # e2e
 test-results/
