@@ -36,7 +36,14 @@ rsync -a \
   --exclude 'Makefile' \
   --exclude '.latexmkrc' \
   --exclude 'figuras/ficha-catalografica.doc' \
+  --exclude 'reference.*' \
+  --exclude 'pages.txt' \
+  --exclude 'build' \
   "$CACHE/" "$DEST/files/"
+
+# Belt-and-braces: a hard git-clean of the pinned checkout removes any stray
+# build artifacts a prior reference-build left in the clone.
+git -C "$CACHE" clean -fdq -e reference.pdf -e reference.bbl 2>/dev/null || true
 
 # LICENSE verbatim at the template root too (§13).
 cp "$CACHE/LICENSE" "$DEST/LICENSE"
