@@ -13,15 +13,40 @@ jobs:
       - uses: oven-sh/setup-bun@v2
       - run: bun install --frozen-lockfile
       - run: bun run check
-      - run: bun run build
       - run: bun run build-storybook
 
-  e2e-smoke:
+  e2e:
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
       - run: bun install --frozen-lockfile
+
+      # Vendored WASM/template/TeX assets are large and content-stable → cache
+      # them keyed by the vendor scripts (bump the key when a script changes).
+      - name: Cache vendored assets
+        id: vendor-cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            public/wasm/busytex
+            public/wasm/swiftlatex/texlive
+            public/templates/uecetex2
+          key: vendor-${{ hashFiles('scripts/vendor-*.sh', 'scripts/sync-texlive-cache.sh') }}
+
+      - name: Vendor assets
+        if: steps.vendor-cache.outputs.cache-hit != 'true'
+        run: |
+          ./scripts/vendor-uecetex2.sh
+          ./scripts/vendor-busytex.sh
+          ./scripts/sync-texlive-cache.sh
+
       - run: bunx playwright install --with-deps chromium
       - run: bun run build
-      - run: bunx playwright test e2e/smoke.spec.ts
+      - run: bunx playwright test
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: playwright-report/

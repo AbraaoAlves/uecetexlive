@@ -24,6 +24,8 @@ test("first boot seeds uecetex2 and the rail shows every section", async ({ page
 test("source edit survives a reload (IndexedDB autosave)", async ({ page }) => {
   await page.goto("/");
   await page.getByTestId("rail-file-elementos-textuais/introducao.tex").click();
+  // introducao.tex opens in WYSIWYG (§4.1); toggle to the raw source view.
+  await page.getByTestId("view-toggle").click();
   const editor = page.getByTestId("source-editor");
   await expect(editor).toBeVisible();
 
@@ -36,6 +38,7 @@ test("source edit survives a reload (IndexedDB autosave)", async ({ page }) => {
 
   await page.reload();
   await page.getByTestId("rail-file-elementos-textuais/introducao.tex").click();
+  await page.getByTestId("view-toggle").click();
   await expect(page.getByTestId("source-editor")).toHaveValue(
     new RegExp(marker.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")),
   );
