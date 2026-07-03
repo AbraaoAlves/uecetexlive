@@ -8,17 +8,22 @@ cd "$(dirname "$0")/.."
 
 SRC="${TMPDIR:-/tmp}/uecetexlive-vendor/uecetex2"
 OUT="e2e/fixtures"
-mkdir -p "$OUT"
+# Build artifacts go to a scratch dir OUTSIDE the git clone, so the next
+# vendor-uecetex2.sh run does not pick them up into the template.
+WORK="${TMPDIR:-/tmp}/uecetexlive-refbuild"
+mkdir -p "$OUT" "$WORK"
 
 [ -d "$SRC/.git" ] || { echo "run scripts/vendor-uecetex2.sh first"; exit 1; }
 
-if [ ! -s "$SRC/reference.pdf" ]; then
-  docker run --rm -v "$SRC":/build -w /build texlive/texlive:latest \
-    sh -c "latexmk -pdf -outdir=/tmp/ref-build documento.tex && cp /tmp/ref-build/documento.pdf /build/reference.pdf"
+if [ ! -s "$WORK/reference.pdf" ]; then
+  docker run --rm -v "$SRC":/src:ro -v "$WORK":/out texlive/texlive:latest \
+    sh -c "cp -r /src /tmp/build && cd /tmp/build && latexmk -pdf -outdir=/tmp/rb documento.tex && cp /tmp/rb/documento.pdf /out/reference.pdf && cp /tmp/rb/documento.bbl /out/reference.bbl"
 fi
+# The Tier-4 .bbl e2e fixture is produced here too (real biber-less bibtex).
+[ -s "$WORK/reference.bbl" ] && cp "$WORK/reference.bbl" "$OUT/documento.bbl"
 
 # Page count + text via pdfjs-dist on the host (the texlive image has no poppler).
-bun scripts/pdf-metrics.ts "$SRC/reference.pdf" --text > "$OUT/reference-metrics.json"
+bun scripts/pdf-metrics.ts "$WORK/reference.pdf" --text > "$OUT/reference-metrics.json"
 
 bun -e '
 const { readFileSync, writeFileSync, rmSync } = require("node:fs");
