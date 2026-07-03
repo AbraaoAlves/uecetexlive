@@ -1,0 +1,110 @@
+{
+  "base": "https://github.com/busytex/busytex/releases/download/build_wasm_4499aa69fd3cf77ad86a47287d9a5193cf5ad993_7936974349_1",
+  "files": [
+    {
+      "name": "busytex.js",
+      "size": 295606,
+      "sha256": "f381d9ba816d9a4389d429f54fe85f13396aa2f822973d9b66e1f527ced3434b"
+    },
+    {
+      "name": "busytex.wasm",
+      "size": 30363063,
+      "sha256": "a7785b59bfddb8667e7738443f111430e3ee2bd3ec0c1c26629267849e091415"
+    },
+    {
+      "name": "busytex_pipeline.js",
+      "size": 30380,
+      "sha256": "f8741cfd1fb0ac3c11daeee8386bc024f59d8b14c3000ad64b9c00dce7d61265"
+    },
+    {
+      "name": "busytex_worker.js",
+      "size": 1241,
+      "sha256": "623136034d61d52be43df97bbe320612f0cca139b955431fb168c529531d21c4"
+    },
+    {
+      "name": "texlive-basic.js",
+      "size": 2068492,
+      "sha256": "23cc4ce427d27d555fe2a050b97ff8c95bb331425018e9159130e74b62373ff1"
+    },
+    {
+      "name": "texlive-basic.data",
+      "size": 104576512,
+      "sha256": "c955651ca293f09b2e57d6360fa2cb61ad710b4ae51e9fbc04b049477a8aeb71"
+    },
+    {
+      "name": "ubuntu-texlive-latex-base.js",
+      "size": 299539,
+      "sha256": "807f0bfbe66ff919c1799737acd751dfba6c1ca2afd8d71db2bb30c3c5c62144"
+    },
+    {
+      "name": "ubuntu-texlive-latex-base.data",
+      "size": 5741806,
+      "sha256": "0dd2dfaaa2e6a9674090cbf8cf3a01419ce37063080f762aee0d82ad7263ead8"
+    },
+    {
+      "name": "ubuntu-texlive-latex-recommended.js",
+      "size": 337892,
+      "sha256": "bbd975921a74adae9119988ae8a740ca9f4837db772061d313c67729fba1d9ee"
+    },
+    {
+      "name": "ubuntu-texlive-latex-recommended.data",
+      "size": 9058527,
+      "sha256": "fa9a03f928a0af0e9c5a24e2ce2956e64db9d580dd2c3a7517176aac16dc9006"
+    },
+    {
+      "name": "ubuntu-texlive-latex-extra.js",
+      "size": 1398581,
+      "sha256": "a99a68b79e6a93f3ca9d94f46afe8a62e7e06b6d4c5e90a705ec15fc42d8ecda"
+    },
+    {
+      "name": "ubuntu-texlive-latex-extra.data",
+      "size": 49513577,
+      "sha256": "fb4dc0440f4b2bd2d5138dbb5689e6a33cd20c9704934422436cb97af5d623c4"
+    },
+    {
+      "name": "ubuntu-texlive-fonts-recommended.js",
+      "size": 353109,
+      "sha256": "708f60e5fc46b64204e8361a0d0939b3f8f0713f9b7fae379baa67e5dbe0c37a"
+    },
+    {
+      "name": "ubuntu-texlive-fonts-recommended.data",
+      "size": 10264033,
+      "sha256": "3154397a58db2ac62d6bcf99e44786c6ea62cc31c2343adc42d51f2088b6a3f1"
+    },
+    {
+      "name": "ubuntu-texlive-science.js",
+      "size": 259829,
+      "sha256": "cf6ddcc894f0b8a5a9493286edc8abba67280041c21cdfa51d7dadffea85c19a"
+    },
+    {
+      "name": "ubuntu-texlive-science.data",
+      "size": 9320179,
+      "sha256": "23c5decd471c214f1a4d16eabe02f2fe1a0b5aee94a8708713d03c4616cd5d61"
+    },
+    {
+      "name": "texmf.cnf",
+      "size": 40745,
+      "sha256": "271578349b62a41077a28b2eb9be1f16d782590825a6acc8ee8cc979dbde37a8"
+    },
+    {
+      "name": "updmap.cfg",
+      "size": 3887,
+      "sha256": "3e03f0e8320abafdfef0b312a9ad2c9050a1d7ffce1850d4c76f7325ba6f973b"
+    },
+    {
+      "name": "dvipdfmx.cfg",
+      "size": 8661,
+      "sha256": "6f43e77b19e2209a42c20085d4dc59754eb95fc063c39285720b1011eb3e9236"
+    },
+    {
+      "name": "ubuntu-texlive-latex-extra.js.providespackage.txt",
+      "size": 100144,
+      "sha256": "8ee355729f1ac204b5150a5a33836d166569de4ac70ecf0fafa89c9cac01f8c2"
+    },
+    {
+      "name": "ubuntu-texlive-science.js.providespackage.txt",
+      "size": 14373,
+      "sha256": "1a2df644a83959e66b90a0279aa9b5197b4c7e6f70e1cdf2d0342e91b6834f8c"
+    }
+  ]
+}

@@ -1,0 +1,193 @@
+{
+  "name": "uecetex2",
+  "entry": "documento.tex",
+  "source": "https://github.com/thiagodnf/uecetex2",
+  "commit": "39e8c8a0312788d72311e3b0157ff0564fb74eaf",
+  "files": [
+    {
+      "path": "LICENSE",
+      "size": 1071,
+      "sha256": "8ef71b49f45a6fb77beba264e05fc25397f2b9965a2e4e638a3653eb81f91a7f"
+    },
+    {
+      "path": "documento.tex",
+      "size": 7784,
+      "sha256": "4e4666d760ffa0053bf34c8cc97be3484dffa45ad68574447d9cc08267e3a0f9"
+    },
+    {
+      "path": "elementos-pos-textuais/anexos/dinamica-das-classes-sociais.tex",
+      "size": 817,
+      "sha256": "7421636cb3ecc93b589840a1849ef3cc21a93f21690f2dd50da54478229098b2"
+    },
+    {
+      "path": "elementos-pos-textuais/anexos/exemplo-de-anexo.tex",
+      "size": 563,
+      "sha256": "d4e37a821777eb9fb1c3026817a2bfbf5eb8b63f3b3b15bf902f0c4209c08175"
+    },
+    {
+      "path": "elementos-pos-textuais/apendices/historico-de-mudancas.tex",
+      "size": 610,
+      "sha256": "61419790480898776c402ea72a58e97945644ffee7e2bb9996b5c270e294c4d1"
+    },
+    {
+      "path": "elementos-pos-textuais/apendices/lorem-ipsum.tex",
+      "size": 682,
+      "sha256": "b206de9fd37d3a2dce20382aa1e3ffd40036eec4537f5061eff151f14a1288d9"
+    },
+    {
+      "path": "elementos-pos-textuais/apendices/termo-de-fiel-depositario.tex",
+      "size": 1322,
+      "sha256": "8f51084dea8c7ca569d7eac8dede40474a2ca480eaf355a342af8516bd7296ce"
+    },
+    {
+      "path": "elementos-pos-textuais/glossario.tex",
+      "size": 1325,
+      "sha256": "e5e5dfe45c595056a89e7168ca5728382e0e011dcf680093714edd384ce10943"
+    },
+    {
+      "path": "elementos-pos-textuais/referencias.bib",
+      "size": 2497,
+      "sha256": "efa90e4a921e228dfecf5673dc06d56fd892e77cf97f8b44b600062b5df87d3b"
+    },
+    {
+      "path": "elementos-pre-textuais/abstract.tex",
+      "size": 1723,
+      "sha256": "5954b126708c86b6a564a4df0fcf1f24ee990f16164cb30eacf2859d99c042ac"
+    },
+    {
+      "path": "elementos-pre-textuais/agradecimentos.tex",
+      "size": 1090,
+      "sha256": "43941f1cf97a18a84fa0737a552df96e5cc6174b7c42b5917d2ba55fe2e55ded"
+    },
+    {
+      "path": "elementos-pre-textuais/dedicatoria.tex",
+      "size": 263,
+      "sha256": "2a16705406c18c93c40b9c966ebb33974dd2c552861c7a8e0b9b1efaf2a1c315"
+    },
+    {
+      "path": "elementos-pre-textuais/epigrafe.tex",
+      "size": 320,
+      "sha256": "559d13ea79683177b5a0982aa15596c6dc6d31e78fe35c59b65c01186212991b"
+    },
+    {
+      "path": "elementos-pre-textuais/errata.tex",
+      "size": 636,
+      "sha256": "174a2e197acd1ed3d5f3a38e6c85b695ab0f0f9c80ac1ae92ed2428b16405bf7"
+    },
+    {
+      "path": "elementos-pre-textuais/ficha-catalografica.pdf",
+      "size": 175366,
+      "sha256": "853422f6d1ce9f39874b84d03caf47f9c23d67bdfc5126a8713f187639bfbb1c"
+    },
+    {
+      "path": "elementos-pre-textuais/lista-de-abreviaturas-e-siglas.tex",
+      "size": 1228,
+      "sha256": "5d728e057c0a81abd12a009e3c42b87fe7c9a37d321966f4f027d87375d3395f"
+    },
+    {
+      "path": "elementos-pre-textuais/lista-de-simbolos.tex",
+      "size": 1208,
+      "sha256": "f66dab2dba5fbe4029d3b5e0887a1f8fd9ebd50e3ee27b94c9a999a2446366e9"
+    },
+    {
+      "path": "elementos-pre-textuais/resumo.tex",
+      "size": 1714,
+      "sha256": "b769aeb58b6c7ecc81549f3cdeeb6def5c887a01ccb4a695ddee00b2d79ffc07"
+    },
+    {
+      "path": "elementos-textuais/conclusao.tex",
+      "size": 3225,
+      "sha256": "9637fe3bacc8e845a56b47dcf9b083adf65490cfc472ef17e3173a46f3313faa"
+    },
+    {
+      "path": "elementos-textuais/fundamentacao-teorica.tex",
+      "size": 7248,
+      "sha256": "62e4f9d1bc0e66fc4cdd5df13e9da48b84bd2226b32eab1d983751a2630d54b9"
+    },
+    {
+      "path": "elementos-textuais/introducao.tex",
+      "size": 4519,
+      "sha256": "7ef44fb01a567916400648d81fbeece313bb5907d0d3b4e90d67a40f4d4d8ac2"
+    },
+    {
+      "path": "elementos-textuais/metodologia.tex",
+      "size": 22731,
+      "sha256": "77b125e1228b5f961a956e83a8bf5c7a84b235314751d4ea994bcbe4bcf7b118"
+    },
+    {
+      "path": "elementos-textuais/resultados.tex",
+      "size": 2018,
+      "sha256": "eae69576a5253279c4dd28b349bf13175214326fb88136010feb8804ed604150"
+    },
+    {
+      "path": "elementos-textuais/trabalhos-relacionados.tex",
+      "size": 6196,
+      "sha256": "a1b316c48b003b492c9758f012c3255ba028519d685074ba7c57459ba3a7734f"
+    },
+    {
+      "path": "figuras/ficha-catalografica.pdf",
+      "size": 175366,
+      "sha256": "853422f6d1ce9f39874b84d03caf47f9c23d67bdfc5126a8713f187639bfbb1c"
+    },
+    {
+      "path": "figuras/figura-1.jpg",
+      "size": 17085,
+      "sha256": "8bd1a630c0df520a4794eea4e916e5f2cc6a9513ec3b8a3996fc6d7c3bceb743"
+    },
+    {
+      "path": "figuras/figura-2.jpg",
+      "size": 38817,
+      "sha256": "850f856d7052a64dd353286a6f58bd4b90af2f41f882e3b05cf3cd86c0c886bf"
+    },
+    {
+      "path": "figuras/figura-3.png",
+      "size": 17319,
+      "sha256": "faacfeb747db70115f9a5581d18256c1a289d202ddaf16a6a366a1f04f50e162"
+    },
+    {
+      "path": "figuras/figura-4.png",
+      "size": 3163292,
+      "sha256": "2283643576eb05469360afaad3b3de4f6f74b2f13ac9774dfee1b8afa2074a53"
+    },
+    {
+      "path": "figuras/figura-5.png",
+      "size": 3163292,
+      "sha256": "ddc70093546efd828895430dfaabebc7327f427f792366ad456db250097511ee"
+    },
+    {
+      "path": "figuras/main.cpp",
+      "size": 102,
+      "sha256": "5fbfa34bdaa17b9ff7d9493bbf73323bc9a8940d24e24305ad1a3d8253948b94"
+    },
+    {
+      "path": "figuras/uecetex2-logo-dark-mode.png",
+      "size": 19169,
+      "sha256": "c9c27894f400f59cb65b1f74876145d96c235d34fdd98a577133b05bf8dc50a6"
+    },
+    {
+      "path": "figuras/uecetex2-logo-light-mode.png",
+      "size": 17975,
+      "sha256": "865a78c76a7d6582bb46c9b3a20ef0d86f7460dd508f24605efd40ec31b2a018"
+    },
+    {
+      "path": "lib/abntex2-alf.bst",
+      "size": 60938,
+      "sha256": "13febf60610ef60bbd6b93bceb187638a970da1f1022b60452f13c84509fa7da"
+    },
+    {
+      "path": "lib/logo-uece.png",
+      "size": 108731,
+      "sha256": "fb52206e283e942072e7f4edb2c2d7bad284c5b63be7ae2ac90d93f987815a82"
+    },
+    {
+      "path": "lib/preambulo.tex",
+      "size": 5655,
+      "sha256": "d34beb1bff09c06c78e0515223c39c9e52c73d8b1f57951ed2601544dc0f67c6"
+    },
+    {
+      "path": "lib/uecetex2.sty",
+      "size": 49343,
+      "sha256": "141c532f9c74719bf5f0e1c26f11082e498d652a98da581777b297b8f51834b9"
+    }
+  ]
+}
