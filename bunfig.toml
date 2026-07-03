@@ -1,0 +1,5 @@
+[install]
+exact = false
+
+[test]
+# Vitest is the test runner (bun run test); `bun test` is not used.
