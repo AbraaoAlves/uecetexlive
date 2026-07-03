@@ -79,3 +79,29 @@ draft in ~3 s.
 - `vite-plugin-pwa`: the ~216 MB WASM/TeX payload is **not** precached (that is
   the app shell only); it is runtime CacheFirst so the first Completa warmup
   fills the cache and the app then works offline.
+
+## D10 — Editor initial content + WYSIWYG e2e list creation
+
+- Tiptap v3: `setContent()` issued before the editor's internal `onCreate`
+  is silently discarded. EditorSurface passes the parsed doc as the initial
+  `content` option and reloads only on file switch (keyed by `path`).
+- `TrailingNode` is required so the caret can escape a document that ends in
+  a `rawLatexBlock` (a code block — Enter inside it just adds a newline).
+  `serializeDoc` drops that trailing empty paragraph.
+- The bullet-list wrapping input rule fires reliably for a real user but is
+  flaky under Playwright's synthetic keystrokes; the roundtrip e2e creates
+  the list via the new `/lista` slash command instead. Input-rule lists are
+  still covered by the `latex-mapping` unit suite.
+
+## Gate status (final)
+
+| Gate | Status | Evidence |
+| --- | --- | --- |
+| G0 | ✅ | `bun run check` + `bun run build` green; `smoke.spec.ts` |
+| G1 | ✅ | `seed-persist.spec.ts` (rail groups + reload persistence); vendor scripts idempotent |
+| G2 | ✅ **the challenge** | `compile-full.spec.ts`: full in-browser build (bibtex8 + makeindex×2), 51 pp ±2 of Docker reference, bibliography + glossary in the PDF text layer |
+| G3 | ✅ | Invariant #1 over all 22 vendored `.tex`; Invariant #2 property; 93.95% lines on the TDD zones |
+| G4 | ✅ | `a-wysiwyg-roundtrip.spec.ts` + `draft-mode.spec.ts`; Storybook builds with the §6.2 inventory |
+| G5 | ✅ | `import-export.spec.ts` (VFS deep-equal round-trip + `.bbl` Tier-4) |
+| G6 | ✅ | PWA runtime cache-first for `/wasm` + `/templates`; app-shell ~183 KB gz (< 350); immutable `_headers` |
+| G7 | ✅ | README quickstart reproduces from vendor scripts; `bun run check` green; all gates re-run green |
