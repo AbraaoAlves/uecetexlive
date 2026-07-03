@@ -88,8 +88,6 @@ export function buildExtensions({ openPicker }: BuildExtensionsOptions): Extensi
     UndoRedo,
     Dropcursor,
     Gapcursor,
-    // Keeps an empty paragraph at doc end so the caret never gets trapped
-    // inside a trailing raw/code block; serializeDoc drops it again.
     TrailingNode.configure({ node: "paragraph" }),
     Placeholder.configure({ placeholder: strings.editor.placeholder }),
     SlashMenu.configure({ openPicker }),

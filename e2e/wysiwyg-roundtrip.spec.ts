@@ -32,7 +32,11 @@ test("wysiwyg roundtrip: type → clean LaTeX → compiled PDF", async ({ page }
   await expect(editor.locator("strong")).toContainText("muito bom");
   await page.keyboard.press("Enter");
 
-  await page.keyboard.type("- primeiro item", { delay: 10 });
+  // Type the "- " marker first so the wrapping input rule fires on the
+  // space before the item text streams in (a real user types slower).
+  await page.keyboard.type("- ", { delay: 40 });
+  await expect(editor.locator("ul li")).toBeVisible();
+  await page.keyboard.type("primeiro item", { delay: 10 });
   await expect(editor.locator("ul li")).toContainText("primeiro item");
   await page.keyboard.press("Enter");
   await page.keyboard.type("segundo item", { delay: 10 });
