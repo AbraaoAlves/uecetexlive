@@ -42,4 +42,20 @@ test("draft mode: fast compile with [?] citations notice", async ({ page }) => {
   await expect(page.getByTestId("log-pane")).toContainText(
     "Modo rascunho: citações, glossário e índice não são resolvidos",
   );
+
+  // Compile a SECOND time: the PdfPane must tear down the previous pdf.js
+  // document (loading-task.destroy, not proxy.destroy) without crashing.
+  await page.getByTestId("preview-tab-pdf").click();
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  await page.getByTestId("compile-button").click();
+  await expect(page.getByTestId("compile-button")).toHaveAttribute(
+    "data-status",
+    /ok|error/,
+    { timeout: 200_000 },
+  );
+  await expect(page.getByTestId("pdf-pane")).toHaveAttribute("data-pages", /^[1-9]\d*$/, {
+    timeout: 30_000,
+  });
+  expect(errors.filter((e) => e.includes("destroy"))).toEqual([]);
 });
