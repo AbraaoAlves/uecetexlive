@@ -16,6 +16,15 @@ interface PdfDoc {
     render(opts: unknown): { promise: Promise<void> };
     getTextContent(): Promise<{ items: unknown[] }>;
   }>;
+}
+
+/**
+ * pdf.js teardown lives on the LOADING TASK, not the document proxy — in
+ * pdfjs-dist v6 `PDFDocumentProxy` has no public `destroy()`. Keep the task
+ * around to tear the worker down on the next compile (§12: proxies leak).
+ */
+interface PdfLoadingTask {
+  promise: Promise<PdfDoc>;
   destroy(): Promise<void>;
 }
 
@@ -30,6 +39,7 @@ async function loadPdfjs() {
 export function PdfPane({ pdf, compiling }: PdfPaneProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const docRef = useRef<PdfDoc | null>(null);
+  const taskRef = useRef<PdfLoadingTask | null>(null);
   const [numPages, setNumPages] = useState(0);
   const [pageNum, setPageNum] = useState(1);
   const [zoom, setZoom] = useState(1);
@@ -41,13 +51,16 @@ export function PdfPane({ pdf, compiling }: PdfPaneProps) {
       const pdfjs = await loadPdfjs();
       // pdf.js transfers the buffer to its worker — hand it a copy.
       const data = new Uint8Array(pdf);
-      const doc = (await pdfjs.getDocument({ data }).promise) as unknown as PdfDoc;
+      const task = pdfjs.getDocument({ data }) as unknown as PdfLoadingTask;
+      const doc = await task.promise;
       if (cancelled) {
-        void doc.destroy();
+        void task.destroy();
         return;
       }
-      // Destroy the previous document (its worker leaks otherwise, §12).
-      if (docRef.current) void docRef.current.destroy();
+      // Tear down the previous document's worker (§12) — destroy the loading
+      // task, not the proxy (which has no public destroy in v6).
+      if (taskRef.current) void taskRef.current.destroy();
+      taskRef.current = task;
       docRef.current = doc;
       setNumPages(doc.numPages);
       setPageNum((prev) => Math.min(prev, doc.numPages) || 1);
@@ -72,6 +85,16 @@ export function PdfPane({ pdf, compiling }: PdfPaneProps) {
       cancelled = true;
     };
   }, [pdf]);
+
+  // Final teardown on unmount (the per-compile path destroys the previous
+  // task; this catches the last one).
+  useEffect(() => {
+    return () => {
+      void taskRef.current?.destroy();
+      taskRef.current = null;
+      docRef.current = null;
+    };
+  }, []);
 
   useEffect(() => {
     const doc = docRef.current;
