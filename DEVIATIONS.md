@@ -57,3 +57,25 @@ paths — the engine then ingests HTML as TeX ("Missing \begin{document}",
 `l.1 <`). Patched `swiftlatexpdftex.js` (both fileid/pkid branches, marker
 `uecetexlive:spa-fallback-guard`) to treat `Content-Type: text/html`
 responses as not-found.
+
+## D8 — Draft-engine TL2020 slice: many packages + base-35 map surgery
+
+The draft engine's `.fmt` is TL2020-era; getting abnTeX2 to load took iterating
+the sync package list from the 404 log (`textcase`, `xkeyval`+its generic
+`.tex`, `translator`, `enumitem`, `glossaries-portuges`, `babel-english/spanish`,
+`rsfs`, `dvips` for `8r.enc`, …), extracting `.tex`/`.sto` (not just `.sty`),
+pulling `eso-pic` from the TL**2019** archive (the 2020 one adopted 2020-10 hook
+management the fmt's kernel lacks), and **prepending base-35 URW font map
+entries** to the synthesized `pdftex.map` (pdfTeX keeps the first entry per
+name; psnfss's non-embedding `psyro` etc. lines otherwise win and abort output).
+Risk K5 (fmt can't load abnTeX2) did **not** trigger — full uecetex2 renders in
+draft in ~3 s.
+
+## D9 — Build/PWA (Phase 6)
+
+- Vite 8/rolldown: chunk splitting via `build.rolldownOptions.output.advancedChunks`
+  (not the Vite-7 `manualChunks`). App-shell entry ~183 KB gz; Tiptap+KaTeX are
+  a lazy chunk (WYSIWYG surface is `React.lazy`), pdf.js lazy on first preview.
+- `vite-plugin-pwa`: the ~216 MB WASM/TeX payload is **not** precached (that is
+  the app shell only); it is runtime CacheFirst so the first Completa warmup
+  fills the cache and the app then works offline.

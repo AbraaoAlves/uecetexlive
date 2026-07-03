@@ -89,6 +89,7 @@ export async function runFullBuild(
   if (precompiledBbl) {
     onProgress?.(0.35, "Compilando (2/6): bibliografia importada (.bbl)…");
     await io.writeFile(`${job}.bbl`, precompiledBbl);
+    fullLog.push(`$ # bibtex8 pulado: usando ${job}.bbl importado (Tier 4)`);
   } else if (aux.includes("\\bibdata")) {
     onProgress?.(0.35, "Compilando (2/6): bibliografia…");
     // uecetex2 writes \bibliographystyle{lib/abntex2-alf.bst} (extension

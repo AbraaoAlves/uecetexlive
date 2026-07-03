@@ -52,24 +52,24 @@ export function serializeInline(node: PMNode): string {
     case "text":
       return wrapMarks(escapeText(node.text ?? ""), node.marks);
     case "citation": {
-      if (raw !== undefined) return raw;
+      if (raw != null) return raw;
       const cmd = (node.attrs?.cmd as string) ?? "cite";
       const keys = (node.attrs?.keys as string[]) ?? [];
       const opt = node.attrs?.opt as string | null | undefined;
       return `\\${cmd}${opt ? `[${opt}]` : ""}{${keys.join(",")}}`;
     }
     case "crossref": {
-      if (raw !== undefined) return raw;
+      if (raw != null) return raw;
       const cmd = (node.attrs?.cmd as string) ?? "ref";
       return `\\${cmd}{${(node.attrs?.target as string) ?? ""}}`;
     }
     case "mathInline": {
-      if (raw !== undefined) return raw;
+      if (raw != null) return raw;
       const tex = (node.attrs?.tex as string) ?? "";
       return node.attrs?.delim === "paren" ? `\\(${tex}\\)` : `$${tex}$`;
     }
     case "footnote": {
-      if (raw !== undefined) return raw;
+      if (raw != null) return raw;
       return `\\footnote{${(node.attrs?.latex as string) ?? ""}}`;
     }
     case "rawLatexInline":
@@ -92,7 +92,7 @@ function serializeListItem(item: PMNode): string {
 
 export function serializeBlock(node: PMNode): string {
   const raw = node.attrs?.rawSource as string | undefined;
-  if (raw !== undefined) return raw;
+  if (raw != null) return raw;
 
   switch (node.type) {
     case "rawLatexBlock":
@@ -102,7 +102,16 @@ export function serializeBlock(node: PMNode): string {
         ? node.content.map((n) => n.text ?? "").join("")
         : ((node.attrs?.latex as string) ?? "");
     case "heading": {
-      const cmd = (node.attrs?.cmd as string) ?? "section";
+      const byLevel: Record<number, string> = {
+        1: "chapter",
+        2: "section",
+        3: "subsection",
+        4: "subsubsection",
+      };
+      const cmd =
+        (node.attrs?.cmd as string | null) ??
+        byLevel[(node.attrs?.level as number) ?? 2] ??
+        "section";
       const star = node.attrs?.starred ? "*" : "";
       return `\\${cmd}${star}{${serializeInlines(node.content)}}`;
     }
@@ -166,7 +175,18 @@ export function serializeBlock(node: PMNode): string {
 }
 
 export function serializeDoc(doc: PMDoc): string {
-  const content = doc.content ?? [];
+  let content = doc.content ?? [];
+  // The editor's TrailingNode keeps an empty paragraph at doc end; it has no
+  // LaTeX meaning — drop it (and only it) on serialization.
+  const last = content[content.length - 1];
+  if (
+    last &&
+    last.type === "paragraph" &&
+    (!last.content || last.content.length === 0) &&
+    last.attrs?.gapBefore == null
+  ) {
+    content = content.slice(0, -1);
+  }
   let out = "";
   content.forEach((node, index) => {
     const gap =

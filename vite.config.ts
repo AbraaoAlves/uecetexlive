@@ -4,9 +4,50 @@ import { fileURLToPath } from "node:url";
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
+import { VitePWA } from "vite-plugin-pwa";
 
 export default defineConfig({
-  plugins: [react(), tailwindcss()],
+  plugins: [
+    react(),
+    tailwindcss(),
+    VitePWA({
+      registerType: "autoUpdate",
+      // The WASM/TeX payload is huge (>200 MB) and content-stable. We do NOT
+      // precache it (precache is the app shell only); it is runtime
+      // cache-first so the first Completa warmup fills the cache and the app
+      // then works fully offline (§11.3 — "funciona no avião").
+      workbox: {
+        globPatterns: ["**/*.{js,css,html,svg,woff2}"],
+        // The app shell is small; the WASM/TeX trees are handled at runtime.
+        globIgnores: ["**/wasm/**", "**/templates/**"],
+        maximumFileSizeToCacheInBytes: 8 * 1024 * 1024,
+        navigateFallbackDenylist: [/^\/wasm\//, /^\/templates\//],
+        runtimeCaching: [
+          {
+            urlPattern: ({ url }) =>
+              url.pathname.startsWith("/wasm/") || url.pathname.startsWith("/templates/"),
+            handler: "CacheFirst",
+            options: {
+              cacheName: "uecetex-assets",
+              cacheableResponse: { statuses: [0, 200] },
+              expiration: { maxEntries: 6000 },
+              rangeRequests: true,
+            },
+          },
+        ],
+      },
+      manifest: {
+        name: "UeceTexLive",
+        short_name: "UeceTexLive",
+        description: "Edite e compile sua monografia UECE (abnTeX2) no navegador.",
+        lang: "pt-BR",
+        theme_color: "#4b7a55",
+        background_color: "#f7f7f2",
+        display: "standalone",
+        start_url: "/",
+      },
+    }),
+  ],
   resolve: {
     alias: {
       "@": fileURLToPath(new URL("./src", import.meta.url)),
@@ -14,6 +55,19 @@ export default defineConfig({
   },
   build: {
     target: "es2022",
+    rolldownOptions: {
+      output: {
+        // Split the heavy libs so the app shell stays under budget (§11.5).
+        advancedChunks: {
+          groups: [
+            { name: "pdfjs", test: /pdfjs-dist/ },
+            { name: "katex", test: /katex/ },
+            { name: "tiptap", test: /@tiptap|prosemirror/ },
+            { name: "react-vendor", test: /react|@tanstack/ },
+          ],
+        },
+      },
+    },
   },
   test: {
     environment: "happy-dom",

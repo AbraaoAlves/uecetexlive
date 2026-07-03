@@ -1,0 +1,8 @@
+# Cloudflare Pages / Netlify headers (§11.1).
+# Everything under /wasm/ and /templates/ is content-stable → cache forever.
+/wasm/*
+  Cache-Control: public, max-age=31536000, immutable
+/templates/*
+  Cache-Control: public, max-age=31536000, immutable
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable

@@ -14,7 +14,7 @@ import {
 import { loadProject, saveProject } from "@/features/persistence/db";
 import type { Project } from "./schema";
 import { seedTemplate } from "./seed";
-import { textToBytes } from "./vfs";
+import { isWysiwygEligible, kindOf, textToBytes } from "./vfs";
 
 const PROJECT_ID = "uecetex2";
 const AUTOSAVE_MS = 500;
@@ -33,6 +33,7 @@ interface ProjectStore {
   updateFileText: (path: string, text: string) => void;
   updateFileBytes: (path: string, bytes: Uint8Array) => void;
   replaceProject: (project: Project) => void;
+  createFile: (path: string, bytes: Uint8Array) => void;
 }
 
 const ProjectContext = createContext<ProjectStore | null>(null);
@@ -124,6 +125,25 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
     [schedulePersist],
   );
 
+  const createFile = useCallback(
+    (path: string, bytes: Uint8Array) => {
+      setProject((prev) => {
+        if (!prev || prev.files.some((f) => f.path === path)) return prev;
+        return {
+          ...prev,
+          updatedAt: Date.now(),
+          files: [
+            ...prev.files,
+            { path, bytes, kind: kindOf(path), editable: isWysiwygEligible(path) },
+          ],
+        };
+      });
+      setCurrentPath(path);
+      schedulePersist();
+    },
+    [schedulePersist],
+  );
+
   const value = useMemo<ProjectStore>(
     () => ({
       project,
@@ -137,6 +157,7 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
       updateFileText,
       updateFileBytes,
       replaceProject,
+      createFile,
     }),
     [
       project,
@@ -149,6 +170,7 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
       updateFileText,
       updateFileBytes,
       replaceProject,
+      createFile,
     ],
   );
 
