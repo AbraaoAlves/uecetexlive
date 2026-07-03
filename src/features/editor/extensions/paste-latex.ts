@@ -16,7 +16,7 @@ export const PasteLatex = Extension.create({
         props: {
           handlePaste(_view, event) {
             const text = event.clipboardData?.getData("text/plain");
-            if (!text || !text.includes("\\")) return false;
+            if (!text?.includes("\\")) return false;
             const { doc } = parseLatex(text);
             if (doc.content.length === 0) return false;
             editor.commands.insertContent(doc.content);

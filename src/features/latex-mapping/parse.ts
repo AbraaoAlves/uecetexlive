@@ -158,12 +158,12 @@ function segmentRange(seg: Node[]): [number, number] | null {
 // Inline promotion
 // ---------------------------------------------------------------------------
 
-function flattenArgText(nodes: Node[]): string {
+function _flattenArgText(nodes: Node[]): string {
   let out = "";
   for (const node of nodes) {
     if (node.type === "string") out += node.content;
     else if (node.type === "whitespace") out += " ";
-    else if (node.type === "group") out += flattenArgText(node.content);
+    else if (node.type === "group") out += _flattenArgText(node.content);
   }
   return out;
 }
@@ -646,7 +646,7 @@ function promoteFigure(env: Ast.Environment, slice: string, ctx: InlineCtx): PMN
   };
 }
 
-function promoteMathEnv(node: Node, slice: string): PMNode {
+function promoteMathEnv(_node: Node, slice: string): PMNode {
   let env: string;
   let inner: string;
   if (slice.startsWith("\\[")) {

@@ -47,3 +47,13 @@ the ±20% rule except none — the exact-size table is embedded in
 The prototype recovered `swiftlatexpdftex.fmt` from Wayback manually
 (prototype doc §6). For fresh-clone reproducibility (Gate G7) the sync script
 now performs that recovery when the file is absent.
+
+## D7 — Third SwiftLaTeX engine patch: SPA-fallback guard
+
+The two prototype patches (worker URL, fileid fallback) assumed a static
+host that 404s missing files. Any SPA-fallback host (vite preview, CF Pages
+with fallback) returns the app's HTML shell with HTTP 200 for missing TL
+paths — the engine then ingests HTML as TeX ("Missing \begin{document}",
+`l.1 <`). Patched `swiftlatexpdftex.js` (both fileid/pkid branches, marker
+`uecetexlive:spa-fallback-guard`) to treat `Content-Type: text/html`
+responses as not-found.
