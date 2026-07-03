@@ -32,11 +32,12 @@ test("wysiwyg roundtrip: type → clean LaTeX → compiled PDF", async ({ page }
   await expect(editor.locator("strong")).toContainText("muito bom");
   await page.keyboard.press("Enter");
 
-  // Type the "- " marker first so the wrapping input rule fires on the
-  // space before the item text streams in (a real user types slower). The
-  // wrapping transaction is the heaviest input rule; give it room under load.
-  await page.keyboard.type("- ", { delay: 40 });
-  await expect(editor.locator("ul li")).toBeVisible({ timeout: 15_000 });
+  // Bullet list via the slash menu (deterministic; input-rule lists are
+  // covered by the unit suite). Marks Bet B2's list serialization.
+  await page.keyboard.type("/lista", { delay: 30 });
+  await expect(page.getByTestId("slash-menu")).toBeVisible();
+  await page.getByTestId("slash-item-lista").click();
+  await expect(editor.locator("ul li")).toBeVisible();
   await page.keyboard.type("primeiro item", { delay: 10 });
   await expect(editor.locator("ul li")).toContainText("primeiro item");
   await page.keyboard.press("Enter");

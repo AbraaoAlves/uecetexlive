@@ -64,6 +64,18 @@ const COMMANDS: CommandDef[] = [
         .run(),
   },
   {
+    id: "lista",
+    label: "Lista com marcadores",
+    run: (editor, range) =>
+      editor.chain().focus().deleteRange(range).toggleBulletList().run(),
+  },
+  {
+    id: "lista-numerada",
+    label: "Lista numerada",
+    run: (editor, range) =>
+      editor.chain().focus().deleteRange(range).toggleOrderedList().run(),
+  },
+  {
     id: "citacao",
     label: "Citação bibliográfica",
     run: (_editor, range, options) => options.openPicker("citation", range),
