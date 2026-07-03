@@ -1,7 +1,9 @@
 import { Loader2 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useCompile } from "@/features/compiler/useCompile";
+import { EditorSurface } from "@/features/editor/EditorSurface";
 import { SourceEditor } from "@/features/editor/SourceEditor";
+import { useEditorResources } from "@/features/editor/useEditorResources";
 import { LogPane } from "@/features/preview/LogPane";
 import { PdfPane } from "@/features/preview/PdfPane";
 import { buildIncludeGraph } from "@/features/project/include-graph";
@@ -9,6 +11,7 @@ import { ProjectProvider, useProject } from "@/features/project/store";
 import {
   bytesToText,
   isAdvancedOnly,
+  isWysiwygEligible,
   type RailSection,
   railSectionOf,
 } from "@/features/project/vfs";
@@ -53,6 +56,7 @@ function ShellInner() {
   } = useProject();
   const [advanced, setAdvanced] = useState(false);
   const [previewTab, setPreviewTab] = useState<"pdf" | "log">("pdf");
+  const [sourceView, setSourceView] = useState(false);
   const { state: compileState, compile, setEngine } = useCompile();
 
   const texSources = useMemo(() => {
@@ -101,6 +105,36 @@ function ShellInner() {
   );
 
   const currentFile = project?.files.find((f) => f.path === currentPath) ?? null;
+  const resources = useEditorResources(project, graph);
+
+  const wysiwygCapable =
+    currentFile !== null &&
+    currentFile.kind === "tex" &&
+    isWysiwygEligible(currentFile.path);
+  const showWysiwyg = wysiwygCapable && !sourceView;
+
+  const projectRefForKeys = useRef(project);
+  projectRefForKeys.current = project;
+
+  // Mod-e toggles WYSIWYG ⇄ source; Mod-Enter compiles (§4.5).
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (!(e.metaKey || e.ctrlKey)) return;
+      if (e.key === "e") {
+        e.preventDefault();
+        setSourceView((v) => !v);
+      } else if (e.key === "Enter") {
+        e.preventDefault();
+        const current = projectRefForKeys.current;
+        if (current) {
+          setPreviewTab("pdf");
+          void compile(current);
+        }
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [compile]);
 
   if (loading) {
     return (
@@ -160,12 +194,32 @@ function ShellInner() {
           />
         </aside>
         <main className="flex min-w-0 flex-1 flex-col" data-testid="editor-pane">
+          {wysiwygCapable && (
+            <div className="flex h-8 shrink-0 items-center justify-end gap-1 border-b bg-surface px-2 text-xs">
+              <button
+                type="button"
+                data-testid="view-toggle"
+                className="rounded px-2 py-0.5 text-ink-muted hover:bg-accent-soft"
+                title="Mod+E"
+                onClick={() => setSourceView((v) => !v)}
+              >
+                {showWysiwyg ? strings.editor.sourceView : strings.editor.wysiwygView}
+              </button>
+            </div>
+          )}
           {currentFile ? (
             currentFile.kind === "image" || currentFile.kind === "pdf" ? (
               <BinaryPreview
                 path={currentFile.path}
                 bytes={currentFile.bytes}
                 kind={currentFile.kind}
+              />
+            ) : showWysiwyg ? (
+              <EditorSurface
+                path={currentFile.path}
+                source={bytesToText(currentFile.bytes)}
+                resources={resources}
+                onChange={(text) => updateFileText(currentFile.path, text)}
               />
             ) : (
               <SourceEditor

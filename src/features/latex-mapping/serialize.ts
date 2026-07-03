@@ -96,7 +96,11 @@ export function serializeBlock(node: PMNode): string {
 
   switch (node.type) {
     case "rawLatexBlock":
-      return (node.attrs?.latex as string) ?? "";
+      // Raw bytes live as text content (never escaped) so ProseMirror can
+      // edit them natively; legacy attr form tolerated.
+      return node.content?.length
+        ? node.content.map((n) => n.text ?? "").join("")
+        : ((node.attrs?.latex as string) ?? "");
     case "heading": {
       const cmd = (node.attrs?.cmd as string) ?? "section";
       const star = node.attrs?.starred ? "*" : "";
@@ -146,7 +150,9 @@ export function serializeBlock(node: PMNode): string {
       return "";
     case "codeBlock": {
       const language = node.attrs?.language as string | null;
-      const code = (node.attrs?.code as string) ?? "";
+      const code = node.content?.length
+        ? node.content.map((n) => n.text ?? "").join("")
+        : ((node.attrs?.code as string) ?? "");
       return `\\begin{lstlisting}${language ? `[language=${language}]` : ""}\n${code}\n\\end{lstlisting}`;
     }
     case "codeInclude": {
