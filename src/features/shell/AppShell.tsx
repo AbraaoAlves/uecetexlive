@@ -1,6 +1,9 @@
 import { Loader2 } from "lucide-react";
 import { useMemo, useState } from "react";
+import { useCompile } from "@/features/compiler/useCompile";
 import { SourceEditor } from "@/features/editor/SourceEditor";
+import { LogPane } from "@/features/preview/LogPane";
+import { PdfPane } from "@/features/preview/PdfPane";
 import { buildIncludeGraph } from "@/features/project/include-graph";
 import { ProjectProvider, useProject } from "@/features/project/store";
 import {
@@ -10,8 +13,12 @@ import {
   railSectionOf,
 } from "@/features/project/vfs";
 import { strings } from "@/lib/strings";
+import { cn } from "@/lib/utils";
+import { CompileButton } from "./CompileButton";
+import { EngineToggle } from "./EngineToggle";
 import { ProjectRail, type RailFile } from "./ProjectRail";
 import { TopBar } from "./TopBar";
+import { WarmupProgress } from "./WarmupProgress";
 
 const SECTION_RANK: Record<RailSection, number> = {
   root: 0,
@@ -45,6 +52,8 @@ function ShellInner() {
     updateFileText,
   } = useProject();
   const [advanced, setAdvanced] = useState(false);
+  const [previewTab, setPreviewTab] = useState<"pdf" | "log">("pdf");
+  const { state: compileState, compile, setEngine } = useCompile();
 
   const texSources = useMemo(() => {
     const map: Record<string, string> = {};
@@ -121,6 +130,22 @@ function ShellInner() {
           />
           Avançado
         </label>
+        {compileState.status === "warming" && compileState.warmup && (
+          <WarmupProgress {...compileState.warmup} />
+        )}
+        <EngineToggle
+          engine={compileState.engine}
+          fullReady={false}
+          onChange={setEngine}
+        />
+        <CompileButton
+          status={compileState.status}
+          progressLabel={compileState.progress?.label}
+          onCompile={() => {
+            setPreviewTab("pdf");
+            void compile(project);
+          }}
+        />
       </TopBar>
       <div className="flex min-h-0 flex-1">
         <aside
@@ -157,10 +182,53 @@ function ShellInner() {
           )}
         </main>
         <section
-          className="flex w-[45%] shrink-0 items-center justify-center border-l bg-surface text-ink-subtle"
+          className="flex w-[45%] shrink-0 flex-col border-l bg-surface"
           data-testid="preview-pane"
         >
-          {strings.preview.empty}
+          <div className="flex h-9 shrink-0 items-center gap-1 border-b px-2 text-xs">
+            <button
+              type="button"
+              data-testid="preview-tab-pdf"
+              onClick={() => setPreviewTab("pdf")}
+              className={cn(
+                "rounded px-2 py-1",
+                previewTab === "pdf" ? "bg-accent-soft font-medium" : "text-ink-muted",
+              )}
+            >
+              {strings.preview.pdfTab}
+            </button>
+            <button
+              type="button"
+              data-testid="preview-tab-log"
+              onClick={() => setPreviewTab("log")}
+              className={cn(
+                "rounded px-2 py-1",
+                previewTab === "log" ? "bg-accent-soft font-medium" : "text-ink-muted",
+              )}
+            >
+              {strings.preview.logTab}
+            </button>
+            {compileState.error && (
+              <span className="ml-2 truncate text-danger">{compileState.error}</span>
+            )}
+          </div>
+          <div className="min-h-0 flex-1">
+            {previewTab === "pdf" ? (
+              <PdfPane
+                pdf={compileState.result?.pdf ?? null}
+                compiling={compileState.status === "compiling"}
+              />
+            ) : (
+              <LogPane
+                log={compileState.result?.log ?? compileState.error ?? ""}
+                diagnostics={compileState.result?.diagnostics ?? []}
+                draftMode={
+                  compileState.engine === "swiftlatex-draft" &&
+                  compileState.result !== null
+                }
+              />
+            )}
+          </div>
         </section>
       </div>
     </div>
