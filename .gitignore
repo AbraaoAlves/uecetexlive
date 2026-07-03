@@ -1,0 +1,21 @@
+# deps / build
+node_modules/
+dist/
+storybook-static/
+coverage/
+
+# vendored heavyweights (fetched by scripts/, never committed)
+public/wasm/busytex/*
+!public/wasm/busytex/manifest.json
+public/wasm/swiftlatex/texlive/
+public/wasm/swiftlatex/*.wasm
+
+# e2e
+test-results/
+playwright-report/
+blob-report/
+
+# misc
+.DS_Store
+*.local
+*.log
