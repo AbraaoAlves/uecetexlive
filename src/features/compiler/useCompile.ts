@@ -38,10 +38,13 @@ export function useCompile() {
   }, []);
 
   const compile = useCallback(
-    async (project: Project, engineOverride?: EngineId) => {
+    async (
+      project: Project,
+      options?: { engine?: EngineId; precompiledBbl?: Uint8Array },
+    ) => {
       if (busy.current) return;
       busy.current = true;
-      const engine = engineOverride ?? state.engine;
+      const engine = options?.engine ?? state.engine;
       try {
         setState((prev) => ({
           ...prev,
@@ -69,6 +72,7 @@ export function useCompile() {
             entry: project.entry,
             files,
             mode: engine === "busytex-full" ? "full" : "draft",
+            precompiledBbl: options?.precompiledBbl,
           },
           (fraction, label) => {
             setState((prev) => ({ ...prev, progress: { fraction, label } }));

@@ -146,8 +146,18 @@ export const SlashMenu = Extension.create<SlashMenuOptions>({
           const position = (clientRect?: (() => DOMRect | null) | null) => {
             const rect = clientRect?.();
             if (!rect || !container) return;
-            container.style.left = `${rect.left}px`;
-            container.style.top = `${rect.bottom + 4}px`;
+            // Clamp into the viewport; flip above the caret near the bottom
+            // edge (typing at document end).
+            const menuHeight = Math.min(container.offsetHeight || 240, 300);
+            const menuWidth = container.offsetWidth || 256;
+            const below = rect.bottom + 4;
+            const top =
+              below + menuHeight > window.innerHeight
+                ? Math.max(4, rect.top - menuHeight - 4)
+                : below;
+            const left = Math.min(rect.left, window.innerWidth - menuWidth - 8);
+            container.style.left = `${Math.max(4, left)}px`;
+            container.style.top = `${top}px`;
           };
 
           return {

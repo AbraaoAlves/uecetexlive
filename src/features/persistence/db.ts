@@ -60,6 +60,11 @@ export async function saveProject(project: Project): Promise<void> {
   await db.put("projects", project);
 }
 
+export async function deleteProject(id: string): Promise<void> {
+  const db = await getDb();
+  await db.delete("projects", id);
+}
+
 export async function loadCompileSettings(): Promise<CompileSettings> {
   const db = await getDb();
   const raw: unknown = await db.get("settings", "compile");

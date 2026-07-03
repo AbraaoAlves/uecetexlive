@@ -9,7 +9,13 @@ import { ListItem } from "@tiptap/extension-list-item";
 import { OrderedList } from "@tiptap/extension-ordered-list";
 import { Paragraph } from "@tiptap/extension-paragraph";
 import { Text } from "@tiptap/extension-text";
-import { Dropcursor, Gapcursor, Placeholder, UndoRedo } from "@tiptap/extensions";
+import {
+  Dropcursor,
+  Gapcursor,
+  Placeholder,
+  TrailingNode,
+  UndoRedo,
+} from "@tiptap/extensions";
 import { strings } from "@/lib/strings";
 import { SlashMenu, type SlashMenuOptions } from "../slash-menu/slash-menu";
 import {
@@ -82,6 +88,9 @@ export function buildExtensions({ openPicker }: BuildExtensionsOptions): Extensi
     UndoRedo,
     Dropcursor,
     Gapcursor,
+    // Keeps an empty paragraph at doc end so the caret never gets trapped
+    // inside a trailing raw/code block; serializeDoc drops it again.
+    TrailingNode.configure({ node: "paragraph" }),
     Placeholder.configure({ placeholder: strings.editor.placeholder }),
     SlashMenu.configure({ openPicker }),
   ] as Extension[];

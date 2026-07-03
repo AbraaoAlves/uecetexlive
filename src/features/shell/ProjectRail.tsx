@@ -16,6 +16,8 @@ export interface ProjectRailProps {
   /** Unresolved \input targets (red entries, §5.3). */
   missingIncludes: string[];
   onSelect: (path: string) => void;
+  /** Chapter drag-reorder (§4.6): drop `from` before `to`. */
+  onReorderChapters?: (from: string, to: string) => void;
 }
 
 const SECTION_ORDER: RailSection[] = [
@@ -45,6 +47,7 @@ export function ProjectRail({
   currentPath,
   missingIncludes,
   onSelect,
+  onReorderChapters,
 }: ProjectRailProps) {
   const bySection = new Map<RailSection, RailFile[]>();
   for (const file of files) {
@@ -74,6 +77,20 @@ export function ProjectRail({
                     type="button"
                     onClick={() => onSelect(file.path)}
                     data-testid={`rail-file-${file.path}`}
+                    draggable={section === "chapters" && !!onReorderChapters}
+                    onDragStart={(e) =>
+                      e.dataTransfer.setData("text/uecetex-chapter", file.path)
+                    }
+                    onDragOver={(e) => {
+                      if (section === "chapters") e.preventDefault();
+                    }}
+                    onDrop={(e) => {
+                      const from = e.dataTransfer.getData("text/uecetex-chapter");
+                      if (from && from !== file.path) {
+                        e.preventDefault();
+                        onReorderChapters?.(from, file.path);
+                      }
+                    }}
                     className={cn(
                       "flex w-full items-center gap-2 px-3 py-1 text-left hover:bg-accent-soft/60",
                       currentPath === file.path &&

@@ -14,6 +14,7 @@ import { cn } from "@/lib/utils";
 import { buildExtensions } from "./extensions";
 import { type EditorResources, EditorResourcesContext } from "./resources";
 import type { PickerKind } from "./slash-menu/slash-menu";
+import "katex/dist/katex.min.css";
 
 export interface EditorSurfaceProps {
   path: string;
@@ -29,36 +30,57 @@ interface PickerState {
 
 export function EditorSurface({ path, source, resources, onChange }: EditorSurfaceProps) {
   const [picker, setPicker] = useState<PickerState | null>(null);
-  const loadedPath = useRef<string | null>(null);
+  // Which file the editor currently holds. Initialized to the mount path so
+  // the initial `content` (below) is not re-applied by the switch effect.
+  const loadedKey = useRef<string>(path);
   const applyingExternal = useRef(false);
+  // Latest-prop refs: the editor instance is created exactly once per mount
+  // (§12) — options capture these refs, never render-scope closures.
+  const onChangeRef = useRef(onChange);
+  onChangeRef.current = onChange;
+  const sourceRef = useRef(source);
+  sourceRef.current = source;
 
-  const editor = useEditor({
-    extensions: buildExtensions({
-      openPicker: (kind, range) => setPicker({ kind, range }),
-    }),
-    editorProps: {
-      attributes: {
-        class: "uecetex-editor mx-auto min-h-full max-w-3xl px-8 py-6 outline-none",
-        "data-testid": "wysiwyg-editor",
+  const editor = useEditor(
+    {
+      extensions: buildExtensions({
+        openPicker: (kind, range) => setPicker({ kind, range }),
+      }),
+      // Initial content is set at creation — setContent() issued before the
+      // editor's internal create is silently discarded, so we never rely on
+      // an effect for the first load.
+      content: parseLatex(source).doc as never,
+      editorProps: {
+        attributes: {
+          class: "uecetex-editor mx-auto min-h-full max-w-3xl px-8 py-6 outline-none",
+          "data-testid": "wysiwyg-editor",
+        },
+      },
+      onCreate: ({ editor: current }) => {
+        (window as unknown as Record<string, unknown>).__uecetexEditor = current;
+        (window as unknown as Record<string, unknown>).__serialize = (json: unknown) =>
+          serializeDoc(json as PMDoc);
+      },
+      onUpdate: ({ editor: current }) => {
+        if (applyingExternal.current) return;
+        const json = current.getJSON() as unknown as PMDoc;
+        onChangeRef.current(serializeDoc(json));
       },
     },
-    onUpdate: ({ editor: current }) => {
-      if (applyingExternal.current) return;
-      const json = current.getJSON() as unknown as PMDoc;
-      onChange(serializeDoc(json));
-    },
-  });
+    [],
+  );
 
-  // Load / switch files.
+  // Reload only on an actual file switch (path change); never on our own
+  // onChange echoes.
   useEffect(() => {
-    if (!editor) return;
-    if (loadedPath.current === path) return;
-    loadedPath.current = path;
+    if (!editor || editor.isDestroyed) return;
+    if (loadedKey.current === path) return;
+    loadedKey.current = path;
     applyingExternal.current = true;
-    const { doc } = parseLatex(source);
+    const { doc } = parseLatex(sourceRef.current);
     editor.commands.setContent(doc as never, { emitUpdate: false });
     applyingExternal.current = false;
-  }, [editor, path, source]);
+  }, [editor, path]);
 
   const insertAtRange = useCallback(
     (content: Record<string, unknown>) => {

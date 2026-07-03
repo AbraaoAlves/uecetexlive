@@ -1,6 +1,6 @@
 @import "tailwindcss" source(none);
 @import "tw-animate-css";
-@import "katex/dist/katex.min.css";
+/* katex CSS is imported from the lazy EditorSurface chunk, not here (§11.5). */
 @source "../src";
 @source "../.storybook";
 

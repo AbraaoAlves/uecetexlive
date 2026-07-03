@@ -1,0 +1,50 @@
+\providecommand{\abntreprintinfo}[1]{%
+ \citeonline{#1}}
+\setlength{\labelsep}{0pt}\begin{thebibliography}{}
+\providecommand{\abntrefinfo}[3]{}
+\providecommand{\abntbstabout}[1]{}
+\abntbstabout{v<VERSION> }
+
+\bibitem[Assis, Avanci e Pesce 2005]{tresautores}
+\abntrefinfo{Assis, Avanci e Pesce}{Assis; Avanci; Pesce}{2005}
+{ASSIS, S.~G.; AVANCI, J.~Q.; PESCE, R.~P. \textbf{Resiliência: enfatizando a
+  proteção dos adolescentes}. Porto Alegre: Artmed: [s.n.], 2005.}
+
+\bibitem[Borges 2012]{Maia2011}
+\abntrefinfo{Borges}{Borges}{2012}
+{BORGES, J. A.~M.
+\textbf{Estudo da drogadição gestacional e óbito neonatal}.
+2012. Disserta\c{c}\~{a}o (Mestrado) --- Universidade Estadual do Ceará,
+  Fortaleza, 2012.}
+
+\bibitem[Hu {\textit{et~al.}} 2000]{Huetal2000}
+\abntrefinfo{Hu {\textit{et~al.}}}{Hu {\textit{et~al.}}}{2000}
+{HU, J.; WU, H.; JENNINGS, A.; WANG, X. Fast and robust equalization: A case
+  study. In:  \textbf{Proceedings of the World Multiconference on Systemics,
+  Cybernetics and Informatics, (SCI 2000), Florida, USA, 23-26 July 2000}. FL,
+  USA: International Institute of Informatics and Systemics, 2000. p.
+  398--403.}
+
+\bibitem[Instituto Brasileiro de Geografia e Estat{\'i}stica 2023]{ibge23}
+\abntrefinfo{IBGE}{Ibge}{2023}
+{INSTITUTO BRASILEIRO DE GEOGRAFIA E ESTAT{\'I}STICA. \textbf{Em 2022,
+  analfabetismo cai, mas continua mais alto entre idosos, pretos e pardos e no
+  Nordeste}. Agência IBGE Notícias, 2023.
+Dispon{\'\i}vel em:
+  \url{https://agenciadenoticias.ibge.gov.br/agencia-noticias/2012-agencia-de-noticias/noticias/37089-em-2022-analfabetismo-cai-mas-continua-mais-alto-entre-idosos-pretos-e-pardos-e-no-nordeste}.
+  Acesso em: 11 nov. 2023.}
+
+\bibitem[Lamport 1986]{lamport1986latex}
+\abntrefinfo{Lamport}{Lamport}{1986}
+{LAMPORT, L. Latex: User's guide \& reference manual.
+Addison-Wesley, 1986.}
+
+\bibitem[Wessberg {\textit{et~al.}} 2000]{quatroautores}
+\abntrefinfo{Wessberg {\textit{et~al.}}}{Wessberg {\textit{et~al.}}}{2000}
+{WESSBERG, J.; STAMBAUGH, C.~R.; KRALIK, J.~D.; BECK, P.~D.; LAUBACH, M.;
+  CHAPIN, J.~K.; KIM, J.; BIGGS, S.~J.; SRINIVASAN, M.~A.; NICOLELIS, M.~A.
+  Real-time prediction of hand trajectory by ensembles of cortical neurons in
+  primates.
+\textbf{Nature}, Nature Publishing Group, v.~408, n.~6810, p. 361--365, 2000.}
+
+\end{thebibliography}
