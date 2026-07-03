@@ -63,7 +63,7 @@ done
 INJECT="$DEST/inject"
 mkdir -p "$INJECT"
 CTAN="https://mirror.ctan.org/systems/texlive/tlnet/archive"
-for pkg in abntex2 tracklang; do
+for pkg in abntex2 tracklang babel-portuges microtype; do
   if [ ! -f "$INJECT/.$pkg.done" ]; then
     echo "fetching CTAN $pkg…"
     tmp="$(mktemp -d)"
@@ -73,7 +73,8 @@ for pkg in abntex2 tracklang; do
     # flat names, and none of these packages have name collisions. TL tlnet
     # archives have no texmf-dist/ prefix: paths are tex/latex/<pkg>/…
     find "$tmp/tex" "$tmp/bibtex" -type f \
-      \( -name '*.sty' -o -name '*.cls' -o -name '*.def' -o -name '*.bst' -o -name '*.bib' \) \
+      \( -name '*.sty' -o -name '*.cls' -o -name '*.def' -o -name '*.bst' \
+         -o -name '*.bib' -o -name '*.tex' -o -name '*.ldf' -o -name '*.ini' -o -name '*.cfg' \) \
       -exec cp {} "$INJECT/" \; 2>/dev/null || true
     rm -rf "$tmp"
     touch "$INJECT/.$pkg.done"
@@ -83,6 +84,27 @@ done
 if [ ! -f "$INJECT/abntex2.cls" ]; then
   echo "FATAL: abntex2.cls missing after CTAN injection fetch (risk K1)" >&2
   exit 1
+fi
+
+# cm-super typewriter subset (see DEVIATIONS.md): the busytex bundles ship no
+# cm-super, so T1-encoded typewriter (ectt*, used by listings/\texttt under
+# fontenc T1) has no Type1 outline and pdfTeX dies trying to fork mktexpk.
+# We vendor just the sftt faces + T1 enc + the ectt map lines; the worker
+# writes a merged pdftex.map into the compile cwd (TEXFONTMAPS searches
+# $TEXMFDOTDIR first, shadowing the tree map).
+if [ ! -f "$INJECT/.cm-super.done" ]; then
+  echo "fetching CTAN cm-super (typewriter subset)…"
+  CMS_CACHE="${TMPDIR:-/tmp}/uecetexlive-vendor/cm-super.tar.xz"
+  mkdir -p "$(dirname "$CMS_CACHE")"
+  [ -s "$CMS_CACHE" ] || curl -sSfL --retry 3 -o "$CMS_CACHE" "$CTAN/cm-super.tar.xz"
+  tmp="$(mktemp -d)"
+  tar -xJf "$CMS_CACHE" -C "$tmp"
+  cp "$tmp"/fonts/type1/public/cm-super/sftt*.pfb "$INJECT/"
+  cp "$tmp"/fonts/enc/dvips/cm-super/cm-super-t1.enc "$INJECT/"
+  grep '^ectt' "$tmp"/fonts/map/dvips/cm-super/cm-super-t1.map \
+    > "$DEST/ectt-map-fragment.txt"
+  rm -rf "$tmp"
+  touch "$INJECT/.cm-super.done"
 fi
 
 # Inject manifest: the busytex compiler fetches these by name at warmup.
