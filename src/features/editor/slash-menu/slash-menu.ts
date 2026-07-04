@@ -14,7 +14,7 @@ export interface SlashMenuOptions {
   openPicker: (kind: PickerKind, range: Range) => void;
 }
 
-interface CommandDef {
+export interface CommandDef {
   id: string;
   label: string;
   run: (editor: Editor, range: Range, options: SlashMenuOptions) => void;
@@ -131,6 +131,13 @@ const COMMANDS: CommandDef[] = [
       editor.chain().focus().deleteRange(range).setNode("rawLatexBlock").run(),
   },
 ];
+
+/** Shared with the fixed toolbar — same insertions, one definition. */
+export function getSlashCommand(id: string): CommandDef {
+  const command = COMMANDS.find((c) => c.id === id);
+  if (!command) throw new Error(`Unknown slash command: ${id}`);
+  return command;
+}
 
 export const SlashMenu = Extension.create<SlashMenuOptions>({
   name: "slashMenu",

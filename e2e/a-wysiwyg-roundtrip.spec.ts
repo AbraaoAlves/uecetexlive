@@ -20,9 +20,16 @@ test("wysiwyg roundtrip: type → clean LaTeX → compiled PDF", async ({ page }
   // Parsed corpus content is on screen (chapter heading promoted to h1).
   await expect(editor.locator("h1")).toContainText("Introdução");
 
-  // Move to the end and add fresh content via input rules (§4.5).
-  await editor.click();
-  await page.keyboard.press("ControlOrMeta+End");
+  // Move to the end and add fresh content via input rules (§4.5). Caret goes
+  // through the exposed editor handle: click + Ctrl+End races ProseMirror's
+  // focus/selection and has historically glued typed text mid-document.
+  await page.evaluate(() => {
+    (
+      window as unknown as {
+        __uecetexEditor: { commands: { focus: (pos: "end") => void } };
+      }
+    ).__uecetexEditor.commands.focus("end");
+  });
   await page.keyboard.press("Enter");
   await page.keyboard.type("## Resultados Preliminares", { delay: 10 });
   await expect(

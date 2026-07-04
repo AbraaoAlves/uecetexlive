@@ -1,4 +1,4 @@
-import { ClipboardList, FileWarning, Lock } from "lucide-react";
+import { ClipboardList, FileWarning, Lock, Plus } from "lucide-react";
 import { type RailSection, railSectionOf } from "@/features/project/vfs";
 import { strings } from "@/lib/strings";
 import { cn } from "@/lib/utils";
@@ -20,6 +20,8 @@ export interface ProjectRailProps {
   onSelect: (path: string) => void;
   /** Chapter drag-reorder (§4.6): drop `from` before `to`. */
   onReorderChapters?: (from: string, to: string) => void;
+  /** "+" in the chapters header — scaffold file + \input (QA Fase 1). */
+  onNewChapter?: () => void;
   /** Opens the "Dados do Trabalho" wizard (F2). */
   onOpenMetadata?: () => void;
   metadataActive?: boolean;
@@ -56,6 +58,7 @@ export function ProjectRail({
   hiddenCount = 0,
   onSelect,
   onReorderChapters,
+  onNewChapter,
   onOpenMetadata,
   metadataActive = false,
   metadataPending = false,
@@ -98,8 +101,20 @@ export function ProjectRail({
         return (
           <div key={section} className="mb-1" data-testid={`rail-section-${section}`}>
             {section !== "root" && (
-              <div className="px-3 pt-2 pb-1 font-medium text-[11px] text-ink-subtle uppercase tracking-wider">
+              <div className="flex items-center justify-between px-3 pt-2 pb-1 font-medium text-[11px] text-ink-subtle uppercase tracking-wider">
                 {SECTION_LABEL[section]}
+                {section === "chapters" && onNewChapter && (
+                  <button
+                    type="button"
+                    data-testid="new-chapter"
+                    title={strings.rail.newChapter}
+                    aria-label={strings.rail.newChapter}
+                    onClick={onNewChapter}
+                    className="rounded p-0.5 hover:bg-accent-soft hover:text-accent-strong"
+                  >
+                    <Plus className="size-3.5" />
+                  </button>
+                )}
               </div>
             )}
             <ul>

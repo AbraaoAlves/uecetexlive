@@ -26,6 +26,11 @@ export interface EditorResources {
   imageFiles: string[];
   /** VFS code/text paths for the codeInclude picker. */
   codeFiles: string[];
+  /**
+   * Saves an uploaded image into figuras/ and returns its VFS path, or null
+   * when rejected (unsupported type, too big, read-only context).
+   */
+  uploadImage: (file: File) => Promise<string | null>;
 }
 
 export const emptyResources: EditorResources = {
@@ -36,6 +41,7 @@ export const emptyResources: EditorResources = {
   labels: [],
   imageFiles: [],
   codeFiles: [],
+  uploadImage: async () => null,
 };
 
 export const EditorResourcesContext = createContext<EditorResources>(emptyResources);

@@ -5,12 +5,14 @@
  */
 import { EditorContent, type Range, useEditor } from "@tiptap/react";
 import { BubbleMenu } from "@tiptap/react/menus";
-import { Bold, Code, Italic, Underline as UnderlineIcon } from "lucide-react";
+import { Bold, Code, ImagePlus, Italic, Underline as UnderlineIcon } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { parseLatex } from "@/features/latex-mapping/parse";
 import { serializeDoc } from "@/features/latex-mapping/serialize";
 import type { PMDoc } from "@/features/latex-mapping/types";
+import { strings } from "@/lib/strings";
 import { cn } from "@/lib/utils";
+import { EditorToolbar } from "./EditorToolbar";
 import { buildExtensions } from "./extensions";
 import { type EditorResources, EditorResourcesContext } from "./resources";
 import type { PickerKind } from "./slash-menu/slash-menu";
@@ -100,60 +102,69 @@ export function EditorSurface({ path, source, resources, onChange }: EditorSurfa
 
   return (
     <EditorResourcesContext.Provider value={resources}>
-      <div className="relative h-full overflow-y-auto" data-testid="editor-surface">
-        <EditorContent editor={editor} className="h-full" />
+      <div className="flex h-full flex-col" data-testid="editor-surface">
+        <EditorToolbar
+          editor={editor}
+          onOpenPicker={(kind) => {
+            const { from, to } = editor.state.selection;
+            setPicker({ kind, range: { from, to } });
+          }}
+        />
+        <div className="relative min-h-0 flex-1 overflow-y-auto">
+          <EditorContent editor={editor} className="h-full" />
 
-        <BubbleMenu editor={editor} data-testid="bubble-menu">
-          <div className="flex items-center gap-0.5 rounded-md border bg-surface-elevated p-0.5 shadow-md">
-            <BubbleButton
-              active={editor.isActive("bold")}
-              onClick={() => editor.chain().focus().toggleBold().run()}
-              label="Negrito"
-            >
-              <Bold className="size-3.5" />
-            </BubbleButton>
-            <BubbleButton
-              active={editor.isActive("italic")}
-              onClick={() => editor.chain().focus().toggleItalic().run()}
-              label="Itálico"
-            >
-              <Italic className="size-3.5" />
-            </BubbleButton>
-            <BubbleButton
-              active={editor.isActive("underline")}
-              onClick={() => editor.chain().focus().toggleUnderline().run()}
-              label="Sublinhado"
-            >
-              <UnderlineIcon className="size-3.5" />
-            </BubbleButton>
-            <BubbleButton
-              active={editor.isActive("code")}
-              onClick={() => editor.chain().focus().toggleCode().run()}
-              label="Monoespaçado"
-            >
-              <Code className="size-3.5" />
-            </BubbleButton>
-            <BubbleButton
-              active={false}
-              onClick={() => {
-                const { from, to } = editor.state.selection;
-                setPicker({ kind: "citation", range: { from, to } });
-              }}
-              label="Citar"
-            >
-              <span className="px-1 text-xs">cite</span>
-            </BubbleButton>
-          </div>
-        </BubbleMenu>
+          <BubbleMenu editor={editor} data-testid="bubble-menu">
+            <div className="flex items-center gap-0.5 rounded-md border bg-surface-elevated p-0.5 shadow-md">
+              <BubbleButton
+                active={editor.isActive("bold")}
+                onClick={() => editor.chain().focus().toggleBold().run()}
+                label="Negrito"
+              >
+                <Bold className="size-3.5" />
+              </BubbleButton>
+              <BubbleButton
+                active={editor.isActive("italic")}
+                onClick={() => editor.chain().focus().toggleItalic().run()}
+                label="Itálico"
+              >
+                <Italic className="size-3.5" />
+              </BubbleButton>
+              <BubbleButton
+                active={editor.isActive("underline")}
+                onClick={() => editor.chain().focus().toggleUnderline().run()}
+                label="Sublinhado"
+              >
+                <UnderlineIcon className="size-3.5" />
+              </BubbleButton>
+              <BubbleButton
+                active={editor.isActive("code")}
+                onClick={() => editor.chain().focus().toggleCode().run()}
+                label="Monoespaçado"
+              >
+                <Code className="size-3.5" />
+              </BubbleButton>
+              <BubbleButton
+                active={false}
+                onClick={() => {
+                  const { from, to } = editor.state.selection;
+                  setPicker({ kind: "citation", range: { from, to } });
+                }}
+                label="Citar"
+              >
+                <span className="px-1 text-xs">cite</span>
+              </BubbleButton>
+            </div>
+          </BubbleMenu>
 
-        {picker && (
-          <PickerDialog
-            kind={picker.kind}
-            resources={resources}
-            onClose={() => setPicker(null)}
-            onPick={insertAtRange}
-          />
-        )}
+          {picker && (
+            <PickerDialog
+              kind={picker.kind}
+              resources={resources}
+              onClose={() => setPicker(null)}
+              onPick={insertAtRange}
+            />
+          )}
+        </div>
       </div>
     </EditorResourcesContext.Provider>
   );
@@ -254,7 +265,7 @@ function PickerDialog({
     );
   } else if (kind === "figure") {
     const results = resources.imageFiles.filter((f) => f.toLowerCase().includes(q));
-    body = results.length ? (
+    const rows = results.length ? (
       results.map((file) => (
         <PickerRow
           key={file}
@@ -277,6 +288,12 @@ function PickerDialog({
       ))
     ) : (
       <Empty>Nenhuma imagem em figuras/</Empty>
+    );
+    body = (
+      <>
+        <UploadImageRow resources={resources} onPick={onPick} />
+        {rows}
+      </>
     );
   } else {
     const results = resources.codeFiles.filter((f) => f.toLowerCase().includes(q));
@@ -323,6 +340,64 @@ function PickerDialog({
         />
         <div className="max-h-64 overflow-y-auto py-1">{body}</div>
       </div>
+    </div>
+  );
+}
+
+/** First row of the figure picker: upload from disk into figuras/ (QA Fase 1). */
+function UploadImageRow({
+  resources,
+  onPick,
+}: {
+  resources: EditorResources;
+  onPick: (content: Record<string, unknown>) => void;
+}) {
+  const [error, setError] = useState<string | null>(null);
+  return (
+    <div className="border-b">
+      <label
+        className="flex w-full cursor-pointer items-center gap-2 px-3 py-1.5 text-left text-accent-strong text-sm hover:bg-accent-soft"
+        data-testid="picker-upload"
+      >
+        <ImagePlus className="size-3.5 shrink-0" />
+        {strings.editor.uploadImage}
+        <input
+          type="file"
+          accept=".png,.jpg,.jpeg,image/png,image/jpeg"
+          className="hidden"
+          data-testid="picker-upload-input"
+          onChange={async (e) => {
+            const file = e.target.files?.[0];
+            e.target.value = "";
+            if (!file) return;
+            const path = await resources.uploadImage(file);
+            if (!path) {
+              setError(strings.editor.uploadImageError);
+              return;
+            }
+            const base =
+              path
+                .split("/")
+                .pop()
+                ?.replace(/\.[^.]*$/, "") ?? "nova";
+            onPick({
+              type: "latexFigure",
+              attrs: {
+                src: path.replace(/\.(png|jpe?g)$/i, ""),
+                options: "width=0.8\\textwidth",
+                caption: "Legenda",
+                label: `fig:${base}`,
+                placement: "htb",
+              },
+            });
+          }}
+        />
+      </label>
+      {error && (
+        <div className="px-3 pb-2 text-danger text-xs" data-testid="picker-upload-error">
+          {error}
+        </div>
+      )}
     </div>
   );
 }

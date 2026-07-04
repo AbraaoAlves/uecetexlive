@@ -33,7 +33,7 @@ interface ProjectStore {
   updateFileText: (path: string, text: string) => void;
   updateFileBytes: (path: string, bytes: Uint8Array) => void;
   replaceProject: (project: Project) => void;
-  createFile: (path: string, bytes: Uint8Array) => void;
+  createFile: (path: string, bytes: Uint8Array, opts?: { open?: boolean }) => void;
 }
 
 const ProjectContext = createContext<ProjectStore | null>(null);
@@ -126,7 +126,7 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
   );
 
   const createFile = useCallback(
-    (path: string, bytes: Uint8Array) => {
+    (path: string, bytes: Uint8Array, opts?: { open?: boolean }) => {
       setProject((prev) => {
         if (!prev || prev.files.some((f) => f.path === path)) return prev;
         return {
@@ -138,7 +138,7 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
           ],
         };
       });
-      setCurrentPath(path);
+      if (opts?.open !== false) setCurrentPath(path);
       schedulePersist();
     },
     [schedulePersist],
