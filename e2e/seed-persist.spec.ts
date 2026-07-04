@@ -1,18 +1,23 @@
 import { expect, test } from "@playwright/test";
+import { dismissWelcome } from "./helpers";
 
 /**
  * Gate G1: boot → rail lists all §2 file groups; edit + reload persists.
+ * Simple mode (default) hides structural sections; "Avançado" reveals them.
  */
 test("first boot seeds uecetex2 and the rail shows every section", async ({ page }) => {
   await page.goto("/");
-  for (const section of [
-    "root",
-    "preTextual",
-    "chapters",
-    "postTextual",
-    "library",
-    "figures",
-  ]) {
+  await dismissWelcome(page);
+  // Simple mode: prose sections only.
+  for (const section of ["preTextual", "chapters", "postTextual", "figures"]) {
+    await expect(page.getByTestId(`rail-section-${section}`)).toBeVisible();
+  }
+  await expect(page.getByTestId("rail-section-root")).not.toBeVisible();
+  await expect(page.getByTestId("rail-section-library")).not.toBeVisible();
+
+  // Advanced mode: structural sections appear.
+  await page.getByTestId("advanced-toggle").check();
+  for (const section of ["root", "library"]) {
     await expect(page.getByTestId(`rail-section-${section}`)).toBeVisible();
   }
   // Chapter order mirrors documento.tex's \input sequence.
@@ -23,6 +28,7 @@ test("first boot seeds uecetex2 and the rail shows every section", async ({ page
 
 test("source edit survives a reload (IndexedDB autosave)", async ({ page }) => {
   await page.goto("/");
+  await dismissWelcome(page);
   await page.getByTestId("rail-file-elementos-textuais/introducao.tex").click();
   // introducao.tex opens in WYSIWYG (§4.1); toggle to the raw source view.
   await page.getByTestId("view-toggle").click();

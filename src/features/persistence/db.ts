@@ -9,6 +9,8 @@ import {
   CompileSettingsSchema,
   type Project,
   ProjectSchema,
+  type UiSettings,
+  UiSettingsSchema,
 } from "@/features/project/schema";
 
 const DB_NAME = "uecetexlive";
@@ -75,6 +77,18 @@ export async function loadCompileSettings(): Promise<CompileSettings> {
 export async function saveCompileSettings(settings: CompileSettings): Promise<void> {
   const db = await getDb();
   await db.put("settings", settings, "compile");
+}
+
+export async function loadUiSettings(): Promise<UiSettings> {
+  const db = await getDb();
+  const raw: unknown = await db.get("settings", "ui");
+  const parsed = UiSettingsSchema.safeParse(raw ?? {});
+  return parsed.success ? parsed.data : UiSettingsSchema.parse({});
+}
+
+export async function saveUiSettings(settings: UiSettings): Promise<void> {
+  const db = await getDb();
+  await db.put("settings", settings, "ui");
 }
 
 export interface CachedPdf {

@@ -1,18 +1,34 @@
-import { Download, FileUp, Loader2, Menu, RotateCcw } from "lucide-react";
-import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
+import {
+  Download,
+  FileUp,
+  Loader2,
+  Menu,
+  PanelLeft,
+  PanelLeftClose,
+  RotateCcw,
+} from "lucide-react";
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useCompile } from "@/features/compiler/useCompile";
 import { SourceEditor } from "@/features/editor/SourceEditor";
 import { useEditorResources } from "@/features/editor/useEditorResources";
+import { MetadataWizard } from "@/features/metadata/MetadataWizard";
+import { WelcomeDialog } from "@/features/metadata/WelcomeDialog";
 import { deleteProject } from "@/features/persistence/db";
 import { LogPane } from "@/features/preview/LogPane";
 import { PdfPane } from "@/features/preview/PdfPane";
 import { buildIncludeGraph } from "@/features/project/include-graph";
+import {
+  applyMetadata,
+  extractMetadata,
+  TEMPLATE_PLACEHOLDER_TITLE,
+} from "@/features/project/metadata";
 import { rewriteInputOrder } from "@/features/project/reorder";
 import { seedTemplate } from "@/features/project/seed";
 import { ProjectProvider, useProject } from "@/features/project/store";
 import {
   bytesToText,
   isAdvancedOnly,
+  isSimpleModeVisible,
   isWysiwygEligible,
   type RailSection,
   railSectionOf,
@@ -25,6 +41,7 @@ import { EngineToggle } from "./EngineToggle";
 import { ImportDialog, type ImportDialogState } from "./ImportDialog";
 import { ProjectRail, type RailFile } from "./ProjectRail";
 import { TopBar } from "./TopBar";
+import { useUiSettings } from "./useUiSettings";
 import { WarmupProgress } from "./WarmupProgress";
 
 // Tiptap + KaTeX are the bulk of the JS (§11.5) — keep them out of the app
@@ -68,7 +85,10 @@ function ShellInner() {
     replaceProject,
     createFile,
   } = useProject();
-  const [advanced, setAdvanced] = useState(false);
+  const { ui, setUi, ready: uiReady } = useUiSettings();
+  const advanced = ui.advancedMode;
+  const railCollapsed = ui.railCollapsed;
+  const [metadataOpen, setMetadataOpen] = useState(false);
   const [previewTab, setPreviewTab] = useState<"pdf" | "log">("pdf");
   const [sourceView, setSourceView] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -97,13 +117,20 @@ function ShellInner() {
     [project, texSources],
   );
 
-  const railFiles = useMemo<RailFile[]>(() => {
+  const visibleFiles = useMemo(() => {
     if (!project) return [];
+    return advanced
+      ? project.files
+      : project.files.filter((f) => isSimpleModeVisible(f.path));
+  }, [project, advanced]);
+  const hiddenCount = project ? project.files.length - visibleFiles.length : 0;
+
+  const railFiles = useMemo<RailFile[]>(() => {
     const graphRank = new Map<string, number>();
     graph.inputs.forEach((input, i) => {
       if (input.resolved) graphRank.set(input.resolved, i);
     });
-    return project.files
+    return visibleFiles
       .map((f) => ({
         path: f.path,
         dirty: dirtyPaths.has(f.path),
@@ -118,15 +145,54 @@ function ShellInner() {
         if (ga !== gb) return ga - gb;
         return a.path.localeCompare(b.path);
       });
-  }, [project, graph, dirtyPaths, advanced]);
+  }, [visibleFiles, graph, dirtyPaths, advanced]);
 
   const missingIncludes = useMemo(
     () => graph.inputs.filter((i) => i.resolved === null).map((i) => i.path),
     [graph],
   );
 
+  const setAdvanced = useCallback(
+    (v: boolean) => {
+      setUi({ advancedMode: v });
+      // Leaving advanced mode may hide the open file — land on prose instead.
+      if (!v && currentPath && !isSimpleModeVisible(currentPath)) {
+        const fallback =
+          project?.files.find((f) => f.path === "elementos-textuais/introducao.tex") ??
+          project?.files.find((f) => isSimpleModeVisible(f.path));
+        if (fallback) openFile(fallback.path);
+      }
+    },
+    [setUi, currentPath, project, openFile],
+  );
+
+  const railToggleRef = useRef<HTMLButtonElement>(null);
+  const railCollapsedRef = useRef(railCollapsed);
+  railCollapsedRef.current = railCollapsed;
+  const toggleRail = useCallback(() => {
+    const collapsing = !railCollapsedRef.current;
+    setUi({ railCollapsed: collapsing });
+    // `inert` drops focus from inside the collapsed rail — keep it reachable.
+    if (collapsing) railToggleRef.current?.focus();
+  }, [setUi]);
+
   const currentFile = project?.files.find((f) => f.path === currentPath) ?? null;
   const resources = useEditorResources(project, graph);
+
+  // Depends on the entry's *string* (not `project`): texSources rebuilds per
+  // keystroke, but equal content yields the same primitive → memo holds.
+  const entrySource = project ? (texSources[project.entry] ?? "") : "";
+  const meta = useMemo(() => extractMetadata(entrySource), [entrySource]);
+  const workTitle = meta.get("titulo")?.value.trim() ?? "";
+  const metadataPending = workTitle === "" || workTitle === TEMPLATE_PLACEHOLDER_TITLE;
+
+  const applyWorkMetadata = useCallback(
+    (updates: Map<string, string>) => {
+      if (!project) return;
+      updateFileText(project.entry, applyMetadata(entrySource, updates));
+    },
+    [project, entrySource, updateFileText],
+  );
 
   const wysiwygCapable =
     currentFile !== null &&
@@ -137,13 +203,19 @@ function ShellInner() {
   const projectRefForKeys = useRef(project);
   projectRefForKeys.current = project;
 
-  // Mod-e toggles WYSIWYG ⇄ source; Mod-Enter compiles (§4.5).
+  // Mod-e toggles WYSIWYG ⇄ source; Mod-Enter compiles (§4.5); Mod-b rail.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (!(e.metaKey || e.ctrlKey)) return;
       if (e.key === "e") {
         e.preventDefault();
         setSourceView((v) => !v);
+      } else if (e.key === "b") {
+        // Inside an editable surface Mod+B belongs to the editor (Tiptap bold).
+        const target = e.target as HTMLElement | null;
+        if (target?.closest?.('[contenteditable="true"], textarea, input')) return;
+        e.preventDefault();
+        toggleRail();
       } else if (e.key === "Enter") {
         e.preventDefault();
         const current = projectRefForKeys.current;
@@ -155,7 +227,7 @@ function ShellInner() {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [compile]);
+  }, [compile, toggleRail]);
 
   const download = (name: string, bytes: Uint8Array, mime: string) => {
     const copy = new Uint8Array(bytes);
@@ -210,6 +282,7 @@ function ShellInner() {
   };
 
   const handleSelect = (path: string) => {
+    setMetadataOpen(false);
     const exists = project?.files.some((f) => f.path === path);
     if (exists) {
       openFile(path);
@@ -263,10 +336,38 @@ function ShellInner() {
 
   return (
     <div className="flex h-full flex-col" data-testid="app-shell">
-      <TopBar projectName={project.name} saveState={saveState}>
+      <TopBar
+        projectName={workTitle || project.name}
+        saveState={saveState}
+        leading={
+          <button
+            ref={railToggleRef}
+            type="button"
+            data-testid="rail-toggle"
+            title={`${strings.topbar.toggleRail} (Ctrl+B)`}
+            aria-expanded={!railCollapsed}
+            className="relative rounded p-1.5 text-ink-muted hover:bg-accent-soft"
+            onClick={toggleRail}
+          >
+            {railCollapsed ? (
+              <PanelLeft className="size-4" />
+            ) : (
+              <PanelLeftClose className="size-4" />
+            )}
+            {railCollapsed && missingIncludes.length > 0 && (
+              <span
+                className="absolute top-0.5 right-0.5 size-1.5 rounded-full bg-danger"
+                data-testid="rail-toggle-alert"
+                title={strings.rail.missingInclude}
+              />
+            )}
+          </button>
+        }
+      >
         <label className="flex items-center gap-1.5 text-ink-muted text-xs">
           <input
             type="checkbox"
+            data-testid="advanced-toggle"
             checked={advanced}
             onChange={(e) => setAdvanced(e.target.checked)}
           />
@@ -394,65 +495,87 @@ function ShellInner() {
       </TopBar>
       <div className="flex min-h-0 flex-1">
         <aside
-          className="w-60 shrink-0 overflow-y-auto border-r bg-surface"
+          className={cn(
+            "shrink-0 overflow-hidden border-r bg-surface transition-[width] duration-200 motion-reduce:transition-none",
+            railCollapsed ? "w-0 border-r-0" : "w-60",
+          )}
           data-testid="project-rail"
+          aria-hidden={railCollapsed}
+          inert={railCollapsed || undefined}
         >
-          <ProjectRail
-            files={railFiles}
-            currentPath={currentPath}
-            missingIncludes={missingIncludes}
-            onSelect={handleSelect}
-            onReorderChapters={reorderChapters}
-          />
+          {/* Fixed inner width: rail content keeps its layout while animating. */}
+          <div className="h-full w-60 overflow-y-auto">
+            <ProjectRail
+              files={railFiles}
+              currentPath={currentPath}
+              missingIncludes={missingIncludes}
+              hiddenCount={hiddenCount}
+              onSelect={handleSelect}
+              onReorderChapters={reorderChapters}
+              onOpenMetadata={() => setMetadataOpen(true)}
+              metadataActive={metadataOpen}
+              metadataPending={metadataPending}
+            />
+          </div>
         </aside>
         <main className="flex min-w-0 flex-1 flex-col" data-testid="editor-pane">
-          {wysiwygCapable && (
-            <div className="flex h-8 shrink-0 items-center justify-end gap-1 border-b bg-surface px-2 text-xs">
-              <button
-                type="button"
-                data-testid="view-toggle"
-                className="rounded px-2 py-0.5 text-ink-muted hover:bg-accent-soft"
-                title="Mod+E"
-                onClick={() => setSourceView((v) => !v)}
-              >
-                {showWysiwyg ? strings.editor.sourceView : strings.editor.wysiwygView}
-              </button>
-            </div>
-          )}
-          {currentFile ? (
-            currentFile.kind === "image" || currentFile.kind === "pdf" ? (
-              <BinaryPreview
-                path={currentFile.path}
-                bytes={currentFile.bytes}
-                kind={currentFile.kind}
-              />
-            ) : showWysiwyg ? (
-              <Suspense
-                fallback={
-                  <div className="flex flex-1 items-center justify-center text-ink-subtle">
-                    <Loader2 className="size-4 animate-spin" />
-                  </div>
-                }
-              >
-                <EditorSurface
-                  path={currentFile.path}
-                  source={bytesToText(currentFile.bytes)}
-                  resources={resources}
-                  onChange={(text) => updateFileText(currentFile.path, text)}
-                />
-              </Suspense>
-            ) : (
-              <SourceEditor
-                path={currentFile.path}
-                text={bytesToText(currentFile.bytes)}
-                readOnly={isAdvancedOnly(currentFile.path) && !advanced}
-                onChange={(text) => updateFileText(currentFile.path, text)}
-              />
-            )
+          {metadataOpen ? (
+            <MetadataWizard
+              fields={meta}
+              onApply={applyWorkMetadata}
+              onClose={() => setMetadataOpen(false)}
+            />
           ) : (
-            <div className="flex flex-1 items-center justify-center text-ink-subtle">
-              {strings.editor.placeholder}
-            </div>
+            <>
+              {wysiwygCapable && (
+                <div className="flex h-8 shrink-0 items-center justify-end gap-1 border-b bg-surface px-2 text-xs">
+                  <button
+                    type="button"
+                    data-testid="view-toggle"
+                    className="rounded px-2 py-0.5 text-ink-muted hover:bg-accent-soft"
+                    title="Mod+E"
+                    onClick={() => setSourceView((v) => !v)}
+                  >
+                    {showWysiwyg ? strings.editor.sourceView : strings.editor.wysiwygView}
+                  </button>
+                </div>
+              )}
+              {currentFile ? (
+                currentFile.kind === "image" || currentFile.kind === "pdf" ? (
+                  <BinaryPreview
+                    path={currentFile.path}
+                    bytes={currentFile.bytes}
+                    kind={currentFile.kind}
+                  />
+                ) : showWysiwyg ? (
+                  <Suspense
+                    fallback={
+                      <div className="flex flex-1 items-center justify-center text-ink-subtle">
+                        <Loader2 className="size-4 animate-spin" />
+                      </div>
+                    }
+                  >
+                    <EditorSurface
+                      path={currentFile.path}
+                      source={bytesToText(currentFile.bytes)}
+                      resources={resources}
+                      onChange={(text) => updateFileText(currentFile.path, text)}
+                    />
+                  </Suspense>
+                ) : (
+                  <SourceEditor
+                    path={currentFile.path}
+                    text={bytesToText(currentFile.bytes)}
+                    readOnly={isAdvancedOnly(currentFile.path) && !advanced}
+                    onChange={(text) => updateFileText(currentFile.path, text)}
+                  />
+                )
+              ) : (
+                <div className="flex flex-1 items-center justify-center text-ink-subtle">
+                  {strings.editor.placeholder}
+                </div>
+              )}
+            </>
           )}
         </main>
         <section
@@ -510,6 +633,15 @@ function ShellInner() {
           state={importState}
           onConfirm={confirmImport}
           onClose={() => setImportState(null)}
+        />
+      )}
+      {uiReady && !ui.welcomeSeen && !importState && (
+        <WelcomeDialog
+          onFill={() => {
+            setUi({ welcomeSeen: true });
+            setMetadataOpen(true);
+          }}
+          onLater={() => setUi({ welcomeSeen: true })}
         />
       )}
     </div>

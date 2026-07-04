@@ -52,6 +52,15 @@ export const CompileSettingsSchema = z.object({
 });
 export type CompileSettings = z.infer<typeof CompileSettingsSchema>;
 
+export const UiSettingsSchema = z.object({
+  /** "Avançado" toggle — unlocks documento.tex/lib and shows structural files. */
+  advancedMode: z.boolean().default(false),
+  railCollapsed: z.boolean().default(false),
+  /** First-run metadata wizard already shown/dismissed. */
+  welcomeSeen: z.boolean().default(false),
+});
+export type UiSettings = z.infer<typeof UiSettingsSchema>;
+
 /** Shape written by scripts/vendor-uecetex2.sh (§5.5). */
 export const TemplateManifestSchema = z.object({
   name: z.string(),

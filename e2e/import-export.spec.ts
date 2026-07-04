@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { expect, test } from "@playwright/test";
+import { dismissWelcome } from "./helpers";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -16,6 +17,7 @@ test("export → wipe → import round-trips the VFS and stays compilable", asyn
   page.on("dialog", (dialog) => dialog.accept());
 
   await page.goto("/");
+  await dismissWelcome(page);
   await expect(page.getByTestId("rail-section-chapters")).toBeVisible();
 
   // Snapshot the seeded VFS (path → byte length) from IndexedDB.
@@ -39,6 +41,8 @@ test("export → wipe → import round-trips the VFS and stays compilable", asyn
   // Wipe IndexedDB and reload — a fresh seed occurs, but we then import.
   await page.evaluate(() => indexedDB.deleteDatabase("uecetexlive"));
   await page.reload();
+  // Wiping the DB also resets welcomeSeen — the dialog shows again.
+  await dismissWelcome(page);
   await expect(page.getByTestId("rail-section-chapters")).toBeVisible();
 
   // Import the captured zip via the hidden file input.
@@ -75,6 +79,7 @@ test("import .bbl activates the Tier-4 precompiled bibliography path", async ({
   const bbl = readFileSync(join(__dirname, "fixtures/documento.bbl"));
 
   await page.goto("/");
+  await dismissWelcome(page);
   await expect(page.getByTestId("rail-section-chapters")).toBeVisible();
 
   await page.getByTestId("menu-button").click();

@@ -4,6 +4,7 @@ import {
   ProjectFileSchema,
   ProjectSchema,
   TemplateManifestSchema,
+  UiSettingsSchema,
 } from "../schema";
 
 const file = (over: Partial<Record<string, unknown>> = {}) => ({
@@ -69,6 +70,20 @@ describe("CompileSettingsSchema", () => {
       mode: "draft",
       autoCompile: false,
     });
+  });
+});
+
+describe("UiSettingsSchema", () => {
+  it("defaults to simple mode, expanded rail, wizard unseen", () => {
+    expect(UiSettingsSchema.parse({})).toEqual({
+      advancedMode: false,
+      railCollapsed: false,
+      welcomeSeen: false,
+    });
+  });
+
+  it("rejects legacy blobs with wrong types (falls back to defaults upstream)", () => {
+    expect(UiSettingsSchema.safeParse({ advancedMode: "yes" }).success).toBe(false);
   });
 });
 

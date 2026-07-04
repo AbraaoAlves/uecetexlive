@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { dismissWelcome } from "./helpers";
 
 /**
  * Gate G4 (§10.3): open introducao.tex in WYSIWYG, write a section with
@@ -11,6 +12,7 @@ test("wysiwyg roundtrip: type → clean LaTeX → compiled PDF", async ({ page }
   page.on("dialog", (dialog) => dialog.accept());
 
   await page.goto("/");
+  await dismissWelcome(page);
   await page.getByTestId("rail-file-elementos-textuais/introducao.tex").click();
 
   const editor = page.getByTestId("wysiwyg-editor");

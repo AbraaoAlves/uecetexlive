@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { expect, test } from "@playwright/test";
+import { dismissWelcome } from "./helpers";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -28,6 +29,7 @@ test("full build: uecetex2 with citations + glossary + index resolved", async ({
   });
 
   await page.goto("/");
+  await dismissWelcome(page);
   await expect(page.getByTestId("compile-button")).toBeVisible();
 
   await page.getByTestId("engine-full").click();

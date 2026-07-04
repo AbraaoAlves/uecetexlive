@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   bytesToText,
+  isSimpleModeVisible,
   isWysiwygEligible,
   kindOf,
   railSectionOf,
@@ -58,6 +59,56 @@ describe("railSectionOf (§4.6 grouping)", () => {
     ["documento.tex", "root"],
   ])("%s -> %s", (path, section) => {
     expect(railSectionOf(path)).toBe(section);
+  });
+});
+
+describe("isSimpleModeVisible (modo simples — allowlist de prosa)", () => {
+  // Full matrix over the template manifest's 37 paths.
+  it.each([
+    // chapters
+    ["elementos-textuais/introducao.tex", true],
+    ["elementos-textuais/fundamentacao-teorica.tex", true],
+    ["elementos-textuais/trabalhos-relacionados.tex", true],
+    ["elementos-textuais/metodologia.tex", true],
+    ["elementos-textuais/resultados.tex", true],
+    ["elementos-textuais/conclusao.tex", true],
+    // prose pre-textuals
+    ["elementos-pre-textuais/resumo.tex", true],
+    ["elementos-pre-textuais/abstract.tex", true],
+    ["elementos-pre-textuais/dedicatoria.tex", true],
+    ["elementos-pre-textuais/epigrafe.tex", true],
+    ["elementos-pre-textuais/agradecimentos.tex", true],
+    // apêndices / anexos
+    ["elementos-pos-textuais/apendices/historico-de-mudancas.tex", true],
+    ["elementos-pos-textuais/apendices/lorem-ipsum.tex", true],
+    ["elementos-pos-textuais/apendices/termo-de-fiel-depositario.tex", true],
+    ["elementos-pos-textuais/anexos/exemplo-de-anexo.tex", true],
+    ["elementos-pos-textuais/anexos/dinamica-das-classes-sociais.tex", true],
+    // bibliography + figures
+    ["elementos-pos-textuais/referencias.bib", true],
+    ["figuras/figura-1.jpg", true],
+    ["figuras/figura-2.jpg", true],
+    ["figuras/figura-3.png", true],
+    ["figuras/figura-4.png", true],
+    ["figuras/figura-5.png", true],
+    ["figuras/ficha-catalografica.pdf", true],
+    ["figuras/main.cpp", true],
+    ["figuras/uecetex2-logo-dark-mode.png", true],
+    ["figuras/uecetex2-logo-light-mode.png", true],
+    // hidden: structural
+    ["documento.tex", false],
+    ["LICENSE", false],
+    ["lib/preambulo.tex", false],
+    ["lib/uecetex2.sty", false],
+    ["lib/abntex2-alf.bst", false],
+    ["lib/logo-uece.png", false],
+    ["elementos-pre-textuais/errata.tex", false],
+    ["elementos-pre-textuais/ficha-catalografica.pdf", false],
+    ["elementos-pre-textuais/lista-de-abreviaturas-e-siglas.tex", false],
+    ["elementos-pre-textuais/lista-de-simbolos.tex", false],
+    ["elementos-pos-textuais/glossario.tex", false],
+  ])("%s -> %s", (path, visible) => {
+    expect(isSimpleModeVisible(path)).toBe(visible);
   });
 });
 
