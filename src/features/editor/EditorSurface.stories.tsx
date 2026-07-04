@@ -85,10 +85,18 @@ export const Figure: Story = {
   },
 };
 
-export const TableProjection: Story = {
+export const TableEditableGrid: Story = {
   args: {
     source:
-      "\\begin{table}[ht!]\n\\begin{tabular}{cc}\nA & B \\\\\n1 & 2 \\\\\n\\end{tabular}\n\\end{table}",
+      "\\begin{table}[ht!]\n\t\\centering\n\t\\Caption{\\label{tab:x} Uma tabela de exemplo}\n\t\\UECEtab{}{\n\t\t\\begin{tabular}{cll}\n\t\t\t\\toprule\n\t\t\tRanking & Coverage & Support \\\\\n\t\t\t\\midrule\n\t\t\tE1 & Complete & Both \\\\\n\t\t\tE2 & Partial & One \\\\\n\t\t\t\\bottomrule\n\t\t\\end{tabular}\n\t}{\n\t\t\\Fonte{Elaborado pelo autor}\n\t}\n\\end{table}",
+  },
+};
+
+export const TableReadOnlyFallback: Story = {
+  // Nested tabular → the grid model bails; the read-only projection shows.
+  args: {
+    source:
+      "\\begin{table}[ht!]\n\\begin{tabular}{c}\n\\begin{tabular}{c}\nX \\\\\n\\end{tabular} \\\\\n\\end{tabular}\n\\end{table}",
   },
 };
 
