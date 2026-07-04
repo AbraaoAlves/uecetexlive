@@ -40,7 +40,8 @@ function firstArg(macro: Ast.Macro): string | null {
   return null;
 }
 
-function walk(nodes: Ast.Node[], visit: (macro: Ast.Macro) => void): void {
+/** Depth-first macro visitor; comments are never descended into. */
+export function walk(nodes: Ast.Node[], visit: (macro: Ast.Macro) => void): void {
   for (const node of nodes) {
     if (node.type === "macro") {
       visit(node);

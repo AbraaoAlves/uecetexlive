@@ -14,6 +14,7 @@
 import type * as Ast from "@unified-latex/unified-latex-types";
 import { parse as unifiedParse } from "@unified-latex/unified-latex-util-parse";
 import { serializeBlock, serializeDoc, serializeInline } from "./serialize";
+import { sliceArgs } from "./slice-args";
 import type { ParseResult, PMDoc, PMNode } from "./types";
 
 const HEADING_CMDS: Record<string, number> = {
@@ -166,45 +167,6 @@ function _flattenArgText(nodes: Node[]): string {
     else if (node.type === "group") out += _flattenArgText(node.content);
   }
   return out;
-}
-
-interface ArgSlices {
-  opt: string | null;
-  mandatory: string | null;
-  end: number;
-}
-
-/**
- * Extract [opt]{mandatory} slices for `\cmd…` from the raw source, starting
- * right after the macro name. Handles nested braces. Returns null on any
- * surprise (caller falls back to rawLatex).
- */
-function sliceArgs(source: string, from: number, wantOpt: boolean): ArgSlices | null {
-  let i = from;
-  let opt: string | null = null;
-  if (wantOpt && source[i] === "[") {
-    const close = source.indexOf("]", i);
-    if (close === -1) return null;
-    opt = source.slice(i + 1, close);
-    i = close + 1;
-  }
-  if (source[i] !== "{") return null;
-  let depth = 0;
-  for (let j = i; j < source.length; j++) {
-    const ch = source[j];
-    if (ch === "\\") {
-      j++;
-      continue;
-    }
-    if (ch === "{") depth++;
-    else if (ch === "}") {
-      depth--;
-      if (depth === 0) {
-        return { opt, mandatory: source.slice(i + 1, j), end: j + 1 };
-      }
-    }
-  }
-  return null;
 }
 
 interface InlineCtx {

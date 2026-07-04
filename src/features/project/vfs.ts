@@ -89,3 +89,16 @@ export function railSectionOf(path: string): RailSection {
 export function isAdvancedOnly(path: string): boolean {
   return path.startsWith("lib/") || path === "documento.tex";
 }
+
+/**
+ * Visible in the rail with "Avançado" off: only what a Perfil-A student
+ * writes — prose (chapters, prose pre-textuals, apêndices/anexos),
+ * bibliography and figures. Structural files (documento.tex, lib/, errata,
+ * ficha catalográfica, listas de siglas/símbolos, glossário) stay hidden.
+ */
+export function isSimpleModeVisible(path: string): boolean {
+  if (isWysiwygEligible(path)) return true;
+  if (path.endsWith(".bib")) return true;
+  if (railSectionOf(path) === "figures") return true;
+  return false;
+}

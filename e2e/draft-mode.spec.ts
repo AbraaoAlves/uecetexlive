@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { dismissWelcome } from "./helpers";
 
 /**
  * Gate G4 (§10.1): boot → template visible → draft compile < 15 s cold →
@@ -11,6 +12,7 @@ test("draft mode: fast compile with [?] citations notice", async ({ page }) => {
   });
 
   await page.goto("/");
+  await dismissWelcome(page);
   await expect(page.getByTestId("rail-section-chapters")).toBeVisible();
 
   // Draft is the default engine (§5.1 CompileSettings).

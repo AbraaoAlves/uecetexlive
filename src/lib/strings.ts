@@ -21,6 +21,7 @@ export const strings = {
     about: "Sobre",
     saving: "Salvando…",
     saved: "Salvo",
+    toggleRail: "Mostrar/ocultar painel de arquivos",
   },
   engine: {
     draft: "Rascunho",
@@ -37,6 +38,9 @@ export const strings = {
     library: "Biblioteca",
     figures: "Figuras",
     missingInclude: "Arquivo não encontrado — clique para criar",
+    hiddenFileSingular: "arquivo avançado oculto",
+    hiddenFilesPlural: "arquivos avançados ocultos",
+    hiddenFilesHint: "Marque “Avançado” na barra superior para vê-los",
   },
   editor: {
     rawLatexTooltip:
@@ -44,6 +48,23 @@ export const strings = {
     sourceView: "Fonte LaTeX",
     wysiwygView: "Editor visual",
     placeholder: "Escreva, ou digite / para inserir…",
+  },
+  metadata: {
+    title: "Dados do Trabalho",
+    railEntry: "Dados do Trabalho",
+    stepsLabel: "Etapas",
+    pendingHint: "Preencha o título e os dados do seu trabalho",
+    missingMacro: "Não encontrado no documento.tex — edite pelo modo Avançado",
+    themeContext: "Seu tema:",
+    prev: "Anterior",
+    next: "Avançar",
+    done: "Concluir",
+    close: "Fechar",
+    welcomeTitle: "Bem-vindo ao UeceTexLive!",
+    welcomeBody:
+      "Comece preenchendo os dados do seu trabalho — título, tipo (TCC, dissertação…), autor e orientador. A capa e a folha de rosto são montadas automaticamente no padrão da UECE.",
+    welcomeFill: "Preencher dados",
+    welcomeLater: "Depois",
   },
   preview: {
     empty: "Compile para ver o PDF aqui.",
