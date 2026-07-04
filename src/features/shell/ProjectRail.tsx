@@ -1,4 +1,12 @@
-import { ClipboardList, FileWarning, Lock, Plus } from "lucide-react";
+import {
+  ChevronDown,
+  ClipboardList,
+  FileWarning,
+  Lock,
+  Plus,
+  Upload,
+} from "lucide-react";
+import { useRef, useState } from "react";
 import { type RailSection, railSectionOf } from "@/features/project/vfs";
 import { strings } from "@/lib/strings";
 import { cn } from "@/lib/utils";
@@ -22,6 +30,13 @@ export interface ProjectRailProps {
   onReorderChapters?: (from: string, to: string) => void;
   /** "+" in the chapters header — scaffold file + \input (QA Fase 1). */
   onNewChapter?: () => void;
+  /** Upload in the figures header — images, PDFs and code files (QA §A4). */
+  onUploadFiles?: (files: File[]) => void;
+  /** "mostrar" next to the hidden-files count enables advanced mode (QA §B2). */
+  onShowHidden?: () => void;
+  /** Folded section headers; controlled (persisted in UiSettings) when given. */
+  collapsedSections?: readonly string[];
+  onToggleSection?: (section: RailSection) => void;
   /** Opens the "Dados do Trabalho" wizard (F2). */
   onOpenMetadata?: () => void;
   metadataActive?: boolean;
@@ -59,10 +74,25 @@ export function ProjectRail({
   onSelect,
   onReorderChapters,
   onNewChapter,
+  onUploadFiles,
+  onShowHidden,
+  collapsedSections,
+  onToggleSection,
   onOpenMetadata,
   metadataActive = false,
   metadataPending = false,
 }: ProjectRailProps) {
+  const uploadInputRef = useRef<HTMLInputElement>(null);
+  // Uncontrolled fallback (stories/tests without the persisted UiSettings).
+  const [localCollapsed, setLocalCollapsed] = useState<readonly string[]>([]);
+  const collapsed = collapsedSections ?? localCollapsed;
+  const toggleSection = (section: RailSection) => {
+    if (onToggleSection) onToggleSection(section);
+    else
+      setLocalCollapsed((prev) =>
+        prev.includes(section) ? prev.filter((s) => s !== section) : [...prev, section],
+      );
+  };
   const bySection = new Map<RailSection, RailFile[]>();
   for (const file of files) {
     const section = railSectionOf(file.path);
@@ -73,6 +103,21 @@ export function ProjectRail({
 
   return (
     <nav aria-label="Arquivos do projeto" className="py-2 text-sm">
+      {onUploadFiles && (
+        <input
+          ref={uploadInputRef}
+          type="file"
+          multiple
+          accept=".png,.jpg,.jpeg,.pdf,.cpp,.c,.h,.java,.py,.js,.ts"
+          className="hidden"
+          data-testid="rail-upload-input"
+          onChange={(e) => {
+            const list = e.target.files;
+            if (list?.length) onUploadFiles(Array.from(list));
+            e.target.value = "";
+          }}
+        />
+      )}
       {onOpenMetadata && (
         <button
           type="button"
@@ -98,11 +143,26 @@ export function ProjectRail({
         const sectionFiles = bySection.get(section);
         const showMissing = section === "chapters" && missingIncludes.length > 0;
         if (!sectionFiles?.length && !showMissing) return null;
+        const isCollapsed = section !== "root" && collapsed.includes(section);
         return (
           <div key={section} className="mb-1" data-testid={`rail-section-${section}`}>
             {section !== "root" && (
               <div className="flex items-center justify-between px-3 pt-2 pb-1 font-medium text-[11px] text-ink-subtle uppercase tracking-wider">
-                {SECTION_LABEL[section]}
+                <button
+                  type="button"
+                  data-testid={`rail-section-toggle-${section}`}
+                  aria-expanded={!isCollapsed}
+                  onClick={() => toggleSection(section)}
+                  className="flex min-w-0 items-center gap-1 uppercase tracking-wider hover:text-ink"
+                >
+                  <ChevronDown
+                    className={cn(
+                      "size-3 shrink-0 transition-transform",
+                      isCollapsed && "-rotate-90",
+                    )}
+                  />
+                  <span className="truncate">{SECTION_LABEL[section]}</span>
+                </button>
                 {section === "chapters" && onNewChapter && (
                   <button
                     type="button"
@@ -115,67 +175,81 @@ export function ProjectRail({
                     <Plus className="size-3.5" />
                   </button>
                 )}
-              </div>
-            )}
-            <ul>
-              {sectionFiles?.map((file) => (
-                <li key={file.path}>
+                {section === "figures" && onUploadFiles && (
                   <button
                     type="button"
-                    onClick={() => onSelect(file.path)}
-                    data-testid={`rail-file-${file.path}`}
-                    draggable={section === "chapters" && !!onReorderChapters}
-                    onDragStart={(e) =>
-                      e.dataTransfer.setData("text/uecetex-chapter", file.path)
-                    }
-                    onDragOver={(e) => {
-                      if (section === "chapters") e.preventDefault();
-                    }}
-                    onDrop={(e) => {
-                      const from = e.dataTransfer.getData("text/uecetex-chapter");
-                      if (from && from !== file.path) {
-                        e.preventDefault();
-                        onReorderChapters?.(from, file.path);
-                      }
-                    }}
-                    className={cn(
-                      "flex w-full items-center gap-2 px-3 py-1 text-left hover:bg-accent-soft/60",
-                      currentPath === file.path &&
-                        "bg-accent-soft font-medium text-accent-strong",
-                    )}
+                    data-testid="rail-upload"
+                    title={strings.rail.uploadFile}
+                    aria-label={strings.rail.uploadFile}
+                    onClick={() => uploadInputRef.current?.click()}
+                    className="rounded p-0.5 hover:bg-accent-soft hover:text-accent-strong"
                   >
-                    <span className="truncate">{baseName(file.path)}</span>
-                    {file.dirty && (
-                      <span
-                        className="size-1.5 shrink-0 rounded-full bg-warning"
-                        data-testid="dirty-dot"
-                        title="Alterações não salvas"
-                      />
-                    )}
-                    {file.locked && (
-                      <Lock
-                        className="ml-auto size-3 shrink-0 text-ink-subtle"
-                        aria-label="Somente leitura (avançado)"
-                      />
-                    )}
+                    <Upload className="size-3.5" />
                   </button>
-                </li>
-              ))}
-              {showMissing &&
-                missingIncludes.map((path) => (
-                  <li key={path}>
+                )}
+              </div>
+            )}
+            {!isCollapsed && (
+              <ul>
+                {sectionFiles?.map((file) => (
+                  <li key={file.path}>
                     <button
                       type="button"
-                      onClick={() => onSelect(path)}
-                      className="flex w-full items-center gap-2 px-3 py-1 text-left text-danger hover:bg-danger/10"
-                      title={strings.rail.missingInclude}
+                      onClick={() => onSelect(file.path)}
+                      data-testid={`rail-file-${file.path}`}
+                      draggable={section === "chapters" && !!onReorderChapters}
+                      onDragStart={(e) =>
+                        e.dataTransfer.setData("text/uecetex-chapter", file.path)
+                      }
+                      onDragOver={(e) => {
+                        if (section === "chapters") e.preventDefault();
+                      }}
+                      onDrop={(e) => {
+                        const from = e.dataTransfer.getData("text/uecetex-chapter");
+                        if (from && from !== file.path) {
+                          e.preventDefault();
+                          onReorderChapters?.(from, file.path);
+                        }
+                      }}
+                      className={cn(
+                        "flex w-full items-center gap-2 px-3 py-1 text-left hover:bg-accent-soft/60",
+                        currentPath === file.path &&
+                          "bg-accent-soft font-medium text-accent-strong",
+                      )}
                     >
-                      <FileWarning className="size-3 shrink-0" />
-                      <span className="truncate">{baseName(path)}</span>
+                      <span className="truncate">{baseName(file.path)}</span>
+                      {file.dirty && (
+                        <span
+                          className="size-1.5 shrink-0 rounded-full bg-warning"
+                          data-testid="dirty-dot"
+                          title="Alterações não salvas"
+                        />
+                      )}
+                      {file.locked && (
+                        <Lock
+                          className="ml-auto size-3 shrink-0 text-ink-subtle"
+                          aria-label="Somente leitura (avançado)"
+                        />
+                      )}
                     </button>
                   </li>
                 ))}
-            </ul>
+                {showMissing &&
+                  missingIncludes.map((path) => (
+                    <li key={path}>
+                      <button
+                        type="button"
+                        onClick={() => onSelect(path)}
+                        className="flex w-full items-center gap-2 px-3 py-1 text-left text-danger hover:bg-danger/10"
+                        title={strings.rail.missingInclude}
+                      >
+                        <FileWarning className="size-3 shrink-0" />
+                        <span className="truncate">{baseName(path)}</span>
+                      </button>
+                    </li>
+                  ))}
+              </ul>
+            )}
           </div>
         );
       })}
@@ -189,6 +263,19 @@ export function ProjectRail({
           {hiddenCount === 1
             ? strings.rail.hiddenFileSingular
             : strings.rail.hiddenFilesPlural}
+          {onShowHidden && (
+            <>
+              {" — "}
+              <button
+                type="button"
+                data-testid="rail-show-hidden"
+                className="text-accent hover:underline"
+                onClick={onShowHidden}
+              >
+                {strings.rail.showHiddenFiles}
+              </button>
+            </>
+          )}
         </div>
       )}
     </nav>

@@ -46,9 +46,8 @@ test("toolbar formats, word count updates, pickers open", async ({ page }) => {
   await page.getByTestId("toolbar-equation").click();
   await expect(page.getByTestId("math-block")).toBeVisible();
   await page.getByTestId("toolbar-table").click();
-  await expect(
-    page.locator("pre[data-raw-latex]", { hasText: "\\begin{tabular}" }),
-  ).toBeVisible();
+  await expect(page.getByTestId("table-grid")).toBeVisible();
+  await expect(page.getByTestId("table-cell-0-0")).toHaveValue("A");
 });
 
 test("image upload lands in figuras/ and inserts a figure", async ({ page }) => {

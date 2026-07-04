@@ -10,8 +10,9 @@ test("new chapter button creates file + \\input and opens it", async ({ page }) 
   await dismissWelcome(page);
   await expect(page.getByTestId("rail-section-chapters")).toBeVisible();
 
-  page.once("dialog", (dialog) => dialog.accept("Estudo de Caso"));
   await page.getByTestId("new-chapter").click();
+  await page.getByTestId("new-chapter-title").fill("Estudo de Caso");
+  await page.getByTestId("new-chapter-create").click();
 
   // The scaffolded chapter opens in the WYSIWYG editor with its title.
   const newFile = page.getByTestId("rail-file-elementos-textuais/estudo-de-caso.tex");
@@ -35,13 +36,17 @@ test("new chapter button creates file + \\input and opens it", async ({ page }) 
   ).toBeVisible();
 });
 
-test("empty prompt is a no-op", async ({ page }) => {
+test("empty title cannot create; Escape dismisses the dialog", async ({ page }) => {
   await page.goto("/");
   await dismissWelcome(page);
   await expect(page.getByTestId("rail-section-chapters")).toBeVisible();
 
-  page.once("dialog", (dialog) => dialog.accept(""));
   await page.getByTestId("new-chapter").click();
+  await expect(page.getByTestId("new-chapter-dialog")).toBeVisible();
+  await expect(page.getByTestId("new-chapter-create")).toBeDisabled();
+
+  await page.keyboard.press("Escape");
+  await expect(page.getByTestId("new-chapter-dialog")).not.toBeVisible();
   await expect(
     page.getByTestId("rail-file-elementos-textuais/novo-capitulo.tex"),
   ).not.toBeVisible();

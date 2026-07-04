@@ -17,6 +17,7 @@ import {
   List,
   ListOrdered,
   Quote,
+  Search,
   Sigma,
   Table,
   TextQuote,
@@ -30,9 +31,11 @@ import { getSlashCommand } from "./slash-menu/slash-menu";
 export interface EditorToolbarProps {
   editor: Editor;
   onOpenPicker: (kind: PickerKind) => void;
+  /** Opens the Find & Replace panel (QA §A2). */
+  onOpenFind?: () => void;
 }
 
-export function EditorToolbar({ editor, onOpenPicker }: EditorToolbarProps) {
+export function EditorToolbar({ editor, onOpenPicker, onOpenFind }: EditorToolbarProps) {
   const active = useEditorState({
     editor,
     selector: ({ editor: e }) => ({
@@ -190,6 +193,20 @@ export function EditorToolbar({ editor, onOpenPicker }: EditorToolbarProps) {
       >
         <Sigma className="size-3.5" />
       </ToolbarButton>
+
+      {onOpenFind && (
+        <>
+          <Divider />
+          <ToolbarButton
+            testid="toolbar-find"
+            label={strings.editor.findHint}
+            active={false}
+            onClick={onOpenFind}
+          >
+            <Search className="size-3.5" />
+          </ToolbarButton>
+        </>
+      )}
     </div>
   );
 }

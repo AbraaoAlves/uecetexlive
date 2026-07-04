@@ -20,7 +20,7 @@ test("source view has CodeMirror with line numbers and a find panel", async ({
 
   // The find panel opens (button) and is localized.
   await page.getByTestId("source-find").click();
-  const panel = page.locator(".cm-search");
+  const panel = page.getByTestId("find-panel");
   await expect(panel).toBeVisible();
   await expect(panel).toContainText("substituir");
   await page.keyboard.press("Escape");
@@ -35,12 +35,11 @@ test("find & replace rewrites the source and flows to the store", async ({ page 
   await expect(page.getByTestId("source-editor")).toBeVisible();
 
   await page.getByTestId("source-find").click();
-  const findField = page.locator(".cm-search input[main-field]");
-  await findField.fill("Introdução");
-  const replaceField = page.locator(".cm-search input[name='replace']");
-  await replaceField.fill("Introducao XYZ");
-  // "substituir tudo" button.
-  await page.locator(".cm-search button[name='replaceAll']").click();
+  await page.getByTestId("find-input").fill("Introdução");
+  // Occurrence counter (QA §B1): "n de m", not just highlights.
+  await expect(page.getByTestId("find-count")).toContainText(/\d+ de \d+/);
+  await page.getByTestId("find-replace-input").fill("Introducao XYZ");
+  await page.getByTestId("find-replace-all").click();
 
   await expect(page.getByTestId("save-state")).toHaveAttribute("data-state", "saved");
   await expect(page.getByTestId("source-editor-value")).toHaveValue(/Introducao XYZ/);

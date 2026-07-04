@@ -11,10 +11,13 @@ import { slugify } from "@/lib/utils";
 import type { BibEntry, EditorResources } from "./resources";
 
 const UPLOAD_MAX_BYTES = 10 * 1024 * 1024;
+// PDF included (QA §A4): vector plots and fichas are legitimate figures —
+// \includegraphics accepts them directly.
 const UPLOAD_EXTENSIONS: Record<string, string> = {
   png: "png",
   jpg: "jpg",
   jpeg: "jpg",
+  pdf: "pdf",
 };
 
 export function useEditorResources(
@@ -99,7 +102,12 @@ export function useEditorResources(
           .join("; ")})`,
       bibEntries,
       labels: graph.labels,
-      imageFiles: files.filter((f) => f.kind === "image").map((f) => f.path),
+      imageFiles: files
+        .filter(
+          (f) =>
+            f.kind === "image" || (f.kind === "pdf" && f.path.startsWith("figuras/")),
+        )
+        .map((f) => f.path),
       codeFiles: files.filter((f) => f.kind === "code").map((f) => f.path),
       uploadImage: async (file) => {
         const rawExt = file.name.split(".").pop()?.toLowerCase() ?? "";

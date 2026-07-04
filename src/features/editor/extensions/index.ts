@@ -43,6 +43,7 @@ import {
 } from "./nodes";
 import { PasteLatex } from "./paste-latex";
 import { RawSourceGuard } from "./raw-source-guard";
+import { UecetexSearch } from "./search";
 
 /** The parser records inter-block whitespace on the doc too. */
 const LatexDocument = Document.extend({
@@ -85,6 +86,7 @@ export function buildExtensions({ openPicker }: BuildExtensionsOptions): Extensi
     FidelityAttributes,
     RawSourceGuard,
     PasteLatex,
+    UecetexSearch,
     UndoRedo,
     Dropcursor,
     Gapcursor,

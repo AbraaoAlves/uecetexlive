@@ -153,9 +153,9 @@ export function serializeBlock(node: PMNode): string {
       ].join("\n");
     }
     case "latexTable":
-      // Read-only projection (§4.2): parse always caches rawSource; a
-      // rawSource-less table only exists via the 3×3 scaffold which builds
-      // a rawLatexBlock instead.
+      // rawSource is the table's ground truth (parse caches it; the 3×3
+      // scaffold inserts it pre-filled) — a rawSource-less table has no
+      // recoverable content.
       return "";
     case "codeBlock": {
       const language = node.attrs?.language as string | null;
@@ -189,8 +189,13 @@ export function serializeDoc(doc: PMDoc): string {
   }
   let out = "";
   content.forEach((node, index) => {
-    const gap =
+    let gap =
       (node.attrs?.gapBefore as string | undefined) ?? (index === 0 ? "" : DEFAULT_GAP);
+    // gapBefore is positional bookkeeping: when a block stops being first
+    // (something was inserted above it), its stale "" would glue it onto the
+    // previous block (`\end{table}\chapter{…}`). Pathological sources that
+    // really do glue blocks fall to the parser's Invariant #1 backstop.
+    if (index > 0 && gap === "") gap = DEFAULT_GAP;
     out += gap + serializeBlock(node);
   });
   out +=
