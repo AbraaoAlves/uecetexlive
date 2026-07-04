@@ -33,8 +33,8 @@ test("source edit survives a reload (IndexedDB autosave)", async ({ page }) => {
   await page.getByTestId("rail-file-elementos-textuais/introducao.tex").click();
   // introducao.tex opens in WYSIWYG (§4.1); toggle to the raw source view.
   await page.getByTestId("view-toggle").click();
-  const editor = page.getByTestId("source-editor");
-  await expect(editor).toBeVisible();
+  await expect(page.getByTestId("source-editor")).toBeVisible();
+  const editor = page.getByTestId("source-editor-input");
 
   const marker = `% e2e-persist-${Date.now()}`;
   await editor.click();
@@ -46,7 +46,7 @@ test("source edit survives a reload (IndexedDB autosave)", async ({ page }) => {
   await page.reload();
   await page.getByTestId("rail-file-elementos-textuais/introducao.tex").click();
   await page.getByTestId("view-toggle").click();
-  await expect(page.getByTestId("source-editor")).toHaveValue(
+  await expect(page.getByTestId("source-editor-value")).toHaveValue(
     new RegExp(marker.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")),
   );
 });

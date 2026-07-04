@@ -69,6 +69,13 @@ test("full build: uecetex2 with citations + glossary + index resolved", async ({
   const pages = Number(await pane.getAttribute("data-pages"));
   expect(Math.abs(pages - reference.pages)).toBeLessThanOrEqual(2);
 
+  // Continuous scroll (QA Fase 2): every page has its own stacked canvas;
+  // the first is rendered and a later one scrolls into view.
+  await expect(page.getByTestId("pdf-page-1")).toBeVisible();
+  await expect(page.getByTestId(`pdf-page-${pages}`)).toBeAttached();
+  await page.getByTestId(`pdf-page-${pages}`).scrollIntoViewIfNeeded();
+  await expect(page.getByTestId("pdf-page-indicator")).toContainText(`/ ${pages}`);
+
   // Text layer: resolved bibliography entry + glossary term.
   const text = await page.evaluate(() =>
     (

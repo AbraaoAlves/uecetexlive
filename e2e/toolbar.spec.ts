@@ -70,10 +70,10 @@ test("image upload lands in figuras/ and inserts a figure", async ({ page }) => 
 
   // Serialization: the chapter now carries the \includegraphics.
   await page.getByTestId("view-toggle").click();
-  await expect(page.getByTestId("source-editor")).toHaveValue(
+  await expect(page.getByTestId("source-editor-value")).toHaveValue(
     /\\includegraphics\[width=0\.8\\textwidth\]\{figuras\/grafico-de-teste\}/,
   );
-  await expect(page.getByTestId("source-editor")).toHaveValue(
+  await expect(page.getByTestId("source-editor-value")).toHaveValue(
     /\\label\{fig:grafico-de-teste\}/,
   );
 

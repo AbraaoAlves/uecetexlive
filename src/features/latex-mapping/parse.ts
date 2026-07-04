@@ -661,6 +661,9 @@ function promoteEnvironment(env: Ast.Environment, slice: string, ctx: InlineCtx)
     case "figure":
       return promoteFigure(env, slice, ctx);
     case "table":
+    case "quadro":
+      // UECE quadros (\UECEqua) are table-like; the visual editor treats
+      // both the same way (rawSource cached for round-trip).
       return { type: "latexTable", attrs: { rawSource: slice } };
     case "lstlisting":
       return promoteCodeBlock(slice);

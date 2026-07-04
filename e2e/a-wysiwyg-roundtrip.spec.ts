@@ -69,9 +69,8 @@ test("wysiwyg roundtrip: type → clean LaTeX → compiled PDF", async ({ page }
 
   // Toggle to source (§4.6) and assert clean LaTeX.
   await page.getByTestId("view-toggle").click();
-  const source = page.getByTestId("source-editor");
-  await expect(source).toBeVisible();
-  const latex = await source.inputValue();
+  await expect(page.getByTestId("source-editor")).toBeVisible();
+  const latex = await page.getByTestId("source-editor-value").inputValue();
   expect(latex).toContain("\\section{Resultados Preliminares}");
   expect(latex).toContain("\\textbf{muito bom}");
   expect(latex).toContain("\\begin{itemize}");

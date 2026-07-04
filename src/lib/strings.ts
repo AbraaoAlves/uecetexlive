@@ -55,6 +55,10 @@ export const strings = {
     wordsInWork: "no trabalho",
     uploadImage: "Enviar imagem do computador…",
     uploadImageError: "Não foi possível enviar — use PNG ou JPG de até 10 MB.",
+    find: "Localizar",
+    findHint: "Localizar e substituir (Ctrl+F)",
+    tableLabel: "Tabela",
+    editAsLatex: "editar como LaTeX",
   },
   toolbar: {
     bold: "Negrito",

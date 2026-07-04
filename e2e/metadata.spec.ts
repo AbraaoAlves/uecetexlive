@@ -33,15 +33,15 @@ test("welcome → wizard fills title; documento.tex updated; persists", async ({
   // The write was surgical: documento.tex now carries the new \titulo.
   await page.getByTestId("advanced-toggle").check();
   await page.getByTestId("rail-file-documento.tex").click();
-  await expect(page.getByTestId("source-editor")).toHaveValue(
+  await expect(page.getByTestId("source-editor-value")).toHaveValue(
     /\\titulo\{Jogos Digitais no Ensino de Programação\}/,
   );
   // Line-start match: the commented %\trabalhoacademico{...} variants must
   // stay untouched — only the active line swaps to tccgraduacao.
-  await expect(page.getByTestId("source-editor")).toHaveValue(
+  await expect(page.getByTestId("source-editor-value")).toHaveValue(
     /\n\\trabalhoacademico\{tccgraduacao\}/,
   );
-  await expect(page.getByTestId("source-editor")).not.toHaveValue(
+  await expect(page.getByTestId("source-editor-value")).not.toHaveValue(
     /\n\\trabalhoacademico\{dissertacao\}/,
   );
 

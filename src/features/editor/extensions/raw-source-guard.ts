@@ -2,6 +2,13 @@
  * rawSource invalidation (§4.3 fidelity): when a transaction touches content
  * inside a node that carries cached `rawSource` bytes, the cache is stale —
  * clear it so serialization regenerates from the structured content.
+ *
+ * Atom nodes are exempt: they have no ProseMirror-editable content, so a
+ * neighbouring insertion or a full-document setContent (file switch) must not
+ * wipe their cache. Their node views invalidate rawSource explicitly via
+ * updateAttributes when the student edits them (figure caption, math tex,
+ * table cell). Without this exemption a `latexTable` — whose only faithful
+ * serialization IS its rawSource — silently vanishes on the next save.
  */
 import { Extension } from "@tiptap/core";
 import { Plugin, PluginKey } from "@tiptap/pm/state";
@@ -34,7 +41,7 @@ export const RawSourceGuard = Extension.create({
               Math.max(0, from),
               Math.min(newState.doc.content.size, to),
               (node, pos) => {
-                if (node.attrs?.rawSource != null) {
+                if (!node.isAtom && node.attrs?.rawSource != null) {
                   fix.setNodeMarkup(pos, null, { ...node.attrs, rawSource: null });
                   mutated = true;
                 }
