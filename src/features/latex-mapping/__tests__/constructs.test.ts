@@ -364,6 +364,31 @@ describe("tables (read-only projection, §4.2)", () => {
     expect(node.type).toBe("latexTable");
     expect(roundTrip(src)).toBe(src);
   });
+
+  it("generated latexTable (3×3 scaffold) serializes its rawSource", () => {
+    const rawSource =
+      "\\begin{table}[htb]\n\t\\centering\n\t\\caption{Legenda}\n\t\\begin{tabular}{ccc}\n\t\tA & B & C \\\\\n\t\\end{tabular}\n\\end{table}";
+    const generated = doc({ type: "latexTable", attrs: { rawSource } });
+    expect(serializeDoc(generated)).toBe(rawSource);
+  });
+});
+
+describe("stale gapBefore (QA §M2)", () => {
+  it("block demoted from first position regains a blank-line gap", () => {
+    // Parse a doc whose heading is the first block (gapBefore: "").
+    const { doc: parsed } = parseLatex("\\chapter{Intro}\n\nTexto.");
+    const heading = parsed.content?.[0] as PMNode;
+    expect(heading.attrs?.gapBefore).toBe("");
+    // Simulate a WYSIWYG insert above it (e.g. figure/table scaffold).
+    const inserted: PMNode = {
+      type: "latexTable",
+      attrs: { rawSource: "\\begin{table}\n\\end{table}" },
+    };
+    const moved = doc(inserted, ...(parsed.content ?? []));
+    const out = serializeDoc(moved);
+    expect(out).toContain("\\end{table}\n\n\\chapter{Intro}");
+    expect(out).not.toContain("\\end{table}\\chapter");
+  });
 });
 
 describe("unknown constructs stay rawLatex", () => {

@@ -30,6 +30,10 @@ test("welcome → wizard fills title; documento.tex updated; persists", async ({
   await expect(page.getByTestId("metadata-field-graduacaoem")).toBeVisible();
   await expect(page.getByTestId("metadata-field-programamestrado")).not.toBeVisible();
 
+  // The wizard is a modal (QA §A3) — close it before reaching the shell.
+  await page.getByTestId("wizard-close").click();
+  await expect(page.getByTestId("metadata-wizard")).not.toBeVisible();
+
   // The write was surgical: documento.tex now carries the new \titulo.
   await page.getByTestId("advanced-toggle").check();
   await page.getByTestId("rail-file-documento.tex").click();
@@ -63,7 +67,7 @@ test("welcome 'Depois' leaves a pending badge; rail entry reopens the wizard", a
   await page.getByTestId("rail-metadata").click();
   await expect(page.getByTestId("metadata-wizard")).toBeVisible();
 
-  // Selecting a file closes the wizard again.
-  await page.getByTestId("rail-file-elementos-textuais/introducao.tex").click();
+  // Escape dismisses the modal (fields commit on blur — nothing is lost).
+  await page.keyboard.press("Escape");
   await expect(page.getByTestId("metadata-wizard")).not.toBeVisible();
 });

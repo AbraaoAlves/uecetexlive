@@ -124,6 +124,14 @@
   font-size: 15px;
   line-height: 1.7;
 }
+/* Find & Replace highlights (QA §A2) */
+.uecetex-search-match {
+  background: color-mix(in oklab, var(--accent) 25%, transparent);
+  border-radius: 2px;
+}
+.uecetex-search-match-active {
+  background: color-mix(in oklab, var(--warning) 55%, transparent);
+}
 .uecetex-editor:focus {
   outline: none;
 }

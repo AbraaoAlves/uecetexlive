@@ -1,11 +1,12 @@
 /**
- * "Dados do Trabalho" wizard (F2) — stepper over WIZARD_STEPS, rendered in
- * place of the editor so the PDF preview stays visible. Text fields commit
- * on blur (autosave philosophy — no Save button); selects/radios commit on
- * change. Fields whose macro is missing from documento.tex render disabled.
+ * "Dados do Trabalho" wizard (F2) — stepper over WIZARD_STEPS, rendered as a
+ * floating modal (QA §A3) so the editor and PDF preview keep their place
+ * underneath. Text fields commit on blur (autosave philosophy — no Save
+ * button); selects/radios commit on change. Fields whose macro is missing
+ * from documento.tex render disabled.
  */
 import { AlertTriangle, X } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   escapeMetadataValue,
   type MetadataField,
@@ -24,6 +25,17 @@ export interface MetadataWizardProps {
 
 export function MetadataWizard({ fields, onApply, onClose }: MetadataWizardProps) {
   const [stepIndex, setStepIndex] = useState(0);
+
+  // Global Escape: the modal must dismiss even when focus sits outside it
+  // (e.g. right after the rail button that opened it).
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
   const workType = workTypeOf(fields);
   const step = WIZARD_STEPS[stepIndex] ?? WIZARD_STEPS[0];
   if (!step) return null;
@@ -43,90 +55,102 @@ export function MetadataWizard({ fields, onApply, onClose }: MetadataWizardProps
 
   return (
     <div
-      className="flex h-full min-h-0 flex-1 flex-col bg-surface"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-ink/30 p-4"
+      role="dialog"
+      aria-modal="true"
       data-testid="metadata-wizard"
+      onClick={onClose}
+      onKeyDown={(e) => e.key === "Escape" && onClose()}
     >
-      <div className="flex shrink-0 items-center gap-3 border-b px-4 py-2.5">
-        <span className="font-display text-base">{strings.metadata.title}</span>
-        <nav aria-label={strings.metadata.stepsLabel} className="flex gap-1">
-          {WIZARD_STEPS.map((s, i) => (
-            <button
-              key={s.id}
-              type="button"
-              data-testid={`wizard-step-${i + 1}`}
-              title={s.title}
-              onClick={() => setStepIndex(i)}
-              className={cn(
-                "rounded-full px-2.5 py-0.5 text-xs",
-                i === stepIndex
-                  ? "bg-accent-soft font-medium text-accent-strong"
-                  : "text-ink-muted hover:bg-accent-soft/60",
-              )}
-            >
-              {i + 1}
-            </button>
-          ))}
-        </nav>
-        <button
-          type="button"
-          data-testid="wizard-close"
-          title={strings.metadata.close}
-          className="ml-auto rounded p-1.5 text-ink-muted hover:bg-accent-soft"
-          onClick={onClose}
-        >
-          <X className="size-4" />
-        </button>
-      </div>
-
-      <div className="min-h-0 flex-1 overflow-y-auto">
-        <div className="mx-auto w-full max-w-xl px-6 py-5">
-          <h2 className="font-display text-xl">{step.title}</h2>
-          {step.description && (
-            <p className="mt-1 text-ink-muted text-sm">{step.description}</p>
-          )}
-          {showTheme && (
-            <p className="mt-1 text-ink-subtle text-sm">
-              {strings.metadata.themeContext} “{titulo}”
-            </p>
-          )}
-          <div className="mt-4 flex flex-col gap-4">
-            {visibleFields.map((def) => (
-              <WizardField
-                key={def.macro}
-                def={def}
-                field={fields.get(def.macro)}
-                onCommit={commit}
-              />
+      {/* Fields commit on blur, so closing via the backdrop never loses input. */}
+      <div
+        className="flex h-[46rem] max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-lg border bg-surface-elevated shadow-xl"
+        onClick={(e) => e.stopPropagation()}
+        onKeyDown={() => {}}
+        role="document"
+      >
+        <div className="flex shrink-0 items-center gap-3 border-b px-4 py-2.5">
+          <span className="font-display text-base">{strings.metadata.title}</span>
+          <nav aria-label={strings.metadata.stepsLabel} className="flex gap-1">
+            {WIZARD_STEPS.map((s, i) => (
+              <button
+                key={s.id}
+                type="button"
+                data-testid={`wizard-step-${i + 1}`}
+                title={s.title}
+                onClick={() => setStepIndex(i)}
+                className={cn(
+                  "rounded-full px-2.5 py-0.5 text-xs",
+                  i === stepIndex
+                    ? "bg-accent-soft font-medium text-accent-strong"
+                    : "text-ink-muted hover:bg-accent-soft/60",
+                )}
+              >
+                {i + 1}
+              </button>
             ))}
+          </nav>
+          <button
+            type="button"
+            data-testid="wizard-close"
+            title={strings.metadata.close}
+            className="ml-auto rounded p-1.5 text-ink-muted hover:bg-accent-soft"
+            onClick={onClose}
+          >
+            <X className="size-4" />
+          </button>
+        </div>
+
+        <div className="min-h-0 flex-1 overflow-y-auto">
+          <div className="w-full px-6 py-5">
+            <h2 className="font-display text-xl">{step.title}</h2>
+            {step.description && (
+              <p className="mt-1 text-ink-muted text-sm">{step.description}</p>
+            )}
+            {showTheme && (
+              <p className="mt-1 text-ink-subtle text-sm">
+                {strings.metadata.themeContext} “{titulo}”
+              </p>
+            )}
+            <div className="mt-4 flex flex-col gap-4">
+              {visibleFields.map((def) => (
+                <WizardField
+                  key={def.macro}
+                  def={def}
+                  field={fields.get(def.macro)}
+                  onCommit={commit}
+                />
+              ))}
+            </div>
           </div>
         </div>
-      </div>
 
-      <div className="flex shrink-0 items-center justify-between border-t px-6 py-3">
-        <button
-          type="button"
-          data-testid="wizard-prev"
-          disabled={stepIndex === 0}
-          className="rounded px-3 py-1.5 text-ink-muted text-sm hover:bg-accent-soft disabled:opacity-40"
-          onClick={() => setStepIndex((i) => Math.max(0, i - 1))}
-        >
-          {strings.metadata.prev}
-        </button>
-        <span className="text-ink-subtle text-xs">
-          {stepIndex + 1} / {WIZARD_STEPS.length}
-        </span>
-        <button
-          type="button"
-          data-testid="wizard-next"
-          className="rounded bg-accent px-3 py-1.5 text-accent-foreground text-sm hover:bg-accent-strong"
-          onClick={() =>
-            isLast
-              ? onClose()
-              : setStepIndex((i) => Math.min(WIZARD_STEPS.length - 1, i + 1))
-          }
-        >
-          {isLast ? strings.metadata.done : strings.metadata.next}
-        </button>
+        <div className="flex shrink-0 items-center justify-between border-t px-6 py-3">
+          <button
+            type="button"
+            data-testid="wizard-prev"
+            disabled={stepIndex === 0}
+            className="rounded px-3 py-1.5 text-ink-muted text-sm hover:bg-accent-soft disabled:opacity-40"
+            onClick={() => setStepIndex((i) => Math.max(0, i - 1))}
+          >
+            {strings.metadata.prev}
+          </button>
+          <span className="text-ink-subtle text-xs">
+            {stepIndex + 1} / {WIZARD_STEPS.length}
+          </span>
+          <button
+            type="button"
+            data-testid="wizard-next"
+            className="rounded bg-accent px-3 py-1.5 text-accent-foreground text-sm hover:bg-accent-strong"
+            onClick={() =>
+              isLast
+                ? onClose()
+                : setStepIndex((i) => Math.min(WIZARD_STEPS.length - 1, i + 1))
+            }
+          >
+            {isLast ? strings.metadata.done : strings.metadata.next}
+          </button>
+        </div>
       </div>
     </div>
   );

@@ -78,6 +78,7 @@ describe("UiSettingsSchema", () => {
     expect(UiSettingsSchema.parse({})).toEqual({
       advancedMode: false,
       railCollapsed: false,
+      collapsedSections: [],
       welcomeSeen: false,
       theme: "system",
     });

@@ -1,7 +1,18 @@
 import { defaultKeymap, history, historyKeymap } from "@codemirror/commands";
 import { StreamLanguage } from "@codemirror/language";
 import { stex } from "@codemirror/legacy-modes/mode/stex";
-import { openSearchPanel, search, searchKeymap } from "@codemirror/search";
+import {
+  closeSearchPanel,
+  findNext,
+  findPrevious,
+  openSearchPanel,
+  replaceAll,
+  replaceNext,
+  SearchQuery,
+  search,
+  searchKeymap,
+  setSearchQuery,
+} from "@codemirror/search";
 import { Annotation, Compartment, EditorState } from "@codemirror/state";
 import {
   EditorView,
@@ -9,11 +20,14 @@ import {
   highlightActiveLineGutter,
   keymap,
   lineNumbers,
+  type Panel,
   placeholder as placeholderExt,
 } from "@codemirror/view";
 import { Search } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { createRoot } from "react-dom/client";
 import { strings } from "@/lib/strings";
+import { type FindReplaceOptions, FindReplacePanel } from "./FindReplacePanel";
 
 export interface SourceEditorProps {
   path: string;
@@ -28,23 +42,99 @@ export interface SourceEditorProps {
  * update) so the update listener does not echo them back through onChange. */
 const External = Annotation.define<boolean>();
 
-/** Search panel copy in pt-BR (CodeMirror ships English defaults). */
-const PT_BR_PHRASES: Record<string, string> = {
-  Find: "Localizar",
-  Replace: "Substituir",
-  next: "próximo",
-  previous: "anterior",
-  all: "tudo",
-  "match case": "diferenciar maiúsculas",
-  "by word": "palavra inteira",
-  regexp: "regex",
-  replace: "substituir",
-  "replace all": "substituir tudo",
-  close: "fechar",
-  "current match": "ocorrência atual",
-  "Go to line": "Ir para a linha",
-  go: "ir",
-};
+/**
+ * CodeMirror search panel replaced by the shared FindReplacePanel (QA §B1):
+ * same UI as the WYSIWYG surface, plus the "n de m" occurrence counter the
+ * built-in panel lacks. Local state drives a SearchQuery effect; counting
+ * runs against the live doc on every doc/selection change (`version`).
+ */
+function CMSearchPanel({ view, version }: { view: EditorView; version: number }) {
+  const [query, setQuery] = useState("");
+  const [replaceValue, setReplaceValue] = useState("");
+  const [options, setOptions] = useState<FindReplaceOptions>({
+    caseSensitive: false,
+    wholeWord: false,
+    regex: false,
+  });
+
+  const buildQuery = (replace: string) =>
+    new SearchQuery({
+      search: query,
+      caseSensitive: options.caseSensitive,
+      regexp: options.regex,
+      wholeWord: options.wholeWord,
+      replace,
+    });
+
+  // Keep CM's search state (highlights, replace source) in sync.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: buildQuery derives from these deps
+  useEffect(() => {
+    view.dispatch({ effects: setSearchQuery.of(buildQuery(replaceValue)) });
+  }, [view, query, options, replaceValue]);
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: version tracks doc/selection changes
+  const counts = useMemo(() => {
+    if (!query) return { current: 0, total: 0 };
+    let cursor: Iterator<{ from: number; to: number }>;
+    try {
+      cursor = buildQuery(replaceValue).getCursor(view.state) as Iterator<{
+        from: number;
+        to: number;
+      }>;
+    } catch {
+      return { current: 0, total: 0 }; // malformed user regex
+    }
+    const sel = view.state.selection.main;
+    let total = 0;
+    let current = 0;
+    for (let r = cursor.next(); !r.done && total < 10_000; r = cursor.next()) {
+      total++;
+      if (r.value.from === sel.from && r.value.to === sel.to) current = total;
+    }
+    return { current, total };
+  }, [view, version, query, options, replaceValue]);
+
+  return (
+    <FindReplacePanel
+      query={query}
+      onQueryChange={setQuery}
+      replaceValue={replaceValue}
+      onReplaceChange={setReplaceValue}
+      options={options}
+      onOptionsChange={setOptions}
+      current={counts.current}
+      total={counts.total}
+      onNext={() => findNext(view)}
+      onPrev={() => findPrevious(view)}
+      onReplace={() => replaceNext(view)}
+      onReplaceAll={() => replaceAll(view)}
+      onClose={() => {
+        closeSearchPanel(view);
+        view.focus();
+      }}
+    />
+  );
+}
+
+/** CM panel host: one React root, re-rendered when doc/selection change. */
+function createFindPanel(view: EditorView): Panel {
+  const dom = document.createElement("div");
+  const root = createRoot(dom);
+  let version = 0;
+  const render = () => root.render(<CMSearchPanel view={view} version={version} />);
+  return {
+    dom,
+    top: true,
+    mount: render,
+    update: (update) => {
+      if (update.docChanged || update.selectionSet) {
+        version++;
+        render();
+      }
+    },
+    destroy: () => queueMicrotask(() => root.unmount()),
+  };
+}
 
 const uecetexTheme = EditorView.theme({
   "&": { height: "100%", fontSize: "13px" },
@@ -93,11 +183,10 @@ export function SourceEditor({
           highlightActiveLine(),
           highlightActiveLineGutter(),
           history(),
-          search({ top: true }),
+          search({ top: true, createPanel: createFindPanel }),
           keymap.of([...defaultKeymap, ...historyKeymap, ...searchKeymap]),
           StreamLanguage.define(stex),
           placeholderExt(strings.editor.placeholder),
-          EditorState.phrases.of(PT_BR_PHRASES),
           EditorView.lineWrapping,
           uecetexTheme,
           readOnlyComp.current.of(EditorState.readOnly.of(readOnly)),

@@ -3,7 +3,7 @@
  * file switch (§12), serialize-on-update through latex-mapping. Ground truth
  * is always the LaTeX source (§4.1).
  */
-import { EditorContent, type Range, useEditor } from "@tiptap/react";
+import { EditorContent, type Range, useEditor, useEditorState } from "@tiptap/react";
 import { BubbleMenu } from "@tiptap/react/menus";
 import { Bold, Code, ImagePlus, Italic, Underline as UnderlineIcon } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -14,6 +14,8 @@ import { strings } from "@/lib/strings";
 import { cn } from "@/lib/utils";
 import { EditorToolbar } from "./EditorToolbar";
 import { buildExtensions } from "./extensions";
+import { searchPluginKey } from "./extensions/search";
+import { type FindReplaceOptions, FindReplacePanel } from "./FindReplacePanel";
 import { type EditorResources, EditorResourcesContext } from "./resources";
 import type { PickerKind } from "./slash-menu/slash-menu";
 import "katex/dist/katex.min.css";
@@ -32,6 +34,14 @@ interface PickerState {
 
 export function EditorSurface({ path, source, resources, onChange }: EditorSurfaceProps) {
   const [picker, setPicker] = useState<PickerState | null>(null);
+  const [findOpen, setFindOpen] = useState(false);
+  const [findQuery, setFindQuery] = useState("");
+  const [replaceValue, setReplaceValue] = useState("");
+  const [findOptions, setFindOptions] = useState<FindReplaceOptions>({
+    caseSensitive: false,
+    wholeWord: false,
+    regex: false,
+  });
   // Which file the editor currently holds. Initialized to the mount path so
   // the initial `content` (below) is not re-applied by the switch effect.
   const loadedKey = useRef<string>(path);
@@ -98,18 +108,74 @@ export function EditorSurface({ path, source, resources, onChange }: EditorSurfa
     [editor, picker],
   );
 
+  // Find & Replace (QA §A2): panel state flows into the search plugin; the
+  // counter flows back out through the plugin state on every transaction.
+  useEffect(() => {
+    if (!editor || editor.isDestroyed) return;
+    if (!findOpen) {
+      editor.commands.clearSearch();
+      return;
+    }
+    editor.commands.setSearch({ query: findQuery, ...findOptions });
+  }, [editor, findOpen, findQuery, findOptions]);
+
+  const searchCounts = useEditorState({
+    editor,
+    selector: ({ editor: current }) => {
+      if (!current) return { total: 0, current: 0 };
+      const search = searchPluginKey.getState(current.state);
+      return {
+        total: search?.matches.length ?? 0,
+        current: (search?.activeIndex ?? -1) + 1,
+      };
+    },
+  });
+
+  const closeFind = useCallback(() => {
+    setFindOpen(false);
+    editor?.commands.focus();
+  }, [editor]);
+
   if (!editor) return null;
 
   return (
     <EditorResourcesContext.Provider value={resources}>
-      <div className="flex h-full flex-col" data-testid="editor-surface">
+      {/* biome-ignore lint/a11y/noStaticElementInteractions: Ctrl+F interception over the whole surface */}
+      <div
+        className="flex h-full flex-col"
+        data-testid="editor-surface"
+        onKeyDown={(e) => {
+          if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "f") {
+            e.preventDefault();
+            setFindOpen(true);
+          }
+        }}
+      >
         <EditorToolbar
           editor={editor}
           onOpenPicker={(kind) => {
             const { from, to } = editor.state.selection;
             setPicker({ kind, range: { from, to } });
           }}
+          onOpenFind={() => setFindOpen(true)}
         />
+        {findOpen && (
+          <FindReplacePanel
+            query={findQuery}
+            onQueryChange={setFindQuery}
+            replaceValue={replaceValue}
+            onReplaceChange={setReplaceValue}
+            options={findOptions}
+            onOptionsChange={setFindOptions}
+            current={searchCounts.current}
+            total={searchCounts.total}
+            onNext={() => editor.commands.findNext()}
+            onPrev={() => editor.commands.findPrev()}
+            onReplace={() => editor.commands.replaceActive(replaceValue)}
+            onReplaceAll={() => editor.commands.replaceAllMatches(replaceValue)}
+            onClose={closeFind}
+          />
+        )}
         <div className="relative min-h-0 flex-1 overflow-y-auto">
           <EditorContent editor={editor} className="h-full" />
 
@@ -201,6 +267,13 @@ function BubbleButton({
 // ---------------------------------------------------------------------------
 // Pickers (§4.5 slash targets)
 // ---------------------------------------------------------------------------
+
+const PICKER_TITLES: Record<PickerKind, string> = {
+  citation: "Citação bibliográfica",
+  crossref: "Referência cruzada",
+  figure: "Figura",
+  codeInclude: "Código-fonte do projeto",
+};
 
 function PickerDialog({
   kind,
@@ -316,7 +389,7 @@ function PickerDialog({
 
   return (
     <div
-      className="absolute inset-0 z-40 flex items-start justify-center bg-ink/20 pt-16"
+      className="absolute inset-0 z-40 flex items-start justify-center bg-ink/30 pt-16"
       onClick={onClose}
       onKeyDown={(e) => e.key === "Escape" && onClose()}
       role="dialog"
@@ -329,6 +402,14 @@ function PickerDialog({
         onKeyDown={() => {}}
         role="document"
       >
+        {/* Title bar (QA §M3): without one, whatever block sits under the
+            translucent backdrop reads as the dialog's header. */}
+        <div
+          className="border-b px-3 py-2 font-medium text-ink-muted text-xs"
+          data-testid="picker-title"
+        >
+          {PICKER_TITLES[kind]}
+        </div>
         <input
           // biome-ignore lint/a11y/noAutofocus: picker is an ephemeral command palette
           autoFocus
@@ -363,7 +444,7 @@ function UploadImageRow({
         {strings.editor.uploadImage}
         <input
           type="file"
-          accept=".png,.jpg,.jpeg,image/png,image/jpeg"
+          accept=".png,.jpg,.jpeg,.pdf,image/png,image/jpeg,application/pdf"
           className="hidden"
           data-testid="picker-upload-input"
           onChange={async (e) => {
@@ -383,7 +464,7 @@ function UploadImageRow({
             onPick({
               type: "latexFigure",
               attrs: {
-                src: path.replace(/\.(png|jpe?g)$/i, ""),
+                src: path.replace(/\.(png|jpe?g|pdf)$/i, ""),
                 options: "width=0.8\\textwidth",
                 caption: "Legenda",
                 label: `fig:${base}`,

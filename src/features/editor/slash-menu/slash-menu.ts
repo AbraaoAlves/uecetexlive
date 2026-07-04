@@ -46,20 +46,20 @@ const COMMANDS: CommandDef[] = [
   },
   {
     id: "tabela",
-    label: "Tabela 3×3 (LaTeX)",
+    label: "Tabela 3×3",
+    // latexTable renders the editable grid (QA §C1); rawSource is the node's
+    // ground truth, so the scaffold serializes verbatim until a cell is edited.
     run: (editor, range) =>
       editor
         .chain()
         .focus()
         .deleteRange(range)
         .insertContent({
-          type: "rawLatexBlock",
-          content: [
-            {
-              type: "text",
-              text: "\\begin{table}[htb]\n\t\\centering\n\t\\caption{Legenda}\n\t\\begin{tabular}{ccc}\n\t\tA & B & C \\\\\n\t\t1 & 2 & 3 \\\\\n\t\t4 & 5 & 6 \\\\\n\t\\end{tabular}\n\\end{table}",
-            },
-          ],
+          type: "latexTable",
+          attrs: {
+            rawSource:
+              "\\begin{table}[htb]\n\t\\centering\n\t\\caption{Legenda}\n\t\\begin{tabular}{ccc}\n\t\tA & B & C \\\\\n\t\t1 & 2 & 3 \\\\\n\t\t4 & 5 & 6 \\\\\n\t\\end{tabular}\n\\end{table}",
+          },
         })
         .run(),
   },

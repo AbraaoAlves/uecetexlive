@@ -13,6 +13,11 @@ export interface PdfPaneProps {
   pdf: Uint8Array | null;
   /** Stale-while-compiling overlay. */
   compiling: boolean;
+  /**
+   * Expose the __uecetexPdf e2e hook (compile preview only — a VFS file
+   * preview must not clobber the compiled document's hook).
+   */
+  debugHook?: boolean;
 }
 
 interface PdfPage {
@@ -46,8 +51,10 @@ async function loadPdfjs() {
 
 const BASE_SCALE = 1.4;
 const PAGE_GAP = 16;
+/** Horizontal breathing room inside the scroll gutter (p-4 both sides). */
+const PAGE_MARGIN = 32;
 
-export function PdfPane({ pdf, compiling }: PdfPaneProps) {
+export function PdfPane({ pdf, compiling, debugHook = true }: PdfPaneProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const docRef = useRef<PdfDoc | null>(null);
   const taskRef = useRef<PdfLoadingTask | null>(null);
@@ -55,8 +62,33 @@ export function PdfPane({ pdf, compiling }: PdfPaneProps) {
   const [base, setBase] = useState<{ w: number; h: number } | null>(null);
   const [zoom, setZoom] = useState(1);
   const [currentPage, setCurrentPage] = useState(1);
+  const [paneWidth, setPaneWidth] = useState<number | null>(null);
   // Dark-comfort reading: default to inverted while the app is in dark theme.
   const [invert, setInvert] = useState(isDarkTheme);
+
+  // Follow theme switches (QA §A1) — the mount-time default above never
+  // updates on its own, so a light→dark toggle left the pages blinding.
+  useEffect(() => {
+    const observer = new MutationObserver(() => setInvert(isDarkTheme()));
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["class"],
+    });
+    return () => observer.disconnect();
+  }, []);
+
+  // Fit-to-width (QA §A1): at zoom 1 the page fills the pane instead of
+  // overflowing at a fixed scale (a 45% pane is narrower than A4 × 1.4).
+  // biome-ignore lint/correctness/useExhaustiveDependencies: the scroll div only exists once pdf is set — re-attach the observer then
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) setPaneWidth(entry.contentRect.width);
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [pdf]);
 
   useEffect(() => {
     if (!pdf) return;
@@ -88,25 +120,27 @@ export function PdfPane({ pdf, compiling }: PdfPaneProps) {
       if (scrollRef.current) scrollRef.current.scrollTop = 0;
 
       // e2e/debug hook: page count + text-layer extraction (Gate G2).
-      (window as unknown as Record<string, unknown>).__uecetexPdf = {
-        numPages: doc.numPages,
-        getText: async () => {
-          let text = "";
-          for (let i = 1; i <= doc.numPages; i++) {
-            const page = await doc.getPage(i);
-            const content = await page.getTextContent();
-            text += `${(content.items as { str?: string }[])
-              .map((item) => item.str ?? "")
-              .join(" ")}\n`;
-          }
-          return text;
-        },
-      };
+      if (debugHook) {
+        (window as unknown as Record<string, unknown>).__uecetexPdf = {
+          numPages: doc.numPages,
+          getText: async () => {
+            let text = "";
+            for (let i = 1; i <= doc.numPages; i++) {
+              const page = await doc.getPage(i);
+              const content = await page.getTextContent();
+              text += `${(content.items as { str?: string }[])
+                .map((item) => item.str ?? "")
+                .join(" ")}\n`;
+            }
+            return text;
+          },
+        };
+      }
     })();
     return () => {
       cancelled = true;
     };
-  }, [pdf]);
+  }, [pdf, debugHook]);
 
   // Final teardown on unmount (the per-compile path destroys the previous
   // task; this catches the last one).
@@ -118,7 +152,11 @@ export function PdfPane({ pdf, compiling }: PdfPaneProps) {
     };
   }, []);
 
-  const scale = BASE_SCALE * zoom;
+  const fitScale =
+    base && paneWidth
+      ? Math.min(Math.max((paneWidth - PAGE_MARGIN) / base.w, 0.4), 2)
+      : BASE_SCALE;
+  const scale = fitScale * zoom;
   const pageNumbers = Array.from({ length: numPages }, (_, i) => i + 1);
 
   // Track the page nearest the viewport top for the indicator.

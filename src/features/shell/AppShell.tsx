@@ -42,6 +42,7 @@ import { cn, slugify } from "@/lib/utils";
 import { CompileButton } from "./CompileButton";
 import { EngineToggle } from "./EngineToggle";
 import { ImportDialog, type ImportDialogState } from "./ImportDialog";
+import { NewChapterDialog } from "./NewChapterDialog";
 import { ProjectRail, type RailFile } from "./ProjectRail";
 import { ThemeToggle } from "./ThemeToggle";
 import { TopBar } from "./TopBar";
@@ -65,6 +66,22 @@ const SECTION_RANK: Record<RailSection, number> = {
   library: 4,
   figures: 5,
 };
+
+/** Rail upload allowlist (QA §A4) — mirrors kindOf's image/pdf/code sets. */
+const RAIL_UPLOAD_EXTENSIONS = new Set([
+  "png",
+  "jpg",
+  "jpeg",
+  "pdf",
+  "cpp",
+  "c",
+  "h",
+  "java",
+  "py",
+  "js",
+  "ts",
+]);
+const RAIL_UPLOAD_MAX_BYTES = 10 * 1024 * 1024;
 
 /**
  * Three-pane shell (§6.1): rail 240px / editor flex / preview 45%.
@@ -95,6 +112,7 @@ function ShellInner() {
   const railCollapsed = ui.railCollapsed;
   useTheme(ui.theme, uiReady);
   const [metadataOpen, setMetadataOpen] = useState(false);
+  const [newChapterOpen, setNewChapterOpen] = useState(false);
   const [previewTab, setPreviewTab] = useState<"pdf" | "log">("pdf");
   const [sourceView, setSourceView] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -190,6 +208,35 @@ function ShellInner() {
   );
   const resources = useEditorResources(project, graph, addImageFile);
 
+  // Rail upload (QA §A4): images, PDFs and code files land in figuras/ —
+  // the template's own convention (main.cpp lives there).
+  const handleRailUpload = async (uploads: File[]) => {
+    if (!project) return;
+    const claimed = new Set(project.files.map((f) => f.path));
+    const rejected: string[] = [];
+    for (const file of uploads) {
+      const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
+      if (
+        !RAIL_UPLOAD_EXTENSIONS.has(ext) ||
+        file.size === 0 ||
+        file.size > RAIL_UPLOAD_MAX_BYTES
+      ) {
+        rejected.push(file.name);
+        continue;
+      }
+      const base = slugify(file.name.replace(/\.[^.]*$/, "")) || "arquivo";
+      let path = `figuras/${base}.${ext}`;
+      for (let n = 2; claimed.has(path); n++) {
+        path = `figuras/${base}-${n}.${ext}`;
+      }
+      claimed.add(path);
+      createFile(path, new Uint8Array(await file.arrayBuffer()), { open: false });
+    }
+    if (rejected.length) {
+      window.alert(`${strings.rail.uploadFileError} ${rejected.join(", ")}`);
+    }
+  };
+
   // Depends on the entry's *string* (not `project`): texSources rebuilds per
   // keystroke, but equal content yields the same primitive → memo holds.
   const entrySource = project ? (texSources[project.entry] ?? "") : "";
@@ -226,6 +273,16 @@ function ShellInner() {
     }
     return sum;
   }, [texSources]);
+
+  // Escape closes the app menu regardless of where focus sits (QA §M4).
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setMenuOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [menuOpen]);
 
   const projectRefForKeys = useRef(project);
   projectRefForKeys.current = project;
@@ -322,10 +379,8 @@ function ShellInner() {
     }
   };
 
-  const handleNewChapter = () => {
+  const createChapter = (title: string) => {
     if (!project) return;
-    const title = window.prompt(strings.rail.newChapterPrompt)?.trim();
-    if (!title) return;
     const slug = slugify(title) || "novo-capitulo";
     let path = `elementos-textuais/${slug}.tex`;
     for (let n = 2; project.files.some((f) => f.path === path); n++) {
@@ -338,6 +393,7 @@ function ShellInner() {
       window.alert((err as Error).message);
       return;
     }
+    setNewChapterOpen(false);
     setMetadataOpen(false);
     createFile(path, textToBytes(chapterScaffold(title, slug)));
   };
@@ -461,6 +517,17 @@ function ShellInner() {
             <Menu className="size-4" />
           </button>
           {menuOpen && (
+            // Invisible backdrop (QA §M4): click-outside and Escape both
+            // dismiss — without it the menu lingered over other popovers.
+            // biome-ignore lint/a11y/noStaticElementInteractions: pointer-only dismiss layer; Escape is handled globally
+            <div
+              className="fixed inset-0 z-40"
+              data-testid="app-menu-backdrop"
+              onClick={() => setMenuOpen(false)}
+              role="presentation"
+            />
+          )}
+          {menuOpen && (
             <div
               className="absolute right-0 top-full z-50 mt-1 w-56 rounded-md border bg-surface-elevated py-1 text-sm shadow-lg"
               data-testid="app-menu"
@@ -560,7 +627,17 @@ function ShellInner() {
               hiddenCount={hiddenCount}
               onSelect={handleSelect}
               onReorderChapters={reorderChapters}
-              onNewChapter={handleNewChapter}
+              onNewChapter={() => setNewChapterOpen(true)}
+              onUploadFiles={(uploads) => void handleRailUpload(uploads)}
+              onShowHidden={() => setAdvanced(true)}
+              collapsedSections={ui.collapsedSections}
+              onToggleSection={(section) =>
+                setUi({
+                  collapsedSections: ui.collapsedSections.includes(section)
+                    ? ui.collapsedSections.filter((s) => s !== section)
+                    : [...ui.collapsedSections, section],
+                })
+              }
               onOpenMetadata={() => setMetadataOpen(true)}
               metadataActive={metadataOpen}
               metadataPending={metadataPending}
@@ -568,71 +645,64 @@ function ShellInner() {
           </div>
         </aside>
         <main className="flex min-w-0 flex-1 flex-col" data-testid="editor-pane">
-          {metadataOpen ? (
-            <MetadataWizard
-              fields={meta}
-              onApply={applyWorkMetadata}
-              onClose={() => setMetadataOpen(false)}
-            />
+          {wysiwygCapable && (
+            <div
+              // h-9 mirrors the preview pane's tab row — the borders must meet.
+              className="flex h-9 shrink-0 items-center justify-between gap-1 border-b bg-surface px-2 text-xs"
+            >
+              <span className="truncate text-ink-subtle" data-testid="word-count">
+                {currentWords.toLocaleString("pt-BR")}{" "}
+                {currentWords === 1
+                  ? strings.editor.wordSingular
+                  : strings.editor.wordsPlural}
+                {" · "}
+                {totalWords.toLocaleString("pt-BR")} {strings.editor.wordsInWork}
+              </span>
+              <button
+                type="button"
+                data-testid="view-toggle"
+                className="rounded px-2 py-0.5 text-ink-muted hover:bg-accent-soft"
+                title="Mod+E"
+                onClick={() => setSourceView((v) => !v)}
+              >
+                {showWysiwyg ? strings.editor.sourceView : strings.editor.wysiwygView}
+              </button>
+            </div>
+          )}
+          {currentFile ? (
+            currentFile.kind === "image" || currentFile.kind === "pdf" ? (
+              <BinaryPreview
+                path={currentFile.path}
+                bytes={currentFile.bytes}
+                kind={currentFile.kind}
+              />
+            ) : showWysiwyg ? (
+              <Suspense
+                fallback={
+                  <div className="flex flex-1 items-center justify-center text-ink-subtle">
+                    <Loader2 className="size-4 animate-spin" />
+                  </div>
+                }
+              >
+                <EditorSurface
+                  path={currentFile.path}
+                  source={bytesToText(currentFile.bytes)}
+                  resources={resources}
+                  onChange={(text) => updateFileText(currentFile.path, text)}
+                />
+              </Suspense>
+            ) : (
+              <SourceEditor
+                path={currentFile.path}
+                text={bytesToText(currentFile.bytes)}
+                readOnly={isAdvancedOnly(currentFile.path) && !advanced}
+                onChange={(text) => updateFileText(currentFile.path, text)}
+              />
+            )
           ) : (
-            <>
-              {wysiwygCapable && (
-                <div className="flex h-8 shrink-0 items-center justify-between gap-1 border-b bg-surface px-2 text-xs">
-                  <span className="truncate text-ink-subtle" data-testid="word-count">
-                    {currentWords.toLocaleString("pt-BR")}{" "}
-                    {currentWords === 1
-                      ? strings.editor.wordSingular
-                      : strings.editor.wordsPlural}
-                    {" · "}
-                    {totalWords.toLocaleString("pt-BR")} {strings.editor.wordsInWork}
-                  </span>
-                  <button
-                    type="button"
-                    data-testid="view-toggle"
-                    className="rounded px-2 py-0.5 text-ink-muted hover:bg-accent-soft"
-                    title="Mod+E"
-                    onClick={() => setSourceView((v) => !v)}
-                  >
-                    {showWysiwyg ? strings.editor.sourceView : strings.editor.wysiwygView}
-                  </button>
-                </div>
-              )}
-              {currentFile ? (
-                currentFile.kind === "image" || currentFile.kind === "pdf" ? (
-                  <BinaryPreview
-                    path={currentFile.path}
-                    bytes={currentFile.bytes}
-                    kind={currentFile.kind}
-                  />
-                ) : showWysiwyg ? (
-                  <Suspense
-                    fallback={
-                      <div className="flex flex-1 items-center justify-center text-ink-subtle">
-                        <Loader2 className="size-4 animate-spin" />
-                      </div>
-                    }
-                  >
-                    <EditorSurface
-                      path={currentFile.path}
-                      source={bytesToText(currentFile.bytes)}
-                      resources={resources}
-                      onChange={(text) => updateFileText(currentFile.path, text)}
-                    />
-                  </Suspense>
-                ) : (
-                  <SourceEditor
-                    path={currentFile.path}
-                    text={bytesToText(currentFile.bytes)}
-                    readOnly={isAdvancedOnly(currentFile.path) && !advanced}
-                    onChange={(text) => updateFileText(currentFile.path, text)}
-                  />
-                )
-              ) : (
-                <div className="flex flex-1 items-center justify-center text-ink-subtle">
-                  {strings.editor.placeholder}
-                </div>
-              )}
-            </>
+            <div className="flex flex-1 items-center justify-center text-ink-subtle">
+              {strings.editor.placeholder}
+            </div>
           )}
         </main>
         <section
@@ -685,6 +755,19 @@ function ShellInner() {
           </div>
         </section>
       </div>
+      {metadataOpen && (
+        <MetadataWizard
+          fields={meta}
+          onApply={applyWorkMetadata}
+          onClose={() => setMetadataOpen(false)}
+        />
+      )}
+      {newChapterOpen && (
+        <NewChapterDialog
+          onCreate={createChapter}
+          onClose={() => setNewChapterOpen(false)}
+        />
+      )}
       {importState && (
         <ImportDialog
           state={importState}
@@ -735,20 +818,30 @@ function BinaryPreview({
   bytes: Uint8Array;
   kind: "image" | "pdf";
 }) {
-  const url = useMemo(() => {
-    const ext = path.split(".").pop()?.toLowerCase();
-    const mime =
-      kind === "pdf" ? "application/pdf" : ext === "png" ? "image/png" : "image/jpeg";
-    const copy = new Uint8Array(bytes);
-    return URL.createObjectURL(new Blob([copy.buffer as ArrayBuffer], { type: mime }));
-  }, [bytes, kind, path]);
-
-  if (kind === "image") {
+  // PDFs render through pdf.js (QA §M5) — the old <iframe> depended on the
+  // browser's PDF plugin and showed a silent blank pane without one.
+  if (kind === "pdf") {
     return (
-      <div className="flex flex-1 items-center justify-center overflow-auto p-8">
-        <img src={url} alt={path} className="max-h-full max-w-full shadow" />
+      <div className="min-h-0 flex-1" data-testid="vfs-pdf-preview">
+        <PdfPane pdf={bytes} compiling={false} debugHook={false} />
       </div>
     );
   }
-  return <iframe src={url} title={path} className="h-full w-full flex-1 border-0" />;
+  return <ImagePreview path={path} bytes={bytes} />;
+}
+
+function ImagePreview({ path, bytes }: { path: string; bytes: Uint8Array }) {
+  const url = useMemo(() => {
+    const ext = path.split(".").pop()?.toLowerCase();
+    const mime = ext === "png" ? "image/png" : "image/jpeg";
+    const copy = new Uint8Array(bytes);
+    return URL.createObjectURL(new Blob([copy.buffer as ArrayBuffer], { type: mime }));
+  }, [bytes, path]);
+  useEffect(() => () => URL.revokeObjectURL(url), [url]);
+
+  return (
+    <div className="flex flex-1 items-center justify-center overflow-auto p-8">
+      <img src={url} alt={path} className="max-h-full max-w-full shadow" />
+    </div>
+  );
 }
