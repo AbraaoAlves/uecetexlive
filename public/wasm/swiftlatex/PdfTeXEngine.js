@@ -60,10 +60,15 @@ var EngineStatus;
     EngineStatus[EngineStatus["Busy"] = 3] = "Busy";
     EngineStatus[EngineStatus["Error"] = 4] = "Error";
 })(EngineStatus = exports.EngineStatus || (exports.EngineStatus = {}));
-// Papyru patch: absolute path so `new Worker(ENGINE_PATH)` resolves against
-// the origin, not the document URL (which on routes like "/" makes the
-// browser request "/swiftlatexpdftex.js" → SPA shell → silent hang).
-var ENGINE_PATH = '/wasm/swiftlatex/swiftlatexpdftex.js';
+// Papyru patch (r2): resolve the worker next to THIS script instead of the
+// document URL (which on routes like "/" made the browser request
+// "/swiftlatexpdftex.js" → SPA shell → silent hang). Anchoring on
+// document.currentScript keeps it working when the whole app is served
+// under a subpath (GitHub Pages /uecetexlive/).
+var ENGINE_PATH = new URL(
+    'swiftlatexpdftex.js',
+    (typeof document !== 'undefined' && document.currentScript && document.currentScript.src) || location.href
+).href;
 var CompileResult = /** @class */ (function () {
     function CompileResult() {
         this.pdf = undefined;

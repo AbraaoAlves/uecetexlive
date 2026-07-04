@@ -6,7 +6,12 @@ import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 import { VitePWA } from "vite-plugin-pwa";
 
+// Project-page deploys (abraaoalves.github.io/uecetexlive) build with
+// BASE_PATH=/uecetexlive/ (deploy.yml); dev/preview/e2e stay at "/".
+const base = process.env.BASE_PATH ?? "/";
+
 export default defineConfig({
+  base,
   plugins: [
     react(),
     tailwindcss(),
@@ -21,11 +26,19 @@ export default defineConfig({
         // The app shell is small; the WASM/TeX trees are handled at runtime.
         globIgnores: ["**/wasm/**", "**/templates/**"],
         maximumFileSizeToCacheInBytes: 8 * 1024 * 1024,
-        navigateFallbackDenylist: [/^\/wasm\//, /^\/templates\//],
+        // Storybook is deployed as a sibling static site under the SW's
+        // scope (${base}storybook/) — without the denylist entry, offline
+        // navigations to it would be hijacked into the app shell.
+        navigateFallbackDenylist: [
+          new RegExp(`^${base}wasm/`),
+          new RegExp(`^${base}templates/`),
+          new RegExp(`^${base}storybook/`),
+        ],
         runtimeCaching: [
           {
-            urlPattern: ({ url }) =>
-              url.pathname.startsWith("/wasm/") || url.pathname.startsWith("/templates/"),
+            // Serialized into sw.js — must not close over `base`. Matching
+            // the path segment covers both "/" and subpath deploys.
+            urlPattern: /\/(wasm|templates)\//,
             handler: "CacheFirst",
             options: {
               cacheName: "uecetex-assets",
@@ -44,7 +57,8 @@ export default defineConfig({
         theme_color: "#4b7a55",
         background_color: "#f7f7f2",
         display: "standalone",
-        start_url: "/",
+        start_url: base,
+        scope: base,
       },
     }),
   ],

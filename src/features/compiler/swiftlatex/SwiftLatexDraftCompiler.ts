@@ -28,8 +28,10 @@ declare global {
   }
 }
 
-const ENGINE_SCRIPT_URL = "/wasm/swiftlatex/PdfTeXEngine.js";
-const TEXLIVE_ENDPOINT = "/wasm/swiftlatex/texlive/"; // trailing slash matters
+// BASE_URL-prefixed: the app may live under a subpath (GitHub Pages
+// abraaoalves.github.io/uecetexlive → BASE_URL "/uecetexlive/").
+const ENGINE_SCRIPT_URL = `${import.meta.env.BASE_URL}wasm/swiftlatex/PdfTeXEngine.js`;
+const TEXLIVE_ENDPOINT = `${import.meta.env.BASE_URL}wasm/swiftlatex/texlive/`; // trailing slash matters
 
 async function loadEngineScript(): Promise<NonNullable<typeof window.PdfTeXEngine>> {
   if (window.PdfTeXEngine) return window.PdfTeXEngine;

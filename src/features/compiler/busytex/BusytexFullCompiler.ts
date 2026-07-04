@@ -15,7 +15,8 @@ import type {
   WarmupProgressFn,
 } from "../types";
 
-const BASE = "/wasm/busytex/";
+// BASE_URL-prefixed: subpath deploys (GitHub Pages) serve wasm under the base.
+const BASE = `${import.meta.env.BASE_URL}wasm/busytex/`;
 
 /** Order matters: mounted in sequence; extra overrides earlier trees. */
 export const DATA_PACKAGES = [

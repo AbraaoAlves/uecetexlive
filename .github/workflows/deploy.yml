@@ -10,6 +10,11 @@ permissions:
   pages: write
   id-token: write
 
+# One Pages deploy at a time; a newer run supersedes an in-flight one.
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -20,11 +25,30 @@ jobs:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
       - run: bun install --frozen-lockfile
-      # Vendored WASM/template assets are not in git; fetch them at deploy time.
+      # Downloaded (not committed) vendor payloads: busytex binaries + the
+      # SwiftLaTeX TeX Live tree. The scripts are idempotent (size-checked),
+      # so a cache hit turns them into fast no-ops. Committed files under
+      # public/wasm are hashed into the key so a stale cache can never
+      # clobber a fresh checkout.
+      - uses: actions/cache@v4
+        with:
+          path: |
+            public/wasm/busytex
+            public/wasm/swiftlatex/texlive
+          key: vendor-${{ hashFiles('scripts/vendor-busytex.sh', 'scripts/sync-texlive-cache.sh', 'public/wasm/busytex/**', 'public/wasm/swiftlatex/*.js', 'public/wasm/swiftlatex/*.wasm') }}
       - run: ./scripts/vendor-uecetex2.sh
       - run: ./scripts/vendor-busytex.sh
       - run: ./scripts/sync-texlive-cache.sh
+      # App at the project-page root (abraaoalves.github.io/uecetexlive)…
       - run: bun run build
+        env:
+          BASE_PATH: /uecetexlive/
+      # GitHub Pages has no SPA rewrite: deep links (/sobre) must fall back
+      # to the app shell via the 404 page.
+      - run: cp dist/index.html dist/404.html
+      # …and Storybook alongside it at /uecetexlive/storybook/ (its assets
+      # are relative, so it needs no base of its own).
+      - run: bunx storybook build -o dist/storybook
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist
