@@ -6,7 +6,8 @@
 import { type Project, ProjectSchema, TemplateManifestSchema } from "./schema";
 import { isWysiwygEligible, kindOf } from "./vfs";
 
-const TEMPLATE_BASE = "/templates/uecetex2";
+// BASE_URL-prefixed: subpath deploys (GitHub Pages) serve templates under it.
+const TEMPLATE_BASE = `${import.meta.env.BASE_URL}templates/uecetex2`;
 
 export async function seedTemplate(): Promise<Project> {
   const manifestRes = await fetch(`${TEMPLATE_BASE}/manifest.json`);

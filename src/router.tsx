@@ -25,7 +25,12 @@ const sobreRoute = createRoute({
 
 const routeTree = rootRoute.addChildren([indexRoute, sobreRoute]);
 
-export const router = createRouter({ routeTree });
+// basepath keeps routes matching when the app is served under a subpath
+// (GitHub Pages abraaoalves.github.io/uecetexlive → BASE_URL "/uecetexlive/").
+export const router = createRouter({
+  routeTree,
+  basepath: import.meta.env.BASE_URL,
+});
 
 declare module "@tanstack/react-router" {
   interface Register {
