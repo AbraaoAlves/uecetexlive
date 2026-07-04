@@ -10,6 +10,12 @@ import {
 } from "@tiptap/react";
 import katex from "katex";
 import { useContext, useEffect, useMemo, useRef, useState } from "react";
+import {
+  editCell,
+  parseTable,
+  serializeTable,
+  tableRows,
+} from "@/features/latex-mapping/table-model";
 import { strings } from "@/lib/strings";
 import { cn } from "@/lib/utils";
 import { EditorResourcesContext } from "../resources";
@@ -310,41 +316,101 @@ export const LatexFigure = Node.create({
 });
 
 // ---------------------------------------------------------------------------
-// Table (read-only projection, §4.2)
+// Table (§4.2): editable grid for flat tabulars, read-only projection for
+// anything the grid model can't safely rebuild.
 // ---------------------------------------------------------------------------
 
-function TableView({ node, editor, getPos }: NodeViewProps) {
+function TableView({ node, editor, getPos, updateAttributes }: NodeViewProps) {
   const raw = (node.attrs.rawSource as string) ?? "";
+  const model = useMemo(() => parseTable(raw), [raw]);
+
+  const editAsLatex = () => {
+    const pos = getPos();
+    if (pos === undefined) return;
+    editor
+      .chain()
+      .focus()
+      .insertContentAt(
+        { from: pos, to: pos + node.nodeSize },
+        {
+          type: "rawLatexBlock",
+          content: raw ? [{ type: "text", text: raw }] : [],
+        },
+      )
+      .run();
+  };
+
+  // Fallback: no safely-editable grid (nested tabular, no rows) → read-only.
+  if (!model) {
+    return (
+      <NodeViewWrapper data-testid="table-node">
+        <div className="my-2 rounded-md border bg-surface p-3">
+          <div className="mb-1 flex items-center justify-between">
+            <span className="font-medium text-ink-muted text-xs">
+              {strings.editor.tableLabel}
+            </span>
+            <button
+              type="button"
+              className="text-accent text-xs hover:underline"
+              onClick={editAsLatex}
+            >
+              {strings.editor.editAsLatex}
+            </button>
+          </div>
+          <pre className="max-h-40 overflow-auto font-mono text-[11px] text-ink-subtle">
+            {raw}
+          </pre>
+        </div>
+      </NodeViewWrapper>
+    );
+  }
+
+  const rows = tableRows(model);
   return (
     <NodeViewWrapper data-testid="table-node">
       <div className="my-2 rounded-md border bg-surface p-3">
         <div className="mb-1 flex items-center justify-between">
-          <span className="font-medium text-ink-muted text-xs">Tabela (LaTeX)</span>
+          <span className="font-medium text-ink-muted text-xs">
+            {strings.editor.tableLabel}
+          </span>
           <button
             type="button"
+            data-testid="table-edit-latex"
             className="text-accent text-xs hover:underline"
-            onClick={() => {
-              const pos = getPos();
-              if (pos === undefined) return;
-              editor
-                .chain()
-                .focus()
-                .insertContentAt(
-                  { from: pos, to: pos + node.nodeSize },
-                  {
-                    type: "rawLatexBlock",
-                    content: raw ? [{ type: "text", text: raw }] : [],
-                  },
-                )
-                .run();
-            }}
+            onClick={editAsLatex}
           >
-            editar como LaTeX
+            {strings.editor.editAsLatex}
           </button>
         </div>
-        <pre className="max-h-40 overflow-auto font-mono text-[11px] text-ink-subtle">
-          {raw}
-        </pre>
+        <div className="overflow-x-auto">
+          <table className="w-full border-collapse text-sm" data-testid="table-grid">
+            <tbody>
+              {rows.map((row, r) => (
+                // biome-ignore lint/suspicious/noArrayIndexKey: row order is the table's identity
+                <tr key={r}>
+                  {row.cells.map((cell, c) => (
+                    // biome-ignore lint/suspicious/noArrayIndexKey: column order is stable
+                    <td key={c} className="border p-0">
+                      <input
+                        data-testid={`table-cell-${r}-${c}`}
+                        className="w-full min-w-24 bg-transparent px-2 py-1 outline-none focus:bg-accent-soft/40"
+                        defaultValue={cell}
+                        onBlur={(e) => {
+                          if (e.target.value === cell) return;
+                          updateAttributes({
+                            rawSource: serializeTable(
+                              editCell(model, r, c, e.target.value),
+                            ),
+                          });
+                        }}
+                      />
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </NodeViewWrapper>
   );
@@ -355,7 +421,12 @@ export const LatexTable = Node.create({
   group: "block",
   atom: true,
   addAttributes() {
-    return {};
+    // rawSource is the table's ground truth. Declared here (not only via the
+    // global FidelityAttributes) so it survives Node.fromJSON when the editor
+    // loads content — otherwise the whole table serializes back to nothing.
+    return {
+      rawSource: { default: null, rendered: false, keepOnSplit: false },
+    };
   },
   parseHTML: () => [{ tag: "div[data-latex-table]" }],
   renderHTML({ HTMLAttributes }) {

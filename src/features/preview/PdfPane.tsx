@@ -1,5 +1,5 @@
-import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { ZoomIn, ZoomOut } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { strings } from "@/lib/strings";
 import { cn } from "@/lib/utils";
 
@@ -9,13 +9,15 @@ export interface PdfPaneProps {
   compiling: boolean;
 }
 
+interface PdfPage {
+  getViewport(opts: { scale: number }): { width: number; height: number };
+  render(opts: unknown): { promise: Promise<void> };
+  getTextContent(): Promise<{ items: unknown[] }>;
+}
+
 interface PdfDoc {
   numPages: number;
-  getPage(n: number): Promise<{
-    getViewport(opts: { scale: number }): { width: number; height: number };
-    render(opts: unknown): { promise: Promise<void> };
-    getTextContent(): Promise<{ items: unknown[] }>;
-  }>;
+  getPage(n: number): Promise<PdfPage>;
 }
 
 /**
@@ -36,13 +38,17 @@ async function loadPdfjs() {
   return pdfjs;
 }
 
+const BASE_SCALE = 1.4;
+const PAGE_GAP = 16;
+
 export function PdfPane({ pdf, compiling }: PdfPaneProps) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
   const docRef = useRef<PdfDoc | null>(null);
   const taskRef = useRef<PdfLoadingTask | null>(null);
   const [numPages, setNumPages] = useState(0);
-  const [pageNum, setPageNum] = useState(1);
+  const [base, setBase] = useState<{ w: number; h: number } | null>(null);
   const [zoom, setZoom] = useState(1);
+  const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
     if (!pdf) return;
@@ -62,8 +68,16 @@ export function PdfPane({ pdf, compiling }: PdfPaneProps) {
       if (taskRef.current) void taskRef.current.destroy();
       taskRef.current = task;
       docRef.current = doc;
+
+      // Uniform layout sizing from page 1 (theses are single page size);
+      // each canvas still renders at its own true viewport.
+      const first = await doc.getPage(1);
+      if (cancelled) return;
+      const vp = first.getViewport({ scale: 1 });
+      setBase({ w: vp.width, h: vp.height });
       setNumPages(doc.numPages);
-      setPageNum((prev) => Math.min(prev, doc.numPages) || 1);
+      setCurrentPage(1);
+      if (scrollRef.current) scrollRef.current.scrollTop = 0;
 
       // e2e/debug hook: page count + text-layer extraction (Gate G2).
       (window as unknown as Record<string, unknown>).__uecetexPdf = {
@@ -96,25 +110,17 @@ export function PdfPane({ pdf, compiling }: PdfPaneProps) {
     };
   }, []);
 
-  useEffect(() => {
-    const doc = docRef.current;
-    const canvas = canvasRef.current;
-    if (!doc || !canvas || numPages === 0) return;
-    let cancelled = false;
-    (async () => {
-      const page = await doc.getPage(Math.min(pageNum, doc.numPages));
-      if (cancelled) return;
-      const viewport = page.getViewport({ scale: 1.4 * zoom });
-      canvas.width = viewport.width;
-      canvas.height = viewport.height;
-      const ctx = canvas.getContext("2d");
-      if (!ctx) return;
-      await page.render({ canvasContext: ctx, viewport }).promise;
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [pageNum, zoom, numPages]);
+  const scale = BASE_SCALE * zoom;
+  const pageNumbers = Array.from({ length: numPages }, (_, i) => i + 1);
+
+  // Track the page nearest the viewport top for the indicator.
+  const onScroll = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el || !base || numPages === 0) return;
+    const pageHeight = base.h * scale + PAGE_GAP;
+    const p = Math.floor(el.scrollTop / pageHeight) + 1;
+    setCurrentPage(Math.min(Math.max(1, p), numPages));
+  }, [base, scale, numPages]);
 
   if (!pdf) {
     return (
@@ -134,27 +140,9 @@ export function PdfPane({ pdf, compiling }: PdfPaneProps) {
       data-pages={numPages}
     >
       <div className="flex h-9 shrink-0 items-center justify-center gap-2 border-b bg-surface text-xs">
-        <button
-          type="button"
-          className="rounded p-1 hover:bg-accent-soft disabled:opacity-40"
-          onClick={() => setPageNum((p) => Math.max(1, p - 1))}
-          disabled={pageNum <= 1}
-          aria-label="Página anterior"
-        >
-          <ChevronLeft className="size-4" />
-        </button>
         <span data-testid="pdf-page-indicator">
-          {Math.min(pageNum, numPages)} / {numPages}
+          {Math.min(currentPage, numPages || 1)} / {numPages || 1}
         </span>
-        <button
-          type="button"
-          className="rounded p-1 hover:bg-accent-soft disabled:opacity-40"
-          onClick={() => setPageNum((p) => Math.min(numPages, p + 1))}
-          disabled={pageNum >= numPages}
-          aria-label="Próxima página"
-        >
-          <ChevronRight className="size-4" />
-        </button>
         <span className="mx-2 h-4 w-px bg-border" />
         <button
           type="button"
@@ -173,11 +161,28 @@ export function PdfPane({ pdf, compiling }: PdfPaneProps) {
           <ZoomIn className="size-4" />
         </button>
       </div>
-      <div className="flex-1 overflow-auto bg-ink/5 p-4">
-        <canvas
-          ref={canvasRef}
-          className={cn("mx-auto shadow-md", compiling && "opacity-60")}
-        />
+      <div
+        ref={scrollRef}
+        onScroll={onScroll}
+        className={cn(
+          "flex flex-1 flex-col items-center overflow-auto bg-ink/5 p-4",
+          compiling && "opacity-60",
+        )}
+        data-testid="pdf-scroll"
+        style={{ gap: `${PAGE_GAP}px` }}
+      >
+        {base &&
+          docRef.current &&
+          pageNumbers.map((pageNum) => (
+            <PdfPageCanvas
+              key={pageNum}
+              doc={docRef.current as PdfDoc}
+              pageNum={pageNum}
+              scale={scale}
+              base={base}
+              root={scrollRef.current}
+            />
+          ))}
       </div>
       {compiling && (
         <div className="absolute inset-x-0 top-9 flex justify-center">
@@ -186,6 +191,85 @@ export function PdfPane({ pdf, compiling }: PdfPaneProps) {
           </span>
         </div>
       )}
+    </div>
+  );
+}
+
+/**
+ * One PDF page, rendered lazily: a placeholder sized from page 1 holds scroll
+ * height until the page nears the viewport (IntersectionObserver), then the
+ * canvas paints at the true viewport. Leaving the viewport frees the bitmap
+ * so a 47-page thesis never holds 47 live canvases.
+ */
+function PdfPageCanvas({
+  doc,
+  pageNum,
+  scale,
+  base,
+  root,
+}: {
+  doc: PdfDoc;
+  pageNum: number;
+  scale: number;
+  base: { w: number; h: number };
+  root: HTMLElement | null;
+}) {
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const renderedScale = useRef<number | null>(null);
+
+  useEffect(() => {
+    const el = wrapRef.current;
+    if (!el) return;
+    let cancelled = false;
+
+    const renderPage = async () => {
+      if (renderedScale.current === scale) return;
+      const page = await doc.getPage(pageNum);
+      if (cancelled) return;
+      const viewport = page.getViewport({ scale });
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      canvas.width = viewport.width;
+      canvas.height = viewport.height;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+      await page.render({ canvasContext: ctx, viewport }).promise;
+      renderedScale.current = scale;
+    };
+
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            void renderPage();
+          } else if (renderedScale.current !== null) {
+            const canvas = canvasRef.current;
+            if (canvas) {
+              canvas.width = 0;
+              canvas.height = 0;
+            }
+            renderedScale.current = null;
+          }
+        }
+      },
+      { root, rootMargin: "600px 0px" },
+    );
+    io.observe(el);
+    return () => {
+      cancelled = true;
+      io.disconnect();
+    };
+  }, [doc, pageNum, scale, root]);
+
+  return (
+    <div
+      ref={wrapRef}
+      data-testid={`pdf-page-${pageNum}`}
+      className="shrink-0 bg-white shadow-md"
+      style={{ width: base.w * scale, height: base.h * scale }}
+    >
+      <canvas ref={canvasRef} className="block" />
     </div>
   );
 }

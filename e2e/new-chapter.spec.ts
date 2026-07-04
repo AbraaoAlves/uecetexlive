@@ -24,7 +24,7 @@ test("new chapter button creates file + \\input and opens it", async ({ page }) 
   // documento.tex got the \input spliced right after conclusao.
   await page.getByTestId("advanced-toggle").check();
   await page.getByTestId("rail-file-documento.tex").click();
-  await expect(page.getByTestId("source-editor")).toHaveValue(
+  await expect(page.getByTestId("source-editor-value")).toHaveValue(
     /\\input\{elementos-textuais\/conclusao\}\n\t\\input\{elementos-textuais\/estudo-de-caso\}/,
   );
 

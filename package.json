@@ -15,6 +15,12 @@
     "e2e": "playwright test"
   },
   "dependencies": {
+    "@codemirror/commands": "^6.10.4",
+    "@codemirror/language": "^6.12.4",
+    "@codemirror/legacy-modes": "^6.5.3",
+    "@codemirror/search": "^6.7.1",
+    "@codemirror/state": "^6.7.0",
+    "@codemirror/view": "^6.43.5",
     "@radix-ui/react-dialog": "^1.1.18",
     "@radix-ui/react-dropdown-menu": "^2.1.19",
     "@radix-ui/react-popover": "^1.1.18",
@@ -31,6 +37,7 @@
     "@unified-latex/unified-latex-types": "^1.8.4",
     "@unified-latex/unified-latex-util-parse": "^1.8.4",
     "clsx": "^2.1.1",
+    "codemirror": "^6.0.2",
     "fflate": "^0.8.3",
     "idb": "^8.0.3",
     "katex": "^0.17.0",
