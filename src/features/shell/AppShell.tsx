@@ -22,6 +22,7 @@ import {
   extractMetadata,
   TEMPLATE_PLACEHOLDER_TITLE,
 } from "@/features/project/metadata";
+import { chapterScaffold, insertChapterInput } from "@/features/project/new-chapter";
 import { rewriteInputOrder } from "@/features/project/reorder";
 import { seedTemplate } from "@/features/project/seed";
 import { ProjectProvider, useProject } from "@/features/project/store";
@@ -32,10 +33,12 @@ import {
   isWysiwygEligible,
   type RailSection,
   railSectionOf,
+  textToBytes,
 } from "@/features/project/vfs";
+import { countLatexWords } from "@/features/project/word-count";
 import { exportProjectZip, importProjectZip } from "@/features/project/zip";
 import { strings } from "@/lib/strings";
-import { cn } from "@/lib/utils";
+import { cn, slugify } from "@/lib/utils";
 import { CompileButton } from "./CompileButton";
 import { EngineToggle } from "./EngineToggle";
 import { ImportDialog, type ImportDialogState } from "./ImportDialog";
@@ -177,7 +180,12 @@ function ShellInner() {
   }, [setUi]);
 
   const currentFile = project?.files.find((f) => f.path === currentPath) ?? null;
-  const resources = useEditorResources(project, graph);
+  // Uploaded images land in the VFS without stealing the open editor.
+  const addImageFile = useCallback(
+    (path: string, bytes: Uint8Array) => createFile(path, bytes, { open: false }),
+    [createFile],
+  );
+  const resources = useEditorResources(project, graph, addImageFile);
 
   // Depends on the entry's *string* (not `project`): texSources rebuilds per
   // keystroke, but equal content yields the same primitive → memo holds.
@@ -199,6 +207,22 @@ function ShellInner() {
     currentFile.kind === "tex" &&
     isWysiwygEligible(currentFile.path);
   const showWysiwyg = wysiwygCapable && !sourceView;
+
+  // Word count (QA Fase 1): current prose file + whole work. The current-file
+  // memo keys on the source *string*, so it holds while typing elsewhere.
+  const currentProseSource =
+    wysiwygCapable && currentPath ? (texSources[currentPath] ?? "") : "";
+  const currentWords = useMemo(
+    () => countLatexWords(currentProseSource),
+    [currentProseSource],
+  );
+  const totalWords = useMemo(() => {
+    let sum = 0;
+    for (const [path, src] of Object.entries(texSources)) {
+      if (isWysiwygEligible(path)) sum += countLatexWords(src);
+    }
+    return sum;
+  }, [texSources]);
 
   const projectRefForKeys = useRef(project);
   projectRefForKeys.current = project;
@@ -293,6 +317,26 @@ function ShellInner() {
     if (window.confirm(`Criar ${target}?`)) {
       createFile(target, new TextEncoder().encode(""));
     }
+  };
+
+  const handleNewChapter = () => {
+    if (!project) return;
+    const title = window.prompt(strings.rail.newChapterPrompt)?.trim();
+    if (!title) return;
+    const slug = slugify(title) || "novo-capitulo";
+    let path = `elementos-textuais/${slug}.tex`;
+    for (let n = 2; project.files.some((f) => f.path === path); n++) {
+      path = `elementos-textuais/${slug}-${n}.tex`;
+    }
+    const target = path.replace(/\.tex$/, "");
+    try {
+      updateFileText(project.entry, insertChapterInput(entrySource, target));
+    } catch (err) {
+      window.alert((err as Error).message);
+      return;
+    }
+    setMetadataOpen(false);
+    createFile(path, textToBytes(chapterScaffold(title, slug)));
   };
 
   const reorderChapters = (from: string, to: string) => {
@@ -512,6 +556,7 @@ function ShellInner() {
               hiddenCount={hiddenCount}
               onSelect={handleSelect}
               onReorderChapters={reorderChapters}
+              onNewChapter={handleNewChapter}
               onOpenMetadata={() => setMetadataOpen(true)}
               metadataActive={metadataOpen}
               metadataPending={metadataPending}
@@ -528,7 +573,15 @@ function ShellInner() {
           ) : (
             <>
               {wysiwygCapable && (
-                <div className="flex h-8 shrink-0 items-center justify-end gap-1 border-b bg-surface px-2 text-xs">
+                <div className="flex h-8 shrink-0 items-center justify-between gap-1 border-b bg-surface px-2 text-xs">
+                  <span className="truncate text-ink-subtle" data-testid="word-count">
+                    {currentWords.toLocaleString("pt-BR")}{" "}
+                    {currentWords === 1
+                      ? strings.editor.wordSingular
+                      : strings.editor.wordsPlural}
+                    {" · "}
+                    {totalWords.toLocaleString("pt-BR")} {strings.editor.wordsInWork}
+                  </span>
                   <button
                     type="button"
                     data-testid="view-toggle"

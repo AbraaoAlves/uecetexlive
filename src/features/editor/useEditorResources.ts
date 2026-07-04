@@ -7,11 +7,20 @@ import { useEffect, useMemo, useRef } from "react";
 import type { IncludeGraph } from "@/features/project/include-graph";
 import type { Project } from "@/features/project/schema";
 import { bytesToText } from "@/features/project/vfs";
+import { slugify } from "@/lib/utils";
 import type { BibEntry, EditorResources } from "./resources";
+
+const UPLOAD_MAX_BYTES = 10 * 1024 * 1024;
+const UPLOAD_EXTENSIONS: Record<string, string> = {
+  png: "png",
+  jpg: "jpg",
+  jpeg: "jpg",
+};
 
 export function useEditorResources(
   project: Project | null,
   graph: IncludeGraph,
+  addFile?: (path: string, bytes: Uint8Array) => void,
 ): EditorResources {
   const urlCache = useRef(new Map<string, string>());
 
@@ -92,6 +101,20 @@ export function useEditorResources(
       labels: graph.labels,
       imageFiles: files.filter((f) => f.kind === "image").map((f) => f.path),
       codeFiles: files.filter((f) => f.kind === "code").map((f) => f.path),
+      uploadImage: async (file) => {
+        const rawExt = file.name.split(".").pop()?.toLowerCase() ?? "";
+        const ext = UPLOAD_EXTENSIONS[rawExt];
+        if (!addFile || !ext || file.size === 0 || file.size > UPLOAD_MAX_BYTES) {
+          return null;
+        }
+        const base = slugify(file.name.replace(/\.[^.]*$/, "")) || "figura";
+        let path = `figuras/${base}.${ext}`;
+        for (let n = 2; files.some((f) => f.path === path); n++) {
+          path = `figuras/${base}-${n}.${ext}`;
+        }
+        addFile(path, new Uint8Array(await file.arrayBuffer()));
+        return path;
+      },
     };
-  }, [project, graph]);
+  }, [project, graph, addFile]);
 }

@@ -18,6 +18,7 @@ const resources: EditorResources = {
   labels: ["cap:introducao", "sec:motivacao", "fig-grafico-1"],
   imageFiles: ["figuras/figura-1.jpg", "figuras/figura-3.png"],
   codeFiles: ["figuras/main.cpp"],
+  uploadImage: async (file) => `figuras/${file.name}`,
 };
 
 const meta = {

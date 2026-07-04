@@ -8,7 +8,9 @@ test("welcome → wizard fills title; documento.tex updated; persists", async ({
   page,
 }) => {
   await page.goto("/");
-  await expect(page.getByTestId("welcome-dialog")).toBeVisible();
+  // First boot on a cold preview server (seed + chunk download) can beat the
+  // default 5 s expect timeout — clicks elsewhere auto-wait far longer.
+  await expect(page.getByTestId("welcome-dialog")).toBeVisible({ timeout: 15_000 });
   await page.getByTestId("welcome-fill").click();
   await expect(page.getByTestId("metadata-wizard")).toBeVisible();
 

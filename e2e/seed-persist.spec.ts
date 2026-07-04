@@ -20,8 +20,9 @@ test("first boot seeds uecetex2 and the rail shows every section", async ({ page
   for (const section of ["root", "library"]) {
     await expect(page.getByTestId(`rail-section-${section}`)).toBeVisible();
   }
-  // Chapter order mirrors documento.tex's \input sequence.
-  const chapters = page.getByTestId("rail-section-chapters").locator("button");
+  // Chapter order mirrors documento.tex's \input sequence. Scope to the file
+  // list — the section header now carries the "+" new-chapter button.
+  const chapters = page.getByTestId("rail-section-chapters").locator("ul button");
   await expect(chapters.first()).toContainText("introducao.tex");
   await expect(chapters.nth(5)).toContainText("conclusao.tex");
 });
