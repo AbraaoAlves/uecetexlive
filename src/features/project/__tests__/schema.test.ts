@@ -74,12 +74,19 @@ describe("CompileSettingsSchema", () => {
 });
 
 describe("UiSettingsSchema", () => {
-  it("defaults to simple mode, expanded rail, wizard unseen", () => {
+  it("defaults to simple mode, expanded rail, wizard unseen, system theme", () => {
     expect(UiSettingsSchema.parse({})).toEqual({
       advancedMode: false,
       railCollapsed: false,
       welcomeSeen: false,
+      theme: "system",
     });
+  });
+
+  it("accepts the three theme values and rejects others", () => {
+    expect(UiSettingsSchema.parse({ theme: "dark" }).theme).toBe("dark");
+    expect(UiSettingsSchema.parse({ theme: "light" }).theme).toBe("light");
+    expect(UiSettingsSchema.safeParse({ theme: "sepia" }).success).toBe(false);
   });
 
   it("rejects legacy blobs with wrong types (falls back to defaults upstream)", () => {

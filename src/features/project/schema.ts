@@ -58,6 +58,8 @@ export const UiSettingsSchema = z.object({
   railCollapsed: z.boolean().default(false),
   /** First-run metadata wizard already shown/dismissed. */
   welcomeSeen: z.boolean().default(false),
+  /** Color theme; "system" follows the OS preference. */
+  theme: z.enum(["system", "light", "dark"]).default("system"),
 });
 export type UiSettings = z.infer<typeof UiSettingsSchema>;
 

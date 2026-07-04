@@ -99,6 +99,7 @@ export const strings = {
     stale: "Compilando…",
     logTab: "Log",
     pdfTab: "PDF",
+    invert: "Modo escuro do PDF (inverter cores)",
   },
   rescue: {
     corruptState:

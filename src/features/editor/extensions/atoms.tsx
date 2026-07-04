@@ -56,11 +56,14 @@ function EditPopover({
   onChange,
   onCommit,
   mono = true,
+  livePreview = false,
 }: {
   value: string;
   onChange: (v: string) => void;
   onCommit: () => void;
   mono?: boolean;
+  /** Render a live KaTeX preview of `value` under the textarea (math edit). */
+  livePreview?: boolean;
 }) {
   const ref = useRef<HTMLTextAreaElement>(null);
   useEffect(() => ref.current?.focus(), []);
@@ -79,6 +82,18 @@ function EditPopover({
           if (e.key === "Escape" || (e.key === "Enter" && e.ctrlKey)) onCommit();
         }}
       />
+      {livePreview && (
+        <div
+          className="mt-1.5 min-h-8 overflow-x-auto rounded border border-dashed bg-background px-2 py-1.5 text-center"
+          data-testid="math-live-preview"
+        >
+          {value.trim() ? (
+            <KatexView tex={value} display />
+          ) : (
+            <span className="text-ink-subtle text-xs">Pré-visualização</span>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -173,11 +188,22 @@ function MathInlineView({ node, updateAttributes }: NodeViewProps) {
   );
   return (
     <NodeViewWrapper as="span" className="relative" data-testid="math-inline">
-      <button type="button" onClick={() => pop.setOpen(true)} className="align-middle">
+      <button
+        type="button"
+        contentEditable={false}
+        onMouseDown={(e) => e.preventDefault()}
+        onClick={() => pop.setOpen(true)}
+        className="align-middle"
+      >
         <KatexView tex={node.attrs.tex as string} display={false} />
       </button>
       {pop.open && (
-        <EditPopover value={pop.value} onChange={pop.setValue} onCommit={pop.commit} />
+        <EditPopover
+          value={pop.value}
+          onChange={pop.setValue}
+          onCommit={pop.commit}
+          livePreview
+        />
       )}
     </NodeViewWrapper>
   );
@@ -212,13 +238,20 @@ function MathBlockView({ node, updateAttributes }: NodeViewProps) {
     <NodeViewWrapper className="relative" data-testid="math-block">
       <button
         type="button"
+        contentEditable={false}
+        onMouseDown={(e) => e.preventDefault()}
         onClick={() => pop.setOpen(true)}
         className="block w-full rounded p-2 text-center hover:bg-surface"
       >
         <KatexView tex={node.attrs.tex as string} display />
       </button>
       {pop.open && (
-        <EditPopover value={pop.value} onChange={pop.setValue} onCommit={pop.commit} />
+        <EditPopover
+          value={pop.value}
+          onChange={pop.setValue}
+          onCommit={pop.commit}
+          livePreview
+        />
       )}
     </NodeViewWrapper>
   );
