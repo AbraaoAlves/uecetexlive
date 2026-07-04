@@ -1,7 +1,13 @@
-import { ZoomIn, ZoomOut } from "lucide-react";
+import { Contrast, ZoomIn, ZoomOut } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { strings } from "@/lib/strings";
 import { cn } from "@/lib/utils";
+
+function isDarkTheme(): boolean {
+  return (
+    typeof document !== "undefined" && document.documentElement.classList.contains("dark")
+  );
+}
 
 export interface PdfPaneProps {
   pdf: Uint8Array | null;
@@ -49,6 +55,8 @@ export function PdfPane({ pdf, compiling }: PdfPaneProps) {
   const [base, setBase] = useState<{ w: number; h: number } | null>(null);
   const [zoom, setZoom] = useState(1);
   const [currentPage, setCurrentPage] = useState(1);
+  // Dark-comfort reading: default to inverted while the app is in dark theme.
+  const [invert, setInvert] = useState(isDarkTheme);
 
   useEffect(() => {
     if (!pdf) return;
@@ -160,6 +168,19 @@ export function PdfPane({ pdf, compiling }: PdfPaneProps) {
         >
           <ZoomIn className="size-4" />
         </button>
+        <button
+          type="button"
+          data-testid="pdf-invert"
+          aria-pressed={invert}
+          title={strings.preview.invert}
+          className={cn(
+            "rounded p-1 hover:bg-accent-soft",
+            invert && "bg-accent-soft text-accent-strong",
+          )}
+          onClick={() => setInvert((v) => !v)}
+        >
+          <Contrast className="size-4" />
+        </button>
       </div>
       <div
         ref={scrollRef}
@@ -181,6 +202,7 @@ export function PdfPane({ pdf, compiling }: PdfPaneProps) {
               scale={scale}
               base={base}
               root={scrollRef.current}
+              invert={invert}
             />
           ))}
       </div>
@@ -207,12 +229,14 @@ function PdfPageCanvas({
   scale,
   base,
   root,
+  invert,
 }: {
   doc: PdfDoc;
   pageNum: number;
   scale: number;
   base: { w: number; h: number };
   root: HTMLElement | null;
+  invert: boolean;
 }) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -267,7 +291,11 @@ function PdfPageCanvas({
       ref={wrapRef}
       data-testid={`pdf-page-${pageNum}`}
       className="shrink-0 bg-white shadow-md"
-      style={{ width: base.w * scale, height: base.h * scale }}
+      style={{
+        width: base.w * scale,
+        height: base.h * scale,
+        filter: invert ? "invert(1) hue-rotate(180deg)" : undefined,
+      }}
     >
       <canvas ref={canvasRef} className="block" />
     </div>

@@ -43,7 +43,9 @@ import { CompileButton } from "./CompileButton";
 import { EngineToggle } from "./EngineToggle";
 import { ImportDialog, type ImportDialogState } from "./ImportDialog";
 import { ProjectRail, type RailFile } from "./ProjectRail";
+import { ThemeToggle } from "./ThemeToggle";
 import { TopBar } from "./TopBar";
+import { useTheme } from "./useTheme";
 import { useUiSettings } from "./useUiSettings";
 import { WarmupProgress } from "./WarmupProgress";
 
@@ -91,6 +93,7 @@ function ShellInner() {
   const { ui, setUi, ready: uiReady } = useUiSettings();
   const advanced = ui.advancedMode;
   const railCollapsed = ui.railCollapsed;
+  useTheme(ui.theme, uiReady);
   const [metadataOpen, setMetadataOpen] = useState(false);
   const [previewTab, setPreviewTab] = useState<"pdf" | "log">("pdf");
   const [sourceView, setSourceView] = useState(false);
@@ -420,6 +423,7 @@ function ShellInner() {
         {compileState.status === "warming" && compileState.warmup && (
           <WarmupProgress {...compileState.warmup} />
         )}
+        <ThemeToggle theme={ui.theme} onChange={(theme) => setUi({ theme })} />
         <EngineToggle
           engine={compileState.engine}
           fullReady={false}
