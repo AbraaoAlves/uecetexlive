@@ -16,7 +16,7 @@ import { WelcomeDialog } from "@/features/metadata/WelcomeDialog";
 import { deleteProject } from "@/features/persistence/db";
 import { LogPane } from "@/features/preview/LogPane";
 import { PdfPane } from "@/features/preview/PdfPane";
-import { buildIncludeGraph } from "@/features/project/include-graph";
+import { buildIncludeGraph, type IncludeGraph } from "@/features/project/include-graph";
 import {
   applyMetadata,
   extractMetadata,
@@ -38,6 +38,7 @@ import {
 import { countLatexWords } from "@/features/project/word-count";
 import { exportProjectZip, importProjectZip } from "@/features/project/zip";
 import { strings } from "@/lib/strings";
+import { useDebouncedValue } from "@/lib/use-debounced-value";
 import { cn, slugify } from "@/lib/utils";
 import { CompileButton } from "./CompileButton";
 import { EngineToggle } from "./EngineToggle";
@@ -57,6 +58,15 @@ const EditorSurface = lazy(() =>
     default: m.EditorSurface,
   })),
 );
+
+/** Settle window for keystroke-heavy derivations (graph, total word count). */
+const DERIVED_MS = 300;
+const EMPTY_GRAPH: IncludeGraph = {
+  inputs: [],
+  labels: [],
+  bibliography: null,
+  bibliographyStyle: null,
+};
 
 const SECTION_RANK: Record<RailSection, number> = {
   root: 0,
@@ -133,12 +143,24 @@ function ShellInner() {
     return map;
   }, [project]);
 
+  // Heavy derivations (unified-latex include graph, whole-work word count)
+  // cost ~150 ms on the stock template and must not run per keystroke
+  // (QA rodada 4 §R4). They key on a debounced copy; per-keystroke reads
+  // (entrySource, currentWords) stay on the live map. Staleness is bounded
+  // by DERIVED_MS and every writer (createChapter, reorderChapters,
+  // applyWorkMetadata) splices the *live* source, never the graph.
+  const settledTexSources = useDebouncedValue(texSources, DERIVED_MS);
+  // Boot flush: the debounced copy starts empty and only catches up 300 ms
+  // after the project loads. Deriving from it that early makes the rail
+  // order/labels pop in late and flips the node-view context identity while
+  // the student may already be typing (lost-keystroke e2e flake). Until the
+  // debounce has caught up once, derive from the live map.
+  const derivedTexSources =
+    Object.keys(settledTexSources).length > 0 ? settledTexSources : texSources;
+  const entryPath = project?.entry ?? null;
   const graph = useMemo(
-    () =>
-      project
-        ? buildIncludeGraph(texSources, project.entry)
-        : { inputs: [], labels: [], bibliography: null, bibliographyStyle: null },
-    [project, texSources],
+    () => (entryPath ? buildIncludeGraph(derivedTexSources, entryPath) : EMPTY_GRAPH),
+    [derivedTexSources, entryPath],
   );
 
   const visibleFiles = useMemo(() => {
@@ -268,11 +290,11 @@ function ShellInner() {
   );
   const totalWords = useMemo(() => {
     let sum = 0;
-    for (const [path, src] of Object.entries(texSources)) {
+    for (const [path, src] of Object.entries(derivedTexSources)) {
       if (isWysiwygEligible(path)) sum += countLatexWords(src);
     }
     return sum;
-  }, [texSources]);
+  }, [derivedTexSources]);
 
   // Escape closes the app menu regardless of where focus sits (QA §M4).
   useEffect(() => {

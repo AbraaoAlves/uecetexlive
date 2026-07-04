@@ -20,6 +20,8 @@ const UPLOAD_EXTENSIONS: Record<string, string> = {
   pdf: "pdf",
 };
 
+const NO_FILES: Project["files"] = [];
+
 export function useEditorResources(
   project: Project | null,
   graph: IncludeGraph,
@@ -36,40 +38,62 @@ export function useEditorResources(
     };
   }, []);
 
-  return useMemo<EditorResources>(() => {
-    const files = project?.files ?? [];
+  // Identity firewall (QA rodada 4 §R4): `project` and `graph` get a new
+  // identity on every keystroke, but the *content* the resources depend on
+  // rarely changes. Closures read the live refs; the memos key on cheap
+  // value-equal strings so `resources` keeps its identity while typing —
+  // otherwise every citation/figure node view re-renders per keystroke and
+  // the whole .bib is re-parsed.
+  const files = project?.files ?? NO_FILES;
+  const filesRef = useRef(files);
+  filesRef.current = files;
+  const graphRef = useRef(graph);
+  graphRef.current = graph;
 
-    const bibEntries: BibEntry[] = [];
-    const bibPath = graph.bibliography
-      ? `${graph.bibliography.replace(/\.bib$/, "")}.bib`
-      : null;
-    const bibFile = files.find((f) => f.path === bibPath);
-    if (bibFile) {
-      try {
-        const parsed = parseBib(bytesToText(bibFile.bytes));
-        for (const entry of parsed.entries) {
-          const fields = entry.fields as Record<string, unknown>;
-          const authors = (fields.author ?? fields.editor) as
-            | { lastName?: string }[]
-            | undefined;
-          bibEntries.push({
-            key: entry.key,
-            author: authors?.[0]?.lastName ?? "—",
-            title: typeof fields.title === "string" ? fields.title : "",
-            year: typeof fields.year === "string" ? fields.year : "s.d.",
-          });
-        }
-      } catch {
-        // Malformed bib → picker shows nothing; compile errors surface it.
+  const bibPath = graph.bibliography
+    ? `${graph.bibliography.replace(/\.bib$/, "")}.bib`
+    : null;
+  const bibFile = bibPath ? files.find((f) => f.path === bibPath) : undefined;
+  // Decoding ~KBs per render is negligible; equal content yields the same
+  // string primitive, so the parse memo below holds while typing prose.
+  const bibText = bibFile ? bytesToText(bibFile.bytes) : null;
+
+  const bibEntries = useMemo<BibEntry[]>(() => {
+    if (bibText === null) return [];
+    const entries: BibEntry[] = [];
+    try {
+      const parsed = parseBib(bibText);
+      for (const entry of parsed.entries) {
+        const fields = entry.fields as Record<string, unknown>;
+        const authors = (fields.author ?? fields.editor) as
+          | { lastName?: string }[]
+          | undefined;
+        entries.push({
+          key: entry.key,
+          author: authors?.[0]?.lastName ?? "—",
+          title: typeof fields.title === "string" ? fields.title : "",
+          year: typeof fields.year === "string" ? fields.year : "s.d.",
+        });
       }
+    } catch {
+      // Malformed bib → picker shows nothing; compile errors surface it.
     }
+    return entries;
+  }, [bibText]);
+
+  const pathsKey = files.map((f) => `${f.kind}:${f.path}`).join("\n");
+  const labelsKey = graph.labels.join("\n");
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: pathsKey/labelsKey are content stand-ins for the per-keystroke files/graph identities read via refs inside.
+  return useMemo<EditorResources>(() => {
     const byKey = new Map(bibEntries.map((e) => [e.key, e]));
+    const current = filesRef.current;
 
     return {
       imageUrl: (path) => {
         const cached = urlCache.current.get(path);
         if (cached) return cached;
-        const file = files.find(
+        const file = filesRef.current.find(
           (f) =>
             f.path === path ||
             f.path === `${path}.png` ||
@@ -89,7 +113,7 @@ export function useEditorResources(
         return url;
       },
       textFilePreview: (path, lines) => {
-        const file = files.find((f) => f.path === path);
+        const file = filesRef.current.find((f) => f.path === path);
         if (!file) return null;
         return bytesToText(file.bytes).split("\n").slice(0, lines).join("\n");
       },
@@ -101,14 +125,14 @@ export function useEditorResources(
           })
           .join("; ")})`,
       bibEntries,
-      labels: graph.labels,
-      imageFiles: files
+      labels: graphRef.current.labels,
+      imageFiles: current
         .filter(
           (f) =>
             f.kind === "image" || (f.kind === "pdf" && f.path.startsWith("figuras/")),
         )
         .map((f) => f.path),
-      codeFiles: files.filter((f) => f.kind === "code").map((f) => f.path),
+      codeFiles: current.filter((f) => f.kind === "code").map((f) => f.path),
       uploadImage: async (file) => {
         const rawExt = file.name.split(".").pop()?.toLowerCase() ?? "";
         const ext = UPLOAD_EXTENSIONS[rawExt];
@@ -117,12 +141,12 @@ export function useEditorResources(
         }
         const base = slugify(file.name.replace(/\.[^.]*$/, "")) || "figura";
         let path = `figuras/${base}.${ext}`;
-        for (let n = 2; files.some((f) => f.path === path); n++) {
+        for (let n = 2; filesRef.current.some((f) => f.path === path); n++) {
           path = `figuras/${base}-${n}.${ext}`;
         }
         addFile(path, new Uint8Array(await file.arrayBuffer()));
         return path;
       },
     };
-  }, [project, graph, addFile]);
+  }, [bibEntries, pathsKey, labelsKey, addFile]);
 }

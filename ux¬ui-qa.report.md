@@ -46,7 +46,7 @@ Todos os itens abaixo foram corrigidos e verificados no browser, exceto **C2 (re
 | R1 Modal "Dados do Trabalho" pequeno demais (scroll desnecessário) | ✅ corrigido | Card de 34rem×max-w-xl → **46rem×max-w-2xl** (limitado a 90vh); conteúdo interno passou a ocupar a largura toda |
 | R2 Seções do rail não são retráteis | ✅ corrigido | Cabeçalhos (Pré-textuais, Capítulos, Pós-textuais, Anexos…) viraram botões com chevron; estado persistido em `UiSettings.collapsedSections` (IndexedDB), como o colapso do rail |
 | R3 Seção "Figuras" com nome errado | ✅ corrigido | Renomeada para **"Anexos"** — aceita imagem, PDF e código desde o §A4 (pasta no VFS continua `figuras/`) |
-| R4 Digitação travada no editor visual | 🔍 diagnosticado (correção não solicitada) | Ver análise abaixo |
+| R4 Digitação travada no editor visual | ✅ corrigido | Ver análise e correção abaixo |
 
 ### R4 — Por que digitar trava: diagnóstico exato
 
@@ -63,6 +63,14 @@ Cadeia por tecla (todas as etapas são síncronas, no mesmo frame do keydown):
 Custos medidos que **não** são o problema: `serializeDoc` (<0,1 ms, cache de rawSource), `bytesToText` de todos os .tex (0,12 ms), plugin de busca (early-return com query vazia), RawSourceGuard (escaneia só os ranges alterados).
 
 **Direção de correção (quando for pedida):** derivar `graph`/`resources`/`totalWords` com debounce (ou `useDeferredValue`), e/ou keyar os memos no **conteúdo** dos arquivos não abertos (que não muda ao digitar) em vez da identidade de `project`; `parseBib` só precisa rodar quando `referencias.bib` mudar. Nenhuma dessas derivadas precisa ser síncrona com a tecla.
+
+**Correção aplicada (mesma sessão), em três frentes:**
+
+1. **Debounce das derivadas pesadas** — `useDebouncedValue` (novo, `src/lib/use-debounced-value.ts`): `graph` e `totalWords` passam a derivar de uma cópia de `texSources` que só assenta 300 ms após a última tecla. Custo por tecla dessas derivadas: **zero**. Staleness de 300 ms é inócua: todo escritor (`createChapter`, `reorderChapters`, `applyWorkMetadata`) splica a fonte *viva*, nunca o grafo — e o único fluxo sensível (reordenar capítulo) passa por um `window.confirm`, muito mais lento que 300 ms.
+2. **Cache por conteúdo no `buildIncludeGraph`** — o scan de cada arquivo (inputs/labels/bib) é função pura da string; memoizado num `Map` (teto de 256). O rebuild pós-pausa re-parseia **só o arquivo editado**: 238 ms frio → **63 ms** (maior capítulo, 22 KB) → **0,02 ms** com tudo em cache. A resolução de `\input` fica fora do cache (continua viva).
+3. **Firewall de identidade no `useEditorResources`** — o parse do `.bib` é keyado no **conteúdo** do arquivo (string), não na identidade de `project`; listas de imagens/código keyadas por chave de caminhos; closures leem refs vivas. `resources` mantém a mesma identidade enquanto se digita → chips de citação e figuras **não re-renderizam mais a cada tecla** e o `.bib` só re-parseia quando muda.
+
+Resultado: o trabalho por tecla cai de ~155 ms (template padrão; 400–700 ms num TCC real) para o custo base do editor (~1–2 ms de getJSON/serialize/encode), com um único rebuild de ~63 ms até 300 ms depois da pausa. Cobertura: 6 testes novos (debounce colapsando rajadas, invalidação do cache do scan, estabilidade de identidade + leituras vivas dos resources).
 
 ---
 

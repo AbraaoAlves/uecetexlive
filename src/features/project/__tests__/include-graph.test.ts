@@ -111,4 +111,20 @@ describe("buildIncludeGraph", () => {
     const missing = graph.inputs.filter((i) => i.resolved === null);
     expect(missing.length).toBe(5);
   });
+
+  it("re-scans a file when its content changes (per-file scan cache)", () => {
+    const files = {
+      "main.tex": "\\input{a}\n",
+      "a.tex": "\\label{sec:um}\n",
+    };
+    expect(buildIncludeGraph(files, "main.tex").labels).toEqual(["sec:um"]);
+    // Equal content strings → cache hit; the result must be identical.
+    expect(buildIncludeGraph({ ...files }, "main.tex").labels).toEqual(["sec:um"]);
+    // Edited content → cache miss; the new label must surface.
+    const edited = { ...files, "a.tex": "\\label{sec:um}\n\\label{sec:dois}\n" };
+    expect(buildIncludeGraph(edited, "main.tex").labels).toEqual(["sec:um", "sec:dois"]);
+    // Resolution stays live even on cache hits: same content, fewer files.
+    const orphaned = buildIncludeGraph({ "main.tex": files["main.tex"] }, "main.tex");
+    expect(orphaned.inputs[0]?.resolved).toBeNull();
+  });
 });
