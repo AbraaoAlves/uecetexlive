@@ -21,5 +21,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 Third-party components retain their own licenses; see THIRD_PARTY.md. The
-busytex WASM toolchain and TeX Live slices aggregate GPL/LPPL/permissive
-licenses and are served unmodified.
+bundled SwiftLaTeX draft engine is AGPL-3.0 (patched); the busytex WASM
+toolchain and TeX Live slices aggregate GPL/LPPL/permissive licenses and are
+served unmodified.

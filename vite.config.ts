@@ -19,18 +19,35 @@ export default defineConfig({
       registerType: "autoUpdate",
       // The WASM/TeX payload is huge (>200 MB) and content-stable. We do NOT
       // precache it (precache is the app shell only); it is runtime
-      // cache-first so the first warmup fills the cache and the app then
-      // works fully offline (§11.3 — "funciona no avião"). The worker source
-      // (src/sw.ts, D12) also decompresses the gzip sidecars that the deploy
-      // publishes for hosts that can't compress large binaries.
-      strategies: "injectManifest",
-      srcDir: "src",
-      filename: "sw.ts",
-      injectManifest: {
+      // cache-first so the first Completa warmup fills the cache and the app
+      // then works fully offline (§11.3 — "funciona no avião").
+      workbox: {
         globPatterns: ["**/*.{js,css,html,svg,woff2}"],
         // The app shell is small; the WASM/TeX trees are handled at runtime.
         globIgnores: ["**/wasm/**", "**/templates/**"],
         maximumFileSizeToCacheInBytes: 8 * 1024 * 1024,
+        // Storybook is deployed as a sibling static site under the SW's
+        // scope (${base}storybook/) — without the denylist entry, offline
+        // navigations to it would be hijacked into the app shell.
+        navigateFallbackDenylist: [
+          new RegExp(`^${base}wasm/`),
+          new RegExp(`^${base}templates/`),
+          new RegExp(`^${base}storybook/`),
+        ],
+        runtimeCaching: [
+          {
+            // Serialized into sw.js — must not close over `base`. Matching
+            // the path segment covers both "/" and subpath deploys.
+            urlPattern: /\/(wasm|templates)\//,
+            handler: "CacheFirst",
+            options: {
+              cacheName: "uecetex-assets",
+              cacheableResponse: { statuses: [0, 200] },
+              expiration: { maxEntries: 6000 },
+              rangeRequests: true,
+            },
+          },
+        ],
       },
       manifest: {
         name: "UeceTexLive",

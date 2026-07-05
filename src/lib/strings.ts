@@ -11,9 +11,6 @@ export const strings = {
     compile: "Compilar",
     compiling: "Compilando…",
     warming: "Preparando motor…",
-    idleWarmup: "Preparando motor:",
-    idleWarmupHint:
-      "Baixando o compilador LaTeX em segundo plano (~150 MB, uma única vez) — você já pode escrever.",
     export: "Exportar",
     exportPdf: "Baixar PDF",
     exportZip: "Exportar projeto (.zip)",
@@ -29,10 +26,8 @@ export const strings = {
   engine: {
     draft: "Rascunho",
     full: "Completa",
-    draftHint:
-      "Uma passagem rápida do pdfLaTeX — citações aparecem como [?]. Ideal enquanto você escreve.",
-    fullHint:
-      "Resolve bibliografia, glossário e índice (várias passagens) — mais lenta. Use para o PDF final.",
+    fullWarning:
+      "A compilação completa baixa ~100 MB na primeira vez (uma única vez — fica salvo no navegador) e resolve bibliografia, glossário e índice. O rascunho é instantâneo, mas mostra [?] nas citações.",
     draftBanner:
       "Modo rascunho: citações, glossário e índice não são resolvidos. Use a compilação Completa para o PDF final.",
   },
