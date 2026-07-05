@@ -1,3 +1,4 @@
+import * as TooltipPrimitive from "@radix-ui/react-tooltip";
 import {
   createRootRoute,
   createRoute,
@@ -8,7 +9,11 @@ import { IndexRoute } from "@/routes/index";
 import { SobreRoute } from "@/routes/sobre";
 
 const rootRoute = createRootRoute({
-  component: () => <Outlet />,
+  component: () => (
+    <TooltipPrimitive.Provider delayDuration={400}>
+      <Outlet />
+    </TooltipPrimitive.Provider>
+  ),
 });
 
 const indexRoute = createRoute({

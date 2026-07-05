@@ -136,6 +136,7 @@
         "vitest": "^4.1.9",
       },
       "peerDependencies": {
+        "@radix-ui/react-tooltip": "^1.2.11",
         "@tiptap/core": "^3.0.0",
         "@tiptap/extension-blockquote": "^3.0.0",
         "@tiptap/extension-bold": "^3.0.0",
