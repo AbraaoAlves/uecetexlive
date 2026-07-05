@@ -9,6 +9,11 @@
   "scripts": {
     "check": "tsc --noEmit && vitest run"
   },
+  "dependencies": {
+    "fflate": "^0.8.3",
+    "idb": "^8.0.3",
+    "zod": "^4.4.3"
+  },
   "devDependencies": {
     "happy-dom": "^20.10.6",
     "typescript": "^6.0.3",
