@@ -1,6 +1,7 @@
 import { expect, it } from "vitest";
-import { PACKAGE_NAME } from "./index";
+import { parseLatex, serializeDoc } from "./index";
 
-it("está ligado ao check do workspace", () => {
-  expect(PACKAGE_NAME).toBe("@uecetexlive/latex-mapping");
+it("round-trip byte-idêntico via entry do pacote", () => {
+  const src = "\\chapter{Intro}\n\nOlá \\cite{a1}.\n";
+  expect(serializeDoc(parseLatex(src).doc)).toBe(src);
 });

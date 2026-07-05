@@ -1,2 +1,6 @@
-/** Casca da Fase 0 — o conteúdo real chega na fase de extração deste pacote. */
-export const PACKAGE_NAME = "@uecetexlive/latex-mapping";
+export { ABNT_CITATION_PROFILE, type CitationProfile } from "./citation-profile";
+export { parseLatex } from "./parse";
+export { escapeText, serializeBlock, serializeDoc, serializeInline } from "./serialize";
+export { type ArgSlices, sliceArgs } from "./slice-args";
+export * from "./table-model";
+export type { ParseResult, PMDoc, PMMark, PMNode } from "./types";
