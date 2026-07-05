@@ -43,6 +43,9 @@ jobs:
       - run: bun run build
         env:
           BASE_PATH: /uecetexlive/
+      # GitHub Pages can't compress the big binaries — publish gzip sidecars
+      # that the service worker decompresses client-side (D12).
+      - run: ./scripts/precompress-wasm.sh dist/wasm/busytex
       # GitHub Pages has no SPA rewrite: deep links (/sobre) must fall back
       # to the app shell via the 404 page.
       - run: cp dist/index.html dist/404.html

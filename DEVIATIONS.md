@@ -117,6 +117,42 @@ a persistent `--fmt` warm dump, or sourcing a non-AGPL fast draft engine.
 Full detail of what was tried lives in `git show 559de78` and this revert
 commit.
 
+## D12 — GitHub Pages deploy: gzip sidecars + idle warmup, re-added standalone (2026-07-05)
+
+The deploy-side half of the D11 attempt was re-added on its own, scoped only
+to the busytex engine (SwiftLaTeX draft doesn't need it — its own assets are
+a couple MB, fetched on demand). Two measures so the ~220 MB busytex payload
+(218 MB on disk) hurts less on the target host:
+
+- **gzip sidecars.** GitHub Pages offers no header control and no on-the-fly
+  compression for `application/octet-stream`/`wasm` — the payload would cross
+  the wire raw. `scripts/precompress-wasm.sh` (run by deploy.yml after the
+  build, scoped to `dist/wasm/busytex`) publishes `*.data.gz` + `busytex.wasm.gz`
+  next to the originals (kept as a no-SW fallback), and the service worker —
+  a custom `src/sw.ts` (`strategies: "injectManifest"`; precache and runtime
+  routes match the old generateSW config) — fetches the sidecar, decompresses
+  it via `DecompressionStream("gzip")` and caches the *decompressed* bytes
+  under the original URL. Missing sidecar (dev/preview/CI serve the raw
+  vendored files) falls back to the original URL; SPA-fallback HTML (the D7
+  lesson) is detected via content-type, and hosts that transparently
+  content-decode are handled by peeking the gzip magic bytes.
+- **Idle warmup.** `useIdleWarmup` starts the one-time busytex warmup shortly
+  after boot — after `navigator.serviceWorker.ready`, so the download flows
+  through the sidecar route — with a discreet topbar indicator ("Preparando
+  motor completo: NN%", `IdleWarmupIndicator`) that yields to the compile
+  flow's own warmup UI. Guards: skipped under `navigator.webdriver` (an eager
+  ~150 MB fetch per page would sink e2e machines) and
+  `navigator.connection.saveData`; localStorage `uecetexlive:idle-warmup` =
+  `force` / `off` overrides. `BusytexFullCompiler.warmup` fans progress out to
+  a listener set (late subscribers get the last event), so clicking Compilar
+  (Completa) mid-prefetch still shows byte progress instead of going quiet.
+  SwiftLaTeX (Rascunho) has its own, separate warmup — unaffected.
+
+Unlike the original D12 (bundled with D11), this one only ever warms
+`busytex-full`; there is no unified compiler to warm "either mode" through.
+`e2e/sw-gzip.spec.ts` validates the SW serves busytex `.data` byte-perfect in
+both the sidecar and raw layouts, without booting the engine.
+
 ## Gate status (final)
 
 | Gate | Status | Evidence |

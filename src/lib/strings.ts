@@ -22,6 +22,9 @@ export const strings = {
     saving: "Salvando…",
     saved: "Salvo",
     toggleRail: "Mostrar/ocultar painel de arquivos",
+    idleWarmup: "Preparando motor completo:",
+    idleWarmupHint:
+      "Baixando o motor da compilação Completa em segundo plano (~150 MB, uma única vez) — você já pode escrever e usar o Rascunho normalmente.",
   },
   engine: {
     draft: "Rascunho",

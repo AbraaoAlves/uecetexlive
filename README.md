@@ -9,15 +9,17 @@ figures, bibliography, glossary, index, code listings — and compiles it to a
 submission-quality PDF entirely in the browser via WebAssembly, edited through
 a Notion-grade WYSIWYG editor built on Tiptap.
 
-No backend, no accounts, no server compile, no telemetry. After the first
-full-build warmup the app works fully **offline**.
+No backend, no accounts, no server compile, no telemetry. The Completa
+engine downloads once in the background shortly after boot (~150 MB
+compressed on the wire, ~220 MB in the cache — see `DEVIATIONS.md` D12); the
+app then works fully **offline**.
 
 ## Two compile engines, one button
 
 | Mode | Engine | Speed | Resolves |
 | --- | --- | --- | --- |
 | **Rascunho** (draft) | SwiftLaTeX pdfTeX (TL 2020) | ~3 s | layout only — citations show `[?]` |
-| **Completa** (full) | busytex: pdfTeX + bibtex8 + makeindex ×2 | ~1–3 min (after a one-time ~100 MB download) | bibliography, glossary **and** index |
+| **Completa** (full) | busytex: pdfTeX + bibtex8 + makeindex ×2 | ~1–4 min (after a one-time ~150 MB compressed download) | bibliography, glossary **and** index |
 
 ## Quickstart (users)
 
@@ -59,6 +61,7 @@ from it (all the hard-won reality) are in [`DEVIATIONS.md`](DEVIATIONS.md).
 | Pass orchestration | `src/features/compiler/orchestrator.ts` | latexmk-in-TS fixpoint (pure, TDD) |
 | busytex worker | `public/wasm/busytex/uecetexlive.worker.js` | see [`docs/busytex-integration.md`](docs/busytex-integration.md) |
 | SwiftLaTeX pipeline | [`docs/prototype-compile-pipeline.md`](docs/prototype-compile-pipeline.md) | the TeX Live URL contract + 3 engine patches |
+| Service worker | `src/sw.ts` | app-shell precache + gzip-sidecar decompression for the busytex payload on Pages (D12) |
 | LaTeX ⇄ ProseMirror | `src/features/latex-mapping/` | byte-identity + stability invariants (pure, TDD) |
 | WYSIWYG editor | `src/features/editor/` | Tiptap extension suite, node views, slash/bubble menus |
 | Project model | `src/features/project/` | Zod schema, include graph, zip, reorder (pure, TDD) |
