@@ -86,6 +86,14 @@ if [ ! -f "$INJECT/abntex2.cls" ]; then
   exit 1
 fi
 
+# l3backend-pdfmode.def stub: busytex's bundled l3kernel exposes "pdfmode" as
+# a backend choice but its alias-resolution to l3backend-pdftex/luatex.def is
+# incomplete, so the deferred \begin{document} load asks for a file no real
+# TeX Live release ships (docs/prototype-compile-pipeline.md §7 — same trap
+# hit by the SwiftLaTeX .fmt; same empty-stub fix, see
+# public/wasm/swiftlatex/texlive/pdftex/26/l3backend-pdfmode.def).
+printf '%s\n' '\endinput' > "$INJECT/l3backend-pdfmode.def"
+
 # cm-super typewriter subset (see DEVIATIONS.md): the busytex bundles ship no
 # cm-super, so T1-encoded typewriter (ectt*, used by listings/\texttt under
 # fontenc T1) has no Type1 outline and pdfTeX dies trying to fork mktexpk.

@@ -232,6 +232,15 @@ document rendering is unaffected.
   source files into memfs and running ini-mode pdftex).
 - Reach SwiftLaTeX maintainers for the custom L3 source.
 
+Same trap, different engine: busytex's bundled l3kernel also exposes
+`pdfmode` as a `sys/backend` choice (real, current l3kernel — confirmed
+against CTAN), but the alias-resolution to `l3backend-pdftex.def` /
+`luatex.def` (`\__sys_load_backend_check:N`) is missing or incomplete in the
+vendored snapshot, so the deferred `\begin{document}` load asks for
+`l3backend-pdfmode.def` verbatim and no real TeX Live release ships that
+file. `scripts/vendor-busytex.sh` writes the same empty-stub workaround into
+the inject pack (`public/wasm/busytex/inject/l3backend-pdfmode.def`).
+
 ---
 
 ## 8. The TL package sync script
