@@ -1,11 +1,5 @@
 # In-browser LaTeX compile via SwiftLaTeX WASM — what we learned
 
-> **Historical record.** The SwiftLaTeX engine, its TL2020 slice
-> (`public/wasm/swiftlatex/`) and `scripts/sync-texlive-cache.sh` were
-> **removed in July 2026** (`DEVIATIONS.md` D11) — draft mode now runs on
-> busytex (`docs/busytex-integration.md`). Nothing below is live code; the
-> file paths it cites no longer exist.
-
 Everything reverse-engineered while turning the bundled SwiftLaTeX engine
 from "silent 2-hour hang on first compile" into "1-second offline PDF of a
 non-trivial ABNT template." Read this before extending the compile path or

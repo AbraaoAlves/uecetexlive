@@ -9,7 +9,7 @@ import { getCompiler } from "./index";
 import type { CompileResult } from "./types";
 
 export type CompileStatus = "idle" | "warming" | "compiling" | "ok" | "error";
-export type EngineId = "busytex-draft" | "busytex-full";
+export type EngineId = "swiftlatex-draft" | "busytex-full";
 
 export interface CompileState {
   status: CompileStatus;
@@ -22,7 +22,7 @@ export interface CompileState {
 
 const initial: CompileState = {
   status: "idle",
-  engine: "busytex-draft",
+  engine: "swiftlatex-draft",
   warmup: null,
   progress: null,
   result: null,
@@ -53,7 +53,7 @@ export function useCompile() {
           warmup: null,
           error: null,
         }));
-        const compiler = await getCompiler();
+        const compiler = await getCompiler(engine);
         await compiler.warmup((loaded, total, label) => {
           setState((prev) => ({ ...prev, warmup: { loaded, total, label } }));
         });

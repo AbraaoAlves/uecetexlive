@@ -5,19 +5,23 @@ storybook-static/
 coverage/
 
 # vendored heavyweights (fetched by scripts/, never committed).
+# The three SwiftLaTeX engine files ARE committed: the two .js carry mandatory
+# patches and the upstream distribution point is fragile (see docs/).
 public/wasm/busytex/*
 !public/wasm/busytex/manifest.json
 !public/wasm/busytex/uecetexlive.worker.js
+public/wasm/swiftlatex/texlive/
 
 # e2e
 test-results/
 playwright-report/
 blob-report/
 
+# …but test fixtures are real inputs, not build noise.
+!src/features/compiler/__tests__/fixtures/*.log
+
 # misc
 .DS_Store
 *.local
 *.log
-# …but test fixtures are real inputs, not build noise.
-!src/features/compiler/__tests__/fixtures/*.log
 .gstack/

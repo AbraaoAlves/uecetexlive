@@ -50,14 +50,12 @@ test("draft mode: fast compile with [?] citations notice", async ({ page }) => {
   await page.getByTestId("preview-tab-pdf").click();
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
-  const warmStarted = Date.now();
   await page.getByTestId("compile-button").click();
   await expect(page.getByTestId("compile-button")).toHaveAttribute(
     "data-status",
     /ok|error/,
     { timeout: 200_000 },
   );
-  console.log(`[draft] warm recompile finished in ${Date.now() - warmStarted}ms`);
   await expect(page.getByTestId("pdf-pane")).toHaveAttribute("data-pages", /^[1-9]\d*$/, {
     timeout: 30_000,
   });

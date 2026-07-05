@@ -4,27 +4,35 @@ import { cn } from "@/lib/utils";
 
 export interface EngineToggleProps {
   engine: EngineId;
+  /** Full engine assets already in cache? Drives the size warning. */
+  fullReady: boolean;
   onChange: (engine: EngineId) => void;
 }
 
-export function EngineToggle({ engine, onChange }: EngineToggleProps) {
+export function EngineToggle({ engine, fullReady, onChange }: EngineToggleProps) {
+  const pick = (next: EngineId) => {
+    if (next === "busytex-full" && engine !== "busytex-full" && !fullReady) {
+      if (!window.confirm(strings.engine.fullWarning)) return;
+    }
+    onChange(next);
+  };
+
   return (
     <div
       className="flex items-center rounded-md border bg-surface p-0.5 text-xs"
       role="radiogroup"
-      aria-label="Modo de compilação"
+      aria-label="Motor de compilação"
       data-testid="engine-toggle"
     >
       <button
         type="button"
         role="radio"
-        aria-checked={engine === "busytex-draft"}
+        aria-checked={engine === "swiftlatex-draft"}
         data-testid="engine-draft"
-        title={strings.engine.draftHint}
-        onClick={() => onChange("busytex-draft")}
+        onClick={() => pick("swiftlatex-draft")}
         className={cn(
           "rounded px-2 py-1",
-          engine === "busytex-draft"
+          engine === "swiftlatex-draft"
             ? "bg-accent text-accent-foreground"
             : "text-ink-muted hover:text-foreground",
         )}
@@ -36,8 +44,8 @@ export function EngineToggle({ engine, onChange }: EngineToggleProps) {
         role="radio"
         aria-checked={engine === "busytex-full"}
         data-testid="engine-full"
-        title={strings.engine.fullHint}
-        onClick={() => onChange("busytex-full")}
+        onClick={() => pick("busytex-full")}
+        title={fullReady ? undefined : strings.engine.fullWarning}
         className={cn(
           "rounded px-2 py-1",
           engine === "busytex-full"

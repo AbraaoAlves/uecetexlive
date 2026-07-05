@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { type OrchestratorIO, runDraftBuild, runFullBuild } from "../orchestrator";
+import { type OrchestratorIO, runFullBuild } from "../orchestrator";
 
 const fixture = (name: string) =>
   readFileSync(join(__dirname, "fixtures", name), "utf-8");
@@ -179,43 +179,5 @@ describe("runFullBuild (§3.5 fixpoint)", () => {
     const result = await runFullBuild(io, { entry: "documento.tex" });
     expect(result.ok).toBe(false);
     expect(result.diagnostics.some((d) => d.severity === "error")).toBe(true);
-  });
-});
-
-describe("runDraftBuild (D11 draft = single pass)", () => {
-  it("one pdflatex pass, no bibtex8/makeindex/rerun — even when all are demanded", async () => {
-    const { io, execLog } = makeFakeIO({
-      auxContent: "\\bibdata{referencias}\n\\citation{x}\n",
-      gloContent: "\\glossaryentry{x}{1}",
-      idxContent: "\\indexentry{y}{2}",
-      logsByPass: [fixture("rerun-forever.log")],
-    });
-    const result = await runDraftBuild(io, { entry: "documento.tex" });
-
-    expect(result.passes).toEqual(["pdflatex"]);
-    expect(execLog).toHaveLength(1);
-    expect(execLog[0]?.[0]).toBe("pdflatex");
-    expect(result.ok).toBe(true);
-    expect(result.pdf).toBeInstanceOf(Uint8Array);
-  });
-
-  it("failed pass: ok=false, diagnostics carried", async () => {
-    const { io } = makeFakeIO({
-      logsByPass: [fixture("file-line-error.log")],
-      pdfBytes: null,
-    });
-    const result = await runDraftBuild(io, { entry: "documento.tex" });
-    expect(result.ok).toBe(false);
-    expect(result.diagnostics.some((d) => d.severity === "error")).toBe(true);
-  });
-
-  it("streams pt-BR draft progress labels", async () => {
-    const labels: string[] = [];
-    const { io } = makeFakeIO();
-    await runDraftBuild(io, {
-      entry: "documento.tex",
-      onProgress: (_f, label) => labels.push(label),
-    });
-    expect(labels.some((l) => l.includes("rascunho"))).toBe(true);
   });
 });

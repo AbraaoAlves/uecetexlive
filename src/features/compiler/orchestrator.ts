@@ -7,9 +7,6 @@
  *   3. makeindex -s .ist   (if .glo non-empty — glossary, per .latexmkrc)
  *   4. makeindex .idx      (if .idx non-empty — index)
  *   5. pdflatex ×2..N=5    (while the log demands a rerun)
- *
- * runDraftBuild is the "Rascunho" contract: step 1 only, PDF returned as-is
- * (citations render as [?] — that is the product contract).
  */
 import { parseLatexLog } from "./log-parser";
 import type { CompileDiagnostic } from "./types";
@@ -54,31 +51,6 @@ export function pdflatexArgv(texPath: string, fmtPath: string): string[] {
     "-file-line-error",
     texPath,
   ];
-}
-
-/** Single pdflatex pass — no bibtex8/makeindex, no rerun fixpoint. */
-export async function runDraftBuild(
-  io: OrchestratorIO,
-  options: OrchestratorOptions,
-): Promise<FullBuildResult> {
-  const { entry, fmtPath = BUSYTEX_PDFLATEX_FMT, onProgress } = options;
-  const job = entry.replace(/\.tex$/, "");
-
-  onProgress?.(0.3, "Compilando (rascunho)…");
-  const { exitCode, stdout, stderr } = await io.exec(pdflatexArgv(entry, fmtPath));
-  const log = (await io.readText(`${job}.log`)) ?? stdout;
-  const parsed = parseLatexLog(log);
-
-  onProgress?.(0.9, "Lendo PDF…");
-  const pdf = await io.readBytes(`${job}.pdf`);
-
-  return {
-    ok: exitCode === 0 && pdf !== null && pdf.length > 0,
-    pdf,
-    log: `$ pdflatex ${entry} (exit ${exitCode})\n${log}\n${stderr}`,
-    passes: ["pdflatex"],
-    diagnostics: parsed.diagnostics,
-  };
 }
 
 export async function runFullBuild(
