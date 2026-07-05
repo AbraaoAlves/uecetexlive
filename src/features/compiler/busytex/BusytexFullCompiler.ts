@@ -3,8 +3,9 @@
  * the pure orchestrator, executed inside a classic worker
  * (public/wasm/busytex/uecetexlive.worker.js).
  *
- * warmup() prefetches every asset with byte progress (the ~100 MB moment —
- * §6.3); the worker's importScripts/fetch then hit the HTTP cache.
+ * warmup() prefetches every asset with byte progress (the ~220 MB moment —
+ * §6.3; ≈150 MB on the wire via the D12 gzip sidecars); the worker's
+ * importScripts/fetch then hit the HTTP cache.
  */
 import { runFullBuild } from "../orchestrator";
 import type {
@@ -63,13 +64,31 @@ export class BusytexFullCompiler implements PdfCompiler {
   private nextId = 1;
   private pending = new Map<number, (reply: WorkerReply) => void>();
   private warmupPromise: Promise<void> | null = null;
+  private warmupDone = false;
+  private warmupListeners = new Set<WarmupProgressFn>();
+  private lastWarmupEvent: [number, number, string] | null = null;
   private injectFiles: { path: string; bytes: ArrayBuffer }[] = [];
 
+  // Warmup can have two watchers at once (the idle prefetch indicator and a
+  // compile started mid-download — D12), so progress fans out to a listener
+  // set; late subscribers are caught up with the last event.
   warmup(onProgress?: WarmupProgressFn): Promise<void> {
-    this.warmupPromise ??= this.doWarmup(onProgress).catch((err) => {
-      this.warmupPromise = null; // allow retry
-      throw err;
-    });
+    if (onProgress && !this.warmupDone) {
+      this.warmupListeners.add(onProgress);
+      if (this.lastWarmupEvent) onProgress(...this.lastWarmupEvent);
+    }
+    this.warmupPromise ??= this.doWarmup((loaded, total, label) => {
+      this.lastWarmupEvent = [loaded, total, label];
+      for (const listener of this.warmupListeners) listener(loaded, total, label);
+    })
+      .then(() => {
+        this.warmupDone = true;
+        this.warmupListeners.clear();
+      })
+      .catch((err) => {
+        this.warmupPromise = null; // allow retry
+        throw err;
+      });
     return this.warmupPromise;
   }
 
