@@ -41,6 +41,17 @@ export const ProjectSchema = z.object({
   name: z.string(),
   entry: z.string(),
   templateSource: z.url(),
+  /**
+   * Commit the project was seeded from (TemplateManifestSchema.commit).
+   * Optional so records saved before this field existed keep parsing —
+   * absence just means "unknown baseline", never a validation failure.
+   * Lets the app detect "the bundled template moved on" without ever
+   * touching `files` automatically (§ update-notice banner).
+   */
+  templateCommit: z
+    .string()
+    .regex(/^[0-9a-f]{40}$/)
+    .optional(),
   files: z.array(ProjectFileSchema),
   updatedAt: z.number(),
 });
@@ -60,6 +71,12 @@ export const UiSettingsSchema = z.object({
   collapsedSections: z.array(z.string()).default([]),
   /** First-run metadata wizard already shown/dismissed. */
   welcomeSeen: z.boolean().default(false),
+  /**
+   * Last template commit the "modelo atualizado" banner was dismissed for
+   * (null = never dismissed). Keyed by commit so a later template update
+   * makes the banner reappear instead of staying dismissed forever.
+   */
+  dismissedTemplateCommit: z.string().nullable().default(null),
   /** Color theme; "system" follows the OS preference. */
   theme: z.enum(["system", "light", "dark"]).default("system"),
 });

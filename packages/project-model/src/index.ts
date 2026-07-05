@@ -5,7 +5,7 @@ export {
   type ProjectDb,
 } from "./db";
 export * from "./schema";
-export { type SeedTemplateOptions, seedTemplate } from "./seed";
+export { fetchTemplateManifest, type SeedTemplateOptions, seedTemplate } from "./seed";
 export {
   matchesAnyGlob,
   type RailSection,

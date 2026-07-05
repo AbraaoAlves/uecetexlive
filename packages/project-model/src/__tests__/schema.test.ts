@@ -80,6 +80,7 @@ describe("UiSettingsSchema", () => {
       railCollapsed: false,
       collapsedSections: [],
       welcomeSeen: false,
+      dismissedTemplateCommit: null,
       theme: "system",
     });
   });
