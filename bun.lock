@@ -94,6 +94,15 @@
         "vitest": "^4.1.9",
       },
     },
+    "packages/project-model": {
+      "name": "@uecetexlive/project-model",
+      "version": "0.0.0",
+      "devDependencies": {
+        "happy-dom": "^20.10.6",
+        "typescript": "^6.0.3",
+        "vitest": "^4.1.9",
+      },
+    },
   },
   "packages": {
     "@adobe/css-tools": ["@adobe/css-tools@4.5.0", "", {}, "sha512-6OzddxPio9UiWTCemp4N8cYLV2ZN1ncRnV1cVGtve7dhPOtRkleRyx32GQCYSwDYgaHU3USMm84tNsvKzRCa1Q=="],
@@ -843,6 +852,8 @@
     "@types/ws": ["@types/ws@8.18.1", "", { "dependencies": { "@types/node": "*" } }, "sha512-ThVF6DCVhA8kUGy+aazFQ4kXQ7E1Ty7A3ypFOe0IcJV8O/M511G99AW24irKrW56Wt44yG9+ij8FaqoBGkuBXg=="],
 
     "@uecetexlive/latex-mapping": ["@uecetexlive/latex-mapping@workspace:packages/latex-mapping"],
+
+    "@uecetexlive/project-model": ["@uecetexlive/project-model@workspace:packages/project-model"],
 
     "@unified-latex/unified-latex-builder": ["@unified-latex/unified-latex-builder@1.8.4", "", { "dependencies": { "@unified-latex/unified-latex-types": "^1.8.4" } }, "sha512-Rw5XlVhJ50wk7J/hukJ0YBjLqaCjNTYDLZc6lNPH8Vji56YPzZbduuh/kY3ueME+CnxJq/34CGY8D/0cOZY8yw=="],
 
