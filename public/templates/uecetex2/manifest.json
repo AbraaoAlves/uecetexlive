@@ -1,8 +1,8 @@
 {
   "name": "uecetex2",
   "entry": "documento.tex",
-  "source": "https://github.com/thiagodnf/uecetex2",
-  "commit": "39e8c8a0312788d72311e3b0157ff0564fb74eaf",
+  "source": "https://github.com/abraaoalves/uecetex2",
+  "commit": "c644a4350e9c0b486bb021652302301e3dd557e6",
   "files": [
     {
       "path": "LICENSE",
@@ -16,33 +16,33 @@
     },
     {
       "path": "elementos-pos-textuais/anexos/dinamica-das-classes-sociais.tex",
-      "size": 817,
-      "sha256": "7421636cb3ecc93b589840a1849ef3cc21a93f21690f2dd50da54478229098b2"
+      "size": 743,
+      "sha256": "3fa787e5991ee19ba7de29234f881f3338b7080139451084a1d1eb0c4411a605"
     },
     {
       "path": "elementos-pos-textuais/anexos/exemplo-de-anexo.tex",
-      "size": 563,
-      "sha256": "d4e37a821777eb9fb1c3026817a2bfbf5eb8b63f3b3b15bf902f0c4209c08175"
+      "size": 1180,
+      "sha256": "c1d7bb7aa76d670fafcf8f500811d3c3cf69cedb590d71eba1d9f6a8c58ff658"
     },
     {
       "path": "elementos-pos-textuais/apendices/historico-de-mudancas.tex",
-      "size": 610,
-      "sha256": "61419790480898776c402ea72a58e97945644ffee7e2bb9996b5c270e294c4d1"
+      "size": 1577,
+      "sha256": "9952f9fbc687aa06c613737c587f11b970f1501a404879ff0b6775264ce8bad6"
     },
     {
       "path": "elementos-pos-textuais/apendices/lorem-ipsum.tex",
-      "size": 682,
-      "sha256": "b206de9fd37d3a2dce20382aa1e3ffd40036eec4537f5061eff151f14a1288d9"
+      "size": 940,
+      "sha256": "901fbdd50b9e020b294a3508557291b8fddd7f682782f922ced2f75456c506b7"
     },
     {
       "path": "elementos-pos-textuais/apendices/termo-de-fiel-depositario.tex",
-      "size": 1322,
-      "sha256": "8f51084dea8c7ca569d7eac8dede40474a2ca480eaf355a342af8516bd7296ce"
+      "size": 1727,
+      "sha256": "bd08e01ca2ebcb0949ac31d13a8aab7f3719b11adf0adedf792c172c754bd5e6"
     },
     {
       "path": "elementos-pos-textuais/glossario.tex",
-      "size": 1325,
-      "sha256": "e5e5dfe45c595056a89e7168ca5728382e0e011dcf680093714edd384ce10943"
+      "size": 1268,
+      "sha256": "3b5ff9524f972cc75c0b348acbb15a9837276908bfd9e16321a665e48bb8cfe6"
     },
     {
       "path": "elementos-pos-textuais/referencias.bib",
@@ -51,28 +51,28 @@
     },
     {
       "path": "elementos-pre-textuais/abstract.tex",
-      "size": 1723,
-      "sha256": "5954b126708c86b6a564a4df0fcf1f24ee990f16164cb30eacf2859d99c042ac"
+      "size": 1054,
+      "sha256": "51ec050f6daf9304071fc5b2122e10be49395baf00ec4de820c9e770cd9afc6c"
     },
     {
       "path": "elementos-pre-textuais/agradecimentos.tex",
-      "size": 1090,
-      "sha256": "43941f1cf97a18a84fa0737a552df96e5cc6174b7c42b5917d2ba55fe2e55ded"
+      "size": 1204,
+      "sha256": "b9e759d42fc10a7110b3c7ce0c152bedfe14396ab74b8a8933bf62d4125a954e"
     },
     {
       "path": "elementos-pre-textuais/dedicatoria.tex",
-      "size": 263,
-      "sha256": "2a16705406c18c93c40b9c966ebb33974dd2c552861c7a8e0b9b1efaf2a1c315"
+      "size": 737,
+      "sha256": "45b6279abf6504c17c4c4b3c3e9f4313b3496f1d464b77c6ad03e90d8e4613b1"
     },
     {
       "path": "elementos-pre-textuais/epigrafe.tex",
-      "size": 320,
-      "sha256": "559d13ea79683177b5a0982aa15596c6dc6d31e78fe35c59b65c01186212991b"
+      "size": 1032,
+      "sha256": "d892acc24130a62eed9e386e43172b73cb7fbd0a629bf564d201b20dfa8ac4e9"
     },
     {
       "path": "elementos-pre-textuais/errata.tex",
-      "size": 636,
-      "sha256": "174a2e197acd1ed3d5f3a38e6c85b695ab0f0f9c80ac1ae92ed2428b16405bf7"
+      "size": 1280,
+      "sha256": "238469a84a9ff77c54f946e4db30955cd0c628de1eef6694f76a4959d7f187e9"
     },
     {
       "path": "elementos-pre-textuais/ficha-catalografica.pdf",
@@ -81,48 +81,48 @@
     },
     {
       "path": "elementos-pre-textuais/lista-de-abreviaturas-e-siglas.tex",
-      "size": 1228,
-      "sha256": "5d728e057c0a81abd12a009e3c42b87fe7c9a37d321966f4f027d87375d3395f"
+      "size": 1158,
+      "sha256": "d0ff38b507b3328c33be62d359adc94328e3c6ed3ec7680ef5cca71094fbf806"
     },
     {
       "path": "elementos-pre-textuais/lista-de-simbolos.tex",
-      "size": 1208,
-      "sha256": "f66dab2dba5fbe4029d3b5e0887a1f8fd9ebd50e3ee27b94c9a999a2446366e9"
+      "size": 960,
+      "sha256": "c80989e4e514ef7495fc3aaec81ee68cff1a52868ecca38d40144d88b3287925"
     },
     {
       "path": "elementos-pre-textuais/resumo.tex",
-      "size": 1714,
-      "sha256": "b769aeb58b6c7ecc81549f3cdeeb6def5c887a01ccb4a695ddee00b2d79ffc07"
+      "size": 1605,
+      "sha256": "e3a29c4b2ae005f698cadd13ec6e8e35678f2b79357c243ea0a5c74ff923784a"
     },
     {
       "path": "elementos-textuais/conclusao.tex",
-      "size": 3225,
-      "sha256": "9637fe3bacc8e845a56b47dcf9b083adf65490cfc472ef17e3173a46f3313faa"
+      "size": 1522,
+      "sha256": "7c6466a8bec74cdc23f2631e140ca99892040fc3ab23ac52a2941770a07fef4e"
     },
     {
       "path": "elementos-textuais/fundamentacao-teorica.tex",
-      "size": 7248,
-      "sha256": "62e4f9d1bc0e66fc4cdd5df13e9da48b84bd2226b32eab1d983751a2630d54b9"
+      "size": 4015,
+      "sha256": "884acbc9c46fbb156eaafc59b5b0bbdb563496424741efb0cad02b28de0e1d8d"
     },
     {
       "path": "elementos-textuais/introducao.tex",
-      "size": 4519,
-      "sha256": "7ef44fb01a567916400648d81fbeece313bb5907d0d3b4e90d67a40f4d4d8ac2"
+      "size": 2893,
+      "sha256": "546e881efcfe4f2d05f4088e554595e392d3fec5407f91950c95787059d26935"
     },
     {
       "path": "elementos-textuais/metodologia.tex",
-      "size": 22731,
-      "sha256": "77b125e1228b5f961a956e83a8bf5c7a84b235314751d4ea994bcbe4bcf7b118"
+      "size": 6675,
+      "sha256": "e92e6fe7fff733d24463dd151d5b3df3c6e40b5e7c55367ec0941a91cbbbd806"
     },
     {
       "path": "elementos-textuais/resultados.tex",
-      "size": 2018,
-      "sha256": "eae69576a5253279c4dd28b349bf13175214326fb88136010feb8804ed604150"
+      "size": 1731,
+      "sha256": "b94dad49481cb2cff637f002e5d85bdb542bafd1a192b16e7a218504cc508e5f"
     },
     {
       "path": "elementos-textuais/trabalhos-relacionados.tex",
-      "size": 6196,
-      "sha256": "a1b316c48b003b492c9758f012c3255ba028519d685074ba7c57459ba3a7734f"
+      "size": 2526,
+      "sha256": "3d1d3df8e8cbbce1890d8b8fd00cc39b2e0485f006f201f2e76c2c4f5c737416"
     },
     {
       "path": "figuras/ficha-catalografica.pdf",
