@@ -52,6 +52,7 @@ import { NewChapterDialog } from "./NewChapterDialog";
 import { ProjectRail, type RailFile } from "./ProjectRail";
 import { TemplateUpdateBanner } from "./TemplateUpdateBanner";
 import { ThemeToggle } from "./ThemeToggle";
+import { Tooltip } from "./Tooltip";
 import { TopBar } from "./TopBar";
 import { useTheme } from "./useTheme";
 import { useUiSettings } from "./useUiSettings";
@@ -479,28 +480,29 @@ function ShellInner() {
         projectName={workTitle || project.name}
         saveState={saveState}
         leading={
-          <button
-            ref={railToggleRef}
-            type="button"
-            data-testid="rail-toggle"
-            title={`${strings.topbar.toggleRail} (Ctrl+B)`}
-            aria-expanded={!railCollapsed}
-            className="relative rounded p-1.5 text-ink-muted hover:bg-accent-soft"
-            onClick={toggleRail}
-          >
-            {railCollapsed ? (
-              <PanelLeft className="size-4" />
-            ) : (
-              <PanelLeftClose className="size-4" />
-            )}
-            {railCollapsed && missingIncludes.length > 0 && (
-              <span
-                className="absolute top-0.5 right-0.5 size-1.5 rounded-full bg-danger"
-                data-testid="rail-toggle-alert"
-                title={strings.rail.missingInclude}
-              />
-            )}
-          </button>
+          <Tooltip content={strings.topbar.toggleRail}>
+            <button
+              ref={railToggleRef}
+              type="button"
+              data-testid="rail-toggle"
+              aria-expanded={!railCollapsed}
+              className="relative rounded p-1.5 text-ink-muted hover:bg-accent-soft"
+              onClick={toggleRail}
+            >
+              {railCollapsed ? (
+                <PanelLeft className="size-4" />
+              ) : (
+                <PanelLeftClose className="size-4" />
+              )}
+              {railCollapsed && missingIncludes.length > 0 && (
+                <span
+                  className="absolute top-0.5 right-0.5 size-1.5 rounded-full bg-danger"
+                  data-testid="rail-toggle-alert"
+                  title={strings.rail.missingInclude}
+                />
+              )}
+            </button>
+          </Tooltip>
         }
       >
         <label className="flex items-center gap-1.5 text-ink-muted text-xs">
@@ -537,29 +539,31 @@ function ShellInner() {
             void compile(project, { precompiledBbl });
           }}
         />
-        <button
-          type="button"
-          data-testid="export-pdf"
-          title={strings.topbar.exportPdf}
-          disabled={!compileState.result?.pdf}
-          className="rounded p-1.5 text-ink-muted hover:bg-accent-soft disabled:opacity-40"
-          onClick={() => {
-            const pdf = compileState.result?.pdf;
-            if (pdf) download("documento.pdf", pdf, "application/pdf");
-          }}
-        >
-          <Download className="size-4" />
-        </button>
-        <div className="relative">
+        <Tooltip content={strings.topbar.exportPdf}>
           <button
             type="button"
-            data-testid="menu-button"
-            title={strings.topbar.menu}
-            className="rounded p-1.5 text-ink-muted hover:bg-accent-soft"
-            onClick={() => setMenuOpen((v) => !v)}
+            data-testid="export-pdf"
+            disabled={!compileState.result?.pdf}
+            className="rounded p-1.5 text-ink-muted hover:bg-accent-soft disabled:opacity-40"
+            onClick={() => {
+              const pdf = compileState.result?.pdf;
+              if (pdf) download("documento.pdf", pdf, "application/pdf");
+            }}
           >
-            <Menu className="size-4" />
+            <Download className="size-4" />
           </button>
+        </Tooltip>
+        <div className="relative">
+          <Tooltip content={strings.topbar.menuHint}>
+            <button
+              type="button"
+              data-testid="menu-button"
+              className="rounded p-1.5 text-ink-muted hover:bg-accent-soft"
+              onClick={() => setMenuOpen((v) => !v)}
+            >
+              <Menu className="size-4" />
+            </button>
+          </Tooltip>
           {menuOpen && (
             // Invisible backdrop (QA §M4): click-outside and Escape both
             // dismiss — without it the menu lingered over other popovers.
@@ -707,15 +711,16 @@ function ShellInner() {
                 {" · "}
                 {totalWords.toLocaleString("pt-BR")} {strings.editor.wordsInWork}
               </span>
-              <button
-                type="button"
-                data-testid="view-toggle"
-                className="rounded px-2 py-0.5 text-ink-muted hover:bg-accent-soft"
-                title="Mod+E"
-                onClick={() => setSourceView((v) => !v)}
-              >
-                {showWysiwyg ? strings.editor.sourceView : strings.editor.wysiwygView}
-              </button>
+              <Tooltip content={strings.topbar.viewToggleHint}>
+                <button
+                  type="button"
+                  data-testid="view-toggle"
+                  className="rounded px-2 py-0.5 text-ink-muted hover:bg-accent-soft"
+                  onClick={() => setSourceView((v) => !v)}
+                >
+                  {showWysiwyg ? strings.editor.sourceView : strings.editor.wysiwygView}
+                </button>
+              </Tooltip>
             </div>
           )}
           {currentFile ? (

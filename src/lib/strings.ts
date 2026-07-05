@@ -21,16 +21,22 @@ export const strings = {
     about: "Sobre",
     saving: "Salvando…",
     saved: "Salvo",
-    toggleRail: "Mostrar/ocultar painel de arquivos",
+    toggleRail: "Painel lateral (Ctrl/Cmd+B): mostrar ou ocultar a árvore de arquivos.",
+    compileHint: "Compilar (Ctrl/Cmd+Enter): atualiza o PDF com as últimas edições.",
+    menuHint:
+      "Menu: importar ZIP, exportar PDF ou projeto, importar .bbl, restaurar modelo.",
+    viewToggleHint: "Alternar entre fonte LaTeX e editor visual (Ctrl/Cmd+E).",
     idleWarmup: "Preparando motor completo:",
     idleWarmupHint:
       "Baixando o motor da compilação Completa em segundo plano (~150 MB, uma única vez) — você já pode escrever e usar o Rascunho normalmente.",
   },
   engine: {
     draft: "Rascunho",
+    draftHint: "Rascunho rápido — não resolve citações, glossário nem índice.",
     full: "Completa",
+    fullHint: "Compilação completa — resolve citações, glossário e índice.",
     fullWarning:
-      "A compilação completa baixa ~100 MB na primeira vez (uma única vez — fica salvo no navegador) e resolve bibliografia, glossário e índice. O rascunho é instantâneo, mas mostra [?] nas citações.",
+      "A compilação completa baixa ~150 MB na primeira vez (uma única vez — fica salvo no navegador) e resolve bibliografia, glossário e índice. O rascunho é instantâneo, mas mostra [?] nas citações.",
     draftBanner:
       "Modo rascunho: citações, glossário e índice não são resolvidos. Use a compilação Completa para o PDF final.",
   },
@@ -53,6 +59,7 @@ export const strings = {
     uploadFile: "Enviar arquivo (imagem, PDF ou código)",
     uploadFileError:
       "Não foi possível enviar (use PNG, JPG, PDF ou código-fonte de até 10 MB):",
+    unsavedChanges: "Alterações não salvas",
   },
   editor: {
     rawLatexTooltip:

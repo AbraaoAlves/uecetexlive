@@ -10,6 +10,7 @@ import { useRef, useState } from "react";
 import { type RailSection, railSectionOf } from "@/features/project/vfs";
 import { strings } from "@/lib/strings";
 import { cn } from "@/lib/utils";
+import { Tooltip } from "./Tooltip";
 
 export interface RailFile {
   path: string;
@@ -131,11 +132,12 @@ export function ProjectRail({
           <ClipboardList className="size-3.5 shrink-0" />
           <span className="truncate">{strings.metadata.railEntry}</span>
           {metadataPending && (
-            <span
-              className="ml-auto size-1.5 shrink-0 rounded-full bg-warning"
-              data-testid="metadata-pending-dot"
-              title={strings.metadata.pendingHint}
-            />
+            <Tooltip content={strings.metadata.pendingHint}>
+              <span
+                className="ml-auto size-1.5 shrink-0 rounded-full bg-warning"
+                data-testid="metadata-pending-dot"
+              />
+            </Tooltip>
           )}
         </button>
       )}
@@ -164,28 +166,30 @@ export function ProjectRail({
                   <span className="truncate">{SECTION_LABEL[section]}</span>
                 </button>
                 {section === "chapters" && onNewChapter && (
-                  <button
-                    type="button"
-                    data-testid="new-chapter"
-                    title={strings.rail.newChapter}
-                    aria-label={strings.rail.newChapter}
-                    onClick={onNewChapter}
-                    className="rounded p-0.5 hover:bg-accent-soft hover:text-accent-strong"
-                  >
-                    <Plus className="size-3.5" />
-                  </button>
+                  <Tooltip content={strings.rail.newChapter}>
+                    <button
+                      type="button"
+                      data-testid="new-chapter"
+                      aria-label={strings.rail.newChapter}
+                      onClick={onNewChapter}
+                      className="rounded p-0.5 hover:bg-accent-soft hover:text-accent-strong"
+                    >
+                      <Plus className="size-3.5" />
+                    </button>
+                  </Tooltip>
                 )}
                 {section === "figures" && onUploadFiles && (
-                  <button
-                    type="button"
-                    data-testid="rail-upload"
-                    title={strings.rail.uploadFile}
-                    aria-label={strings.rail.uploadFile}
-                    onClick={() => uploadInputRef.current?.click()}
-                    className="rounded p-0.5 hover:bg-accent-soft hover:text-accent-strong"
-                  >
-                    <Upload className="size-3.5" />
-                  </button>
+                  <Tooltip content={strings.rail.uploadFile}>
+                    <button
+                      type="button"
+                      data-testid="rail-upload"
+                      aria-label={strings.rail.uploadFile}
+                      onClick={() => uploadInputRef.current?.click()}
+                      className="rounded p-0.5 hover:bg-accent-soft hover:text-accent-strong"
+                    >
+                      <Upload className="size-3.5" />
+                    </button>
+                  </Tooltip>
                 )}
               </div>
             )}
@@ -219,11 +223,12 @@ export function ProjectRail({
                     >
                       <span className="truncate">{baseName(file.path)}</span>
                       {file.dirty && (
-                        <span
-                          className="size-1.5 shrink-0 rounded-full bg-warning"
-                          data-testid="dirty-dot"
-                          title="Alterações não salvas"
-                        />
+                        <Tooltip content={strings.rail.unsavedChanges}>
+                          <span
+                            className="size-1.5 shrink-0 rounded-full bg-warning"
+                            data-testid="dirty-dot"
+                          />
+                        </Tooltip>
                       )}
                       {file.locked && (
                         <Lock
@@ -237,15 +242,16 @@ export function ProjectRail({
                 {showMissing &&
                   missingIncludes.map((path) => (
                     <li key={path}>
-                      <button
-                        type="button"
-                        onClick={() => onSelect(path)}
-                        className="flex w-full items-center gap-2 px-3 py-1 text-left text-danger hover:bg-danger/10"
-                        title={strings.rail.missingInclude}
-                      >
-                        <FileWarning className="size-3 shrink-0" />
-                        <span className="truncate">{baseName(path)}</span>
-                      </button>
+                      <Tooltip content={strings.rail.missingInclude}>
+                        <button
+                          type="button"
+                          onClick={() => onSelect(path)}
+                          className="flex w-full items-center gap-2 px-3 py-1 text-left text-danger hover:bg-danger/10"
+                        >
+                          <FileWarning className="size-3 shrink-0" />
+                          <span className="truncate">{baseName(path)}</span>
+                        </button>
+                      </Tooltip>
                     </li>
                   ))}
               </ul>
@@ -254,29 +260,30 @@ export function ProjectRail({
         );
       })}
       {hiddenCount > 0 && (
-        <div
-          className="px-3 pt-3 pb-1 text-[11px] text-ink-subtle"
-          data-testid="rail-hidden-count"
-          title={strings.rail.hiddenFilesHint}
-        >
-          {hiddenCount}{" "}
-          {hiddenCount === 1
-            ? strings.rail.hiddenFileSingular
-            : strings.rail.hiddenFilesPlural}
-          {onShowHidden && (
-            <>
-              {" — "}
-              <button
-                type="button"
-                data-testid="rail-show-hidden"
-                className="text-accent hover:underline"
-                onClick={onShowHidden}
-              >
-                {strings.rail.showHiddenFiles}
-              </button>
-            </>
-          )}
-        </div>
+        <Tooltip content={strings.rail.hiddenFilesHint}>
+          <div
+            className="px-3 pt-3 pb-1 text-[11px] text-ink-subtle"
+            data-testid="rail-hidden-count"
+          >
+            {hiddenCount}{" "}
+            {hiddenCount === 1
+              ? strings.rail.hiddenFileSingular
+              : strings.rail.hiddenFilesPlural}
+            {onShowHidden && (
+              <>
+                {" — "}
+                <button
+                  type="button"
+                  data-testid="rail-show-hidden"
+                  className="text-accent hover:underline"
+                  onClick={onShowHidden}
+                >
+                  {strings.rail.showHiddenFiles}
+                </button>
+              </>
+            )}
+          </div>
+        </Tooltip>
       )}
     </nav>
   );

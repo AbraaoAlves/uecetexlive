@@ -1,5 +1,6 @@
 import { Loader2 } from "lucide-react";
 import { strings } from "@/lib/strings";
+import { Tooltip } from "./Tooltip";
 
 export interface IdleWarmupIndicatorProps {
   loaded: number;
@@ -17,14 +18,15 @@ export function IdleWarmupIndicator({ loaded, total, label }: IdleWarmupIndicato
   const text =
     total > 0 && loaded >= total ? label : `${strings.topbar.idleWarmup} ${pct}%`;
   return (
-    <span
-      className="flex items-center gap-1.5 text-[11px] text-ink-subtle"
-      data-testid="idle-warmup"
-      title={strings.topbar.idleWarmupHint}
-      aria-live="polite"
-    >
-      <Loader2 className="size-3 animate-spin" />
-      {text}
-    </span>
+    <Tooltip content={strings.topbar.idleWarmupHint}>
+      <span
+        className="flex items-center gap-1.5 text-[11px] text-ink-subtle"
+        data-testid="idle-warmup"
+        aria-live="polite"
+      >
+        <Loader2 className="size-3 animate-spin" />
+        {text}
+      </span>
+    </Tooltip>
   );
 }

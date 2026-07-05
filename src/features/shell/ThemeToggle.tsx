@@ -1,4 +1,5 @@
 import { Monitor, Moon, Sun } from "lucide-react";
+import { Tooltip } from "./Tooltip";
 import type { Theme } from "./useTheme";
 
 const NEXT: Record<Theme, Theme> = {
@@ -29,16 +30,17 @@ export function ThemeToggle({
 }) {
   const Icon = ICON[theme];
   return (
-    <button
-      type="button"
-      data-testid="theme-toggle"
-      data-theme={theme}
-      title={LABEL[theme]}
-      aria-label={LABEL[theme]}
-      className="rounded p-1.5 text-ink-muted hover:bg-accent-soft"
-      onClick={() => onChange(NEXT[theme])}
-    >
-      <Icon className="size-4" />
-    </button>
+    <Tooltip content={LABEL[theme]}>
+      <button
+        type="button"
+        data-testid="theme-toggle"
+        data-theme={theme}
+        aria-label={LABEL[theme]}
+        className="rounded p-1.5 text-ink-muted hover:bg-accent-soft"
+        onClick={() => onChange(NEXT[theme])}
+      >
+        <Icon className="size-4" />
+      </button>
+    </Tooltip>
   );
 }
