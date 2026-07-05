@@ -1,9 +1,9 @@
 import { act, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { getCompiler } from "../index";
-import { useIdleWarmup } from "../useIdleWarmup";
+import { useIdleWarmup } from "../react/useIdleWarmup";
+import type { PdfCompiler } from "../types";
 
-vi.mock("../index", () => ({ getCompiler: vi.fn() }));
+const getCompiler = vi.fn<() => Promise<PdfCompiler>>();
 
 const setWebdriver = (value: boolean) =>
   Object.defineProperty(window.navigator, "webdriver", { value, configurable: true });
@@ -27,13 +27,13 @@ describe("useIdleWarmup (D12 idle prefetch)", () => {
   });
   afterEach(() => {
     vi.useRealTimers();
-    vi.mocked(getCompiler).mockReset();
+    getCompiler.mockReset();
     Reflect.deleteProperty(window.navigator, "connection");
   });
 
   it("skips under automation (navigator.webdriver)", async () => {
     setWebdriver(true);
-    const { result } = renderHook(() => useIdleWarmup());
+    const { result } = renderHook(() => useIdleWarmup({ getCompiler }));
     expect(result.current.status).toBe("skipped");
     await act(async () => {
       await vi.advanceTimersByTimeAsync(BOOT_MS);
@@ -46,7 +46,7 @@ describe("useIdleWarmup (D12 idle prefetch)", () => {
       value: { saveData: true },
       configurable: true,
     });
-    const { result } = renderHook(() => useIdleWarmup());
+    const { result } = renderHook(() => useIdleWarmup({ getCompiler }));
     expect(result.current.status).toBe("skipped");
     await act(async () => {
       await vi.advanceTimersByTimeAsync(BOOT_MS);
@@ -56,7 +56,7 @@ describe("useIdleWarmup (D12 idle prefetch)", () => {
 
   it('localStorage "off" disables it even off-automation', async () => {
     localStorage.setItem("uecetexlive:idle-warmup", "off");
-    const { result } = renderHook(() => useIdleWarmup());
+    const { result } = renderHook(() => useIdleWarmup({ getCompiler }));
     expect(result.current.status).toBe("skipped");
     await act(async () => {
       await vi.advanceTimersByTimeAsync(BOOT_MS);
@@ -68,15 +68,15 @@ describe("useIdleWarmup (D12 idle prefetch)", () => {
     setWebdriver(true);
     localStorage.setItem("uecetexlive:idle-warmup", "force");
     const warmup = deferred();
-    vi.mocked(getCompiler).mockResolvedValue({
+    getCompiler.mockResolvedValue({
       warmup: vi.fn(() => warmup.promise),
     } as never);
 
-    renderHook(() => useIdleWarmup());
+    renderHook(() => useIdleWarmup({ getCompiler }));
     await act(async () => {
       await vi.advanceTimersByTimeAsync(BOOT_MS);
     });
-    expect(getCompiler).toHaveBeenCalledWith("busytex-full");
+    expect(getCompiler).toHaveBeenCalledTimes(1);
   });
 
   it("reports byte progress and lands on done", async () => {
@@ -87,9 +87,9 @@ describe("useIdleWarmup (D12 idle prefetch)", () => {
         return warmup.promise;
       }),
     };
-    vi.mocked(getCompiler).mockResolvedValue(compiler as never);
+    getCompiler.mockResolvedValue(compiler as never);
 
-    const { result } = renderHook(() => useIdleWarmup());
+    const { result } = renderHook(() => useIdleWarmup({ getCompiler }));
     expect(result.current.status).toBe("idle");
     await act(async () => {
       await vi.advanceTimersByTimeAsync(BOOT_MS);
@@ -109,8 +109,8 @@ describe("useIdleWarmup (D12 idle prefetch)", () => {
   });
 
   it("goes quiet (skipped) when the warmup fails — compile retries anyway", async () => {
-    vi.mocked(getCompiler).mockRejectedValue(new Error("offline"));
-    const { result } = renderHook(() => useIdleWarmup());
+    getCompiler.mockRejectedValue(new Error("offline"));
+    const { result } = renderHook(() => useIdleWarmup({ getCompiler }));
     await act(async () => {
       await vi.advanceTimersByTimeAsync(BOOT_MS);
     });
