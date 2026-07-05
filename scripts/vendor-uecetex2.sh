@@ -8,7 +8,7 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 REPO="https://github.com/abraaoalves/uecetex2"
-PINNED_COMMIT="c644a4350e9c0b486bb021652302301e3dd557e6"
+PINNED_COMMIT="5784d36b6507384b2c470c99eb3a412e63f1bf93"
 DEST="public/templates/uecetex2"
 CACHE="${TMPDIR:-/tmp}/uecetexlive-vendor/uecetex2"
 
