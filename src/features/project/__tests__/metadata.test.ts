@@ -19,6 +19,11 @@ describe("extractMetadata (documento.tex real do template)", () => {
     expect(fields.get("orientador")?.value).toBe("Nome do seu Orientador");
   });
 
+  it("extracts the UAB fields with their default values", () => {
+    expect(fields.get("ehuab")?.value).toBe("nao");
+    expect(fields.get("localdopolo")?.value).toBe("");
+  });
+
   it("ignores commented \\trabalhoacademico lines (L32-35)", () => {
     expect(fields.get("trabalhoacademico")?.value).toBe("dissertacao");
     expect(workTypeOf(fields)).toBe("dissertacao");

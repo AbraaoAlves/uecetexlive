@@ -27,6 +27,8 @@ const BANCA_SLOTS = ["dois", "tres", "quatro", "cinco", "seis"] as const;
 export const METADATA_MACROS: readonly string[] = [
   "trabalhoacademico",
   "ehqualificacao",
+  "ehuab",
+  "localdopolo",
   "ies",
   "iessigla",
   "centro",
