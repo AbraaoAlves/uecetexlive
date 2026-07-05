@@ -57,14 +57,14 @@ from it (all the hard-won reality) are in [`DEVIATIONS.md`](DEVIATIONS.md).
 
 | Area | Where | Notes |
 | --- | --- | --- |
-| Compile engines | `src/features/compiler/` | `PdfCompiler` interface; busytex + SwiftLaTeX behind it |
-| Pass orchestration | `src/features/compiler/orchestrator.ts` | latexmk-in-TS fixpoint (pure, TDD) |
+| Compile engines | `packages/compiler/` | `PdfCompiler` interface; busytex + SwiftLaTeX behind it |
+| Pass orchestration | `packages/compiler/src/orchestrator.ts` | latexmk-in-TS fixpoint (pure, TDD) |
 | busytex worker | `public/wasm/busytex/uecetexlive.worker.js` | see [`docs/busytex-integration.md`](docs/busytex-integration.md) |
 | SwiftLaTeX pipeline | [`docs/prototype-compile-pipeline.md`](docs/prototype-compile-pipeline.md) | the TeX Live URL contract + 3 engine patches |
 | Service worker | `src/sw.ts` | app-shell precache + gzip-sidecar decompression for the busytex payload on Pages (D12) |
 | LaTeX ⇄ ProseMirror | `packages/latex-mapping/` | byte-identity + stability invariants (pure, TDD) |
-| WYSIWYG editor | `src/features/editor/` | Tiptap extension suite, node views, slash/bubble menus |
-| Project model | `src/features/project/` | Zod schema, include graph, zip, reorder (pure, TDD) |
+| WYSIWYG editor | `packages/editor/` | Tiptap extension suite, node views, slash/bubble menus |
+| Project model | `packages/project-model/` (adapters do app em `src/features/project/`) | Zod schema, include graph, zip, reorder (pure, TDD) |
 | Persistence | `src/features/persistence/db.ts` | IndexedDB (`uecetexlive`) |
 | Shell / preview | `src/features/{shell,preview}/` | three-pane UI, PDF (pdf.js) + log panes |
 | Biber research | [`docs/research/biber-wasm.md`](docs/research/biber-wasm.md) | tiers 2–3 assessment |
