@@ -2,7 +2,7 @@
   "name": "uecetex2",
   "entry": "documento.tex",
   "source": "https://github.com/abraaoalves/uecetex2",
-  "commit": "c644a4350e9c0b486bb021652302301e3dd557e6",
+  "commit": "4c4ab76ded7bcbf666250f1006558b95e2dea683",
   "files": [
     {
       "path": "LICENSE",
@@ -11,8 +11,8 @@
     },
     {
       "path": "documento.tex",
-      "size": 7784,
-      "sha256": "4e4666d760ffa0053bf34c8cc97be3484dffa45ad68574447d9cc08267e3a0f9"
+      "size": 8518,
+      "sha256": "bcc8e8cef5efee27074f0d657ecbd69ba5a22c4bca36043154403b4f8a96912a"
     },
     {
       "path": "elementos-pos-textuais/anexos/dinamica-das-classes-sociais.tex",
@@ -180,14 +180,19 @@
       "sha256": "fb52206e283e942072e7f4edb2c2d7bad284c5b63be7ae2ac90d93f987815a82"
     },
     {
+      "path": "lib/logo_uab.png",
+      "size": 520120,
+      "sha256": "9bd8ad6646928c855f05735d9ea7d9e518ef4c18f41ac785d8680ef10067f2ed"
+    },
+    {
       "path": "lib/preambulo.tex",
       "size": 5655,
       "sha256": "d34beb1bff09c06c78e0515223c39c9e52c73d8b1f57951ed2601544dc0f67c6"
     },
     {
       "path": "lib/uecetex2.sty",
-      "size": 49343,
-      "sha256": "141c532f9c74719bf5f0e1c26f11082e498d652a98da581777b297b8f51834b9"
+      "size": 51497,
+      "sha256": "666f9aaae80417584f1ee788b6b71946a4e16aa92061338af09d83fdefb1d90e"
     }
   ]
 }
