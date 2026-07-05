@@ -62,7 +62,7 @@ from it (all the hard-won reality) are in [`DEVIATIONS.md`](DEVIATIONS.md).
 | busytex worker | `public/wasm/busytex/uecetexlive.worker.js` | see [`docs/busytex-integration.md`](docs/busytex-integration.md) |
 | SwiftLaTeX pipeline | [`docs/prototype-compile-pipeline.md`](docs/prototype-compile-pipeline.md) | the TeX Live URL contract + 3 engine patches |
 | Service worker | `src/sw.ts` | app-shell precache + gzip-sidecar decompression for the busytex payload on Pages (D12) |
-| LaTeX ⇄ ProseMirror | `src/features/latex-mapping/` | byte-identity + stability invariants (pure, TDD) |
+| LaTeX ⇄ ProseMirror | `packages/latex-mapping/` | byte-identity + stability invariants (pure, TDD) |
 | WYSIWYG editor | `src/features/editor/` | Tiptap extension suite, node views, slash/bubble menus |
 | Project model | `src/features/project/` | Zod schema, include graph, zip, reorder (pure, TDD) |
 | Persistence | `src/features/persistence/db.ts` | IndexedDB (`uecetexlive`) |

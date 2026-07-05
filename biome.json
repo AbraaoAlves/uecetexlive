@@ -13,7 +13,7 @@
       "!storybook-static",
       "!coverage",
       "!e2e/fixtures",
-      "!src/features/latex-mapping/fixtures",
+      "!packages/latex-mapping/src/fixtures",
       "!**/*.css"
     ]
   },
