@@ -9,6 +9,9 @@
 #       Corresponding Source dos patches;
 #   (c) todo arquivo de engine alterado localmente carrega a marcação
 #       `papyru:` / `Papyru patch:` (rastreabilidade dos patches).
+#
+# Sem dependência de nenhum vendor-*.sh — só lê arquivos já commitados no
+# git, roda em qualquer ordem/momento (ver scripts/README.md).
 set -euo pipefail
 cd "$(dirname "$0")/.."
 

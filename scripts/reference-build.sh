@@ -2,6 +2,11 @@
 # Reference PDF (§10): compile upstream uecetex2 with real latexmk in Docker
 # (upstream's own texlive image + latexmk line), then record page count +
 # text hash into e2e/fixtures/reference.json for the compile-full gate.
+#
+# Manual/local-only — no CI workflow calls this (see scripts/README.md).
+# Run it yourself and commit the regenerated e2e/fixtures/reference.* when
+# the template changes enough to need a new reference. Requires
+# scripts/vendor-uecetex2.sh to have run first (checked below) and Docker.
 set -euo pipefail
 
 cd "$(dirname "$0")/.."

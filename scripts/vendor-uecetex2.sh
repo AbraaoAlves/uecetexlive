@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 # Vendors the uecetex2 template (pinned commit) into public/templates/uecetex2/.
 # Idempotent: output is deterministic; run twice → no diff (§5.5 / Gate G1).
+# No dependency on the other vendor-*.sh scripts (see scripts/README.md) —
+# just run before `bun run build`.
 set -euo pipefail
 
 cd "$(dirname "$0")/.."

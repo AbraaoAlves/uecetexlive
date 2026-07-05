@@ -3,6 +3,8 @@
 # Sizes verified ±20% against Appendix A.3 (queried from the release API on
 # 2026-07-02); abnTeX2 presence asserted (risk K1). Idempotent: existing files
 # with the right size are not re-downloaded.
+# No dependency on the other vendor-*.sh scripts (see scripts/README.md) —
+# just run before `bun run build`.
 set -euo pipefail
 
 cd "$(dirname "$0")/.."

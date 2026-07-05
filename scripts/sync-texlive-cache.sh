@@ -2,6 +2,9 @@
 # Vendor TeX Live files into public/wasm/swiftlatex/texlive/ so the SwiftLaTeX
 # WASM compiler works offline (its upstream texlive2.swiftlatex.com CDN is dead).
 #
+# No dependency on the other vendor-*.sh scripts (see scripts/README.md) —
+# just run before `bun run build`.
+#
 # The worker asks for `<endpoint>pdftex/<formatInt>/<filename>` (flat per format
 # code, NO subdirs). We mirror that 1:1.
 #

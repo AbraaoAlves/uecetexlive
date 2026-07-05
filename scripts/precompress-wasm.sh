@@ -7,6 +7,9 @@
 # fetches the sidecar and decompresses it client-side. Originals are kept
 # (-k) as the fallback for uncontrolled/first-load fetches.
 #
+# Must run AFTER `bun run build` — operates on dist/, not public/ (see
+# scripts/README.md for the full vendor → build → precompress order).
+#
 # Usage: ./scripts/precompress-wasm.sh [dist/wasm/busytex]
 set -euo pipefail
 
