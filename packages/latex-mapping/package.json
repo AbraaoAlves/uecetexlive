@@ -9,7 +9,12 @@
   "scripts": {
     "check": "tsc --noEmit && vitest run"
   },
+  "dependencies": {
+    "@unified-latex/unified-latex-types": "^1.8.4",
+    "@unified-latex/unified-latex-util-parse": "^1.8.4"
+  },
   "devDependencies": {
+    "fast-check": "^4.8.0",
     "happy-dom": "^20.10.6",
     "typescript": "^6.0.3",
     "vitest": "^4.1.9"
