@@ -8,6 +8,7 @@
     "./react": "./src/react/index.ts"
   },
   "scripts": {
+    "build": "tsc -p tsconfig.build.json",
     "check": "tsc --noEmit && vitest run"
   },
   "peerDependencies": {
@@ -24,5 +25,10 @@
     "happy-dom": "^20.10.6",
     "typescript": "^6.0.3",
     "vitest": "^4.1.9"
-  }
+  },
+  "files": [
+    "dist",
+    "src",
+    "README.md"
+  ]
 }

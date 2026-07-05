@@ -8,6 +8,7 @@
     "./preview": "./src/preview/index.ts"
   },
   "scripts": {
+    "build": "tsc -p tsconfig.build.json",
     "check": "tsc --noEmit && vitest run"
   },
   "dependencies": {
@@ -57,5 +58,10 @@
     "happy-dom": "^20.10.6",
     "typescript": "^6.0.3",
     "vitest": "^4.1.9"
-  }
+  },
+  "files": [
+    "dist",
+    "src",
+    "README.md"
+  ]
 }
