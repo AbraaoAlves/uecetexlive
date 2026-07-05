@@ -8,14 +8,14 @@ import {
   NodeViewWrapper,
   ReactNodeViewRenderer,
 } from "@tiptap/react";
-import katex from "katex";
-import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import {
   editCell,
   parseTable,
   serializeTable,
   tableRows,
-} from "@/features/latex-mapping/table-model";
+} from "@uecetexlive/latex-mapping";
+import katex from "katex";
+import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import { strings } from "@/lib/strings";
 import { cn } from "@/lib/utils";
 import { EditorResourcesContext } from "../resources";

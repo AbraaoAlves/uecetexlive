@@ -4,7 +4,7 @@
  */
 import { Extension } from "@tiptap/core";
 import { Plugin, PluginKey } from "@tiptap/pm/state";
-import { parseLatex } from "@/features/latex-mapping/parse";
+import { parseLatex } from "@uecetexlive/latex-mapping";
 
 export const PasteLatex = Extension.create({
   name: "pasteLatex",

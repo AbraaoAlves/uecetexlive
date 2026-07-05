@@ -5,11 +5,9 @@
  */
 import { EditorContent, type Range, useEditor, useEditorState } from "@tiptap/react";
 import { BubbleMenu } from "@tiptap/react/menus";
+import { type PMDoc, parseLatex, serializeDoc } from "@uecetexlive/latex-mapping";
 import { Bold, Code, ImagePlus, Italic, Underline as UnderlineIcon } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { parseLatex } from "@/features/latex-mapping/parse";
-import { serializeDoc } from "@/features/latex-mapping/serialize";
-import type { PMDoc } from "@/features/latex-mapping/types";
 import { strings } from "@/lib/strings";
 import { cn } from "@/lib/utils";
 import { EditorToolbar } from "./EditorToolbar";

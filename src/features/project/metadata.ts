@@ -7,9 +7,10 @@
  * parser's Invariant #1: applying the extracted values back unchanged must
  * reproduce the source byte-for-byte.
  */
+
+import { sliceArgs } from "@uecetexlive/latex-mapping";
 import type * as Ast from "@unified-latex/unified-latex-types";
 import { parse } from "@unified-latex/unified-latex-util-parse";
-import { sliceArgs } from "@/features/latex-mapping/slice-args";
 import { walk } from "./include-graph";
 
 export type WorkType = "tccgraduacao" | "tccespecializacao" | "dissertacao" | "tese";
