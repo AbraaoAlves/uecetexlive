@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { UECETEX2_STRUCTURE } from "../template-structure";
 import {
   bytesToText,
   isSimpleModeVisible,
@@ -43,7 +44,7 @@ describe("isWysiwygEligible (§4.1 editable zone)", () => {
     ["elementos-pos-textuais/glossario.tex", false],
     ["figuras/figura-1.jpg", false],
   ])("%s -> %s", (path, eligible) => {
-    expect(isWysiwygEligible(path)).toBe(eligible);
+    expect(isWysiwygEligible(UECETEX2_STRUCTURE, path)).toBe(eligible);
   });
 });
 
@@ -58,7 +59,7 @@ describe("railSectionOf (§4.6 grouping)", () => {
     ["figuras/main.cpp", "figures"],
     ["documento.tex", "root"],
   ])("%s -> %s", (path, section) => {
-    expect(railSectionOf(path)).toBe(section);
+    expect(railSectionOf(UECETEX2_STRUCTURE, path)).toBe(section);
   });
 });
 
@@ -108,7 +109,7 @@ describe("isSimpleModeVisible (modo simples — allowlist de prosa)", () => {
     ["elementos-pre-textuais/lista-de-simbolos.tex", false],
     ["elementos-pos-textuais/glossario.tex", false],
   ])("%s -> %s", (path, visible) => {
-    expect(isSimpleModeVisible(path)).toBe(visible);
+    expect(isSimpleModeVisible(UECETEX2_STRUCTURE, path)).toBe(visible);
   });
 });
 
