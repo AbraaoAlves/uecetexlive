@@ -9,15 +9,19 @@ figures, bibliography, glossary, index, code listings — and compiles it to a
 submission-quality PDF entirely in the browser via WebAssembly, edited through
 a Notion-grade WYSIWYG editor built on Tiptap.
 
-No backend, no accounts, no server compile, no telemetry. After the first
-full-build warmup the app works fully **offline**.
+No backend, no accounts, no server compile, no telemetry. The engine
+downloads once in the background (~150 MB compressed on the wire, ~220 MB in
+the cache — see DEVIATIONS.md D12) and the app then works fully **offline**.
 
-## Two compile engines, one button
+## One engine (busytex), two compile modes
 
-| Mode | Engine | Speed | Resolves |
+| Mode | Pipeline | Speed | Resolves |
 | --- | --- | --- | --- |
-| **Rascunho** (draft) | SwiftLaTeX pdfTeX (TL 2020) | ~3 s | layout only — citations show `[?]` |
-| **Completa** (full) | busytex: pdfTeX + bibtex8 + makeindex ×2 | ~1–3 min (after a one-time ~100 MB download) | bibliography, glossary **and** index |
+| **Rascunho** (draft) | busytex pdfTeX, single pass | ≈3× faster than full | layout only — citations show `[?]` |
+| **Completa** (full) | busytex: pdfTeX + bibtex8 + makeindex ×2 | ~1–4 min | bibliography, glossary **and** index |
+
+Both modes share the same engine instance and asset cache — switching modes
+never re-downloads anything.
 
 ## Quickstart (users)
 
@@ -33,14 +37,12 @@ full build will skip BibTeX and use your precompiled bibliography (§3.6 Tier 4)
 ```bash
 bun install
 ./scripts/vendor-uecetex2.sh        # template snapshot (pinned commit)
-./scripts/vendor-busytex.sh         # busytex WASM + CTAN injection pack (~216 MB)
-./scripts/sync-texlive-cache.sh     # SwiftLaTeX draft engine TL2020 slice (~85 MB)
+./scripts/vendor-busytex.sh         # busytex WASM + CTAN injection pack (~220 MB)
 bun run dev                         # http://localhost:5173
 ```
 
 The vendor scripts are idempotent and network-driven; their outputs are
-gitignored (too large for the repo) except the small manifests and the
-patched SwiftLaTeX engine files.
+gitignored (too large for the repo) except the small manifests.
 
 ```bash
 bun run check          # biome + tsc + vitest (the CI gate)
@@ -55,10 +57,10 @@ from it (all the hard-won reality) are in [`DEVIATIONS.md`](DEVIATIONS.md).
 
 | Area | Where | Notes |
 | --- | --- | --- |
-| Compile engines | `src/features/compiler/` | `PdfCompiler` interface; busytex + SwiftLaTeX behind it |
-| Pass orchestration | `src/features/compiler/orchestrator.ts` | latexmk-in-TS fixpoint (pure, TDD) |
+| Compile engine | `src/features/compiler/` | `PdfCompiler` interface; busytex behind it (draft + full modes) |
+| Pass orchestration | `src/features/compiler/orchestrator.ts` | latexmk-in-TS fixpoint + single-pass draft (pure, TDD) |
 | busytex worker | `public/wasm/busytex/uecetexlive.worker.js` | see [`docs/busytex-integration.md`](docs/busytex-integration.md) |
-| SwiftLaTeX pipeline | [`docs/prototype-compile-pipeline.md`](docs/prototype-compile-pipeline.md) | the TeX Live URL contract + 3 engine patches |
+| Service worker | `src/sw.ts` | app-shell precache + gzip-sidecar decompression for Pages (D12) |
 | LaTeX ⇄ ProseMirror | `src/features/latex-mapping/` | byte-identity + stability invariants (pure, TDD) |
 | WYSIWYG editor | `src/features/editor/` | Tiptap extension suite, node views, slash/bubble menus |
 | Project model | `src/features/project/` | Zod schema, include graph, zip, reorder (pure, TDD) |
@@ -68,6 +70,6 @@ from it (all the hard-won reality) are in [`DEVIATIONS.md`](DEVIATIONS.md).
 
 ## License
 
-MIT (see [`LICENSE`](LICENSE)). Third-party components — notably the AGPL-3.0
-SwiftLaTeX engine (served patched) and the aggregate-licensed busytex/TeX Live
-bundles — retain their own licenses; see [`THIRD_PARTY.md`](THIRD_PARTY.md).
+MIT (see [`LICENSE`](LICENSE)). Third-party components — notably the
+aggregate-licensed busytex/TeX Live bundles — retain their own licenses;
+see [`THIRD_PARTY.md`](THIRD_PARTY.md).

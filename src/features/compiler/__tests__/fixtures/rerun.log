@@ -1,0 +1,13 @@
+This is pdfTeX, Version 3.141592653-2.6-1.40.24 (preloaded format=pdflatex)
+(./documento.tex
+(./elementos-textuais/introducao.tex)
+
+LaTeX Warning: Citation `alves2010' on page 12 undefined on input line 8.
+
+
+LaTeX Warning: There were undefined references.
+
+
+LaTeX Warning: Label(s) may have changed. Rerun to get cross-references right.
+
+Output written on documento.pdf (62 pages, 500000 bytes).

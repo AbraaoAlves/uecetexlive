@@ -1,24 +1,17 @@
 /**
- * Lazy factory per engine id (§3.2). Engine modules are client-only, loaded
- * via dynamic import() from event handlers — never from route module graphs.
+ * Lazy factory (§3.2). The engine module is client-only, loaded via dynamic
+ * import() from event handlers — never from route module graphs.
+ *
+ * Draft and full share the single busytex instance (same worker, same
+ * one-time ~220 MB warmup); the mode is decided per compile via
+ * CompileInput.mode.
  */
 import type { PdfCompiler } from "./types";
 
-const cache = new Map<string, Promise<PdfCompiler>>();
+let cached: Promise<PdfCompiler> | null = null;
 
-export function getCompiler(
-  id: "busytex-full" | "swiftlatex-draft",
-): Promise<PdfCompiler> {
-  let cached = cache.get(id);
-  if (!cached) {
-    cached =
-      id === "busytex-full"
-        ? import("./busytex/BusytexFullCompiler").then((m) => new m.BusytexFullCompiler())
-        : import("./swiftlatex/SwiftLatexDraftCompiler").then(
-            (m) => new m.SwiftLatexDraftCompiler(),
-          );
-    cache.set(id, cached);
-  }
+export function getCompiler(): Promise<PdfCompiler> {
+  cached ??= import("./busytex/BusytexCompiler").then((m) => new m.BusytexCompiler());
   return cached;
 }
 

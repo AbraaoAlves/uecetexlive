@@ -1,0 +1,7 @@
+This is pdfTeX, Version 3.141592653-2.6-1.40.24 (preloaded format=pdflatex)
+(./documento.tex
+(./lib/preambulo.tex
+(/texlive/texmf-dist/tex/latex/abntex2/abntex2.cls
+./elementos-textuais/metodologia.tex:100: Undefined control sequence.
+l.100 \foo
+Interrupted at this po

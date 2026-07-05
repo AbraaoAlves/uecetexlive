@@ -1,0 +1,12 @@
+This is pdfTeX, Version 3.141592653-2.6-1.40.24 (TeX Live 2023/Debian) (preloaded format=pdflatex)
+entering extended mode
+(./documento.tex
+LaTeX2e <2022-11-01> patch level 1
+(./lib/preambulo.tex
+(/texlive/texmf-dist/tex/latex/abntex2/abntex2.cls
+Document Class: abntex2 2018/11/17 v1.9.7 abnTeX2
+(/texlive/texmf-dist/tex/latex/memoir/memoir.cls)))
+(./elementos-textuais/introducao.tex [11] [12])
+(./elementos-textuais/conclusao.tex [58])
+Output written on documento.pdf (62 pages, 543210 bytes).
+Transcript written on documento.log.

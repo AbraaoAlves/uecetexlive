@@ -1,8 +1,7 @@
 # busytex integration — our knowledge.md
 
 Everything learned wiring busytex's WASM toolchain (pdflatex + bibtex8 +
-makeindex) into UeceTexLive. Companion to `docs/prototype-compile-pipeline.md`
-(the SwiftLaTeX/draft-engine manual). Read this before touching
+makeindex) into UeceTexLive. Read this before touching
 `public/wasm/busytex/uecetexlive.worker.js` or
 `src/features/compiler/busytex/`.
 
@@ -100,7 +99,7 @@ engine chatter.
 
 ## 7. Download/warmup
 
-`BusytexFullCompiler.warmup()` prefetches wasm + 6×(.js+.data) with byte
+`BusytexCompiler.warmup()` prefetches wasm + 6×(.js+.data) with byte
 progress (4-way parallel), then spawns the worker whose importScripts/fetch
 hit the HTTP cache. ~216 MB raw; service-worker cached after first run
 (Phase 6). Keep fetched buffers in the browser cache, not in page memory
