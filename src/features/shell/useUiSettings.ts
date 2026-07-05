@@ -3,9 +3,10 @@
  * persisted in the IndexedDB `settings` store under the "ui" key.
  * Optimistic set + fire-and-forget persist; defaults render until hydration.
  */
+
+import { type UiSettings, UiSettingsSchema } from "@uecetexlive/project-model";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { loadUiSettings, saveUiSettings } from "@/features/persistence/db";
-import { type UiSettings, UiSettingsSchema } from "@/features/project/schema";
 
 export interface UseUiSettings {
   ui: UiSettings;

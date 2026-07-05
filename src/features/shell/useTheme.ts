@@ -3,8 +3,9 @@
  * palette in styles.css). "system" follows the OS and live-updates when the
  * OS preference changes.
  */
+
+import type { UiSettings } from "@uecetexlive/project-model";
 import { useEffect } from "react";
-import type { UiSettings } from "@/features/project/schema";
 
 export type Theme = UiSettings["theme"];
 

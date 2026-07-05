@@ -5,9 +5,9 @@
  * the .bib is re-parsed per keystroke.
  */
 import { renderHook } from "@testing-library/react";
+import type { Project } from "@uecetexlive/project-model";
 import { describe, expect, it } from "vitest";
 import type { IncludeGraph } from "@/features/project/include-graph";
-import type { Project } from "@/features/project/schema";
 import { textToBytes } from "@/features/project/vfs";
 import { useEditorResources } from "../useEditorResources";
 

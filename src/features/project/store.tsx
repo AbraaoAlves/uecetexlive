@@ -1,6 +1,8 @@
 /**
  * Project state — load-or-seed on boot, 500 ms debounced autosave (§5.2).
  */
+
+import type { Project } from "@uecetexlive/project-model";
 import {
   createContext,
   type ReactNode,
@@ -12,7 +14,6 @@ import {
   useState,
 } from "react";
 import { loadProject, saveProject } from "@/features/persistence/db";
-import type { Project } from "./schema";
 import { seedTemplate } from "./seed";
 import { isWysiwygEligible, kindOf, textToBytes } from "./vfs";
 

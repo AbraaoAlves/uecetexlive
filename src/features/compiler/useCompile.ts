@@ -2,9 +2,10 @@
  * Page-side compile state machine. Engine modules load lazily on first use
  * (client-only discipline, §3.2).
  */
+
+import type { Project } from "@uecetexlive/project-model";
 import { useCallback, useRef, useState } from "react";
 import { cacheLastPdf } from "@/features/persistence/db";
-import type { Project } from "@/features/project/schema";
 import { getCompiler } from "./index";
 import type { CompileResult } from "./types";
 

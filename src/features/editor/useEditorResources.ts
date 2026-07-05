@@ -3,9 +3,9 @@
  * parsed bibliography for citation chips/picker, harvested labels.
  */
 import { parse as parseBib } from "@retorquere/bibtex-parser";
+import type { Project } from "@uecetexlive/project-model";
 import { useEffect, useMemo, useRef } from "react";
 import type { IncludeGraph } from "@/features/project/include-graph";
-import type { Project } from "@/features/project/schema";
 import { bytesToText } from "@/features/project/vfs";
 import { slugify } from "@/lib/utils";
 import type { BibEntry, EditorResources } from "./resources";
