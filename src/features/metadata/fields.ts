@@ -3,7 +3,7 @@
  * inline, like the slash-menu COMMANDS. Fields with `verbatim` write their
  * value as-is (enums); free text is escaped by the wizard before applying.
  */
-import type { WorkType } from "@/features/project/metadata";
+import type { MetadataField, WorkType } from "@/features/project/metadata";
 
 export interface FieldOption {
   value: string;
@@ -22,7 +22,10 @@ export interface FieldDef {
   verbatim?: boolean;
   /** Sub-heading rendered above this field within the step. */
   section?: string;
-  showWhen?: (type: WorkType | null) => boolean;
+  showWhen?: (
+    type: WorkType | null,
+    fields: ReadonlyMap<string, MetadataField>,
+  ) => boolean;
 }
 
 export interface StepDef {
@@ -37,6 +40,8 @@ const isEspec = (t: WorkType | null) => t === "tccespecializacao";
 const isMestrado = (t: WorkType | null) => t === "dissertacao";
 const isDoutorado = (t: WorkType | null) => t === "tese";
 const isStricto = (t: WorkType | null) => t === "dissertacao" || t === "tese";
+const isUab = (_type: WorkType | null, fields: ReadonlyMap<string, MetadataField>) =>
+  fields.get("ehuab")?.value.trim() === "sim";
 
 function bancaSlot(slot: string, ordinal: number, firstHint?: string): FieldDef[] {
   return [
@@ -113,6 +118,29 @@ export const WIZARD_STEPS: readonly StepDef[] = [
           { value: "sim", label: "Sim — exame de qualificação" },
         ],
         showWhen: isStricto,
+      },
+      {
+        macro: "ehuab",
+        label: "É modalidade UAB (Universidade Aberta do Brasil)?",
+        kind: "select",
+        verbatim: true,
+        options: [
+          { value: "nao", label: "Não" },
+          { value: "sim", label: "Sim — polo EAD/UAB" },
+        ],
+        section: "Modalidade UAB",
+        hint:
+          "Adiciona o brasão e a linha “Universidade Aberta do Brasil” na capa " +
+          "(e, em TCC, a frase de parceria na folha de rosto).",
+      },
+      {
+        macro: "localdopolo",
+        label: "Local do polo",
+        kind: "text",
+        hint:
+          "Cidade do polo (ex.: “Limoeiro do Norte -- Ceará”). Substitui o " +
+          "Local apenas na capa.",
+        showWhen: isUab,
       },
     ],
   },

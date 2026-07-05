@@ -39,14 +39,21 @@ export function MetadataWizard({ fields, onApply, onClose }: MetadataWizardProps
   const workType = workTypeOf(fields);
   const step = WIZARD_STEPS[stepIndex] ?? WIZARD_STEPS[0];
   if (!step) return null;
-  const visibleFields = step.fields.filter((f) => !f.showWhen || f.showWhen(workType));
+  const visibleFields = step.fields.filter(
+    (f) => !f.showWhen || f.showWhen(workType, fields),
+  );
   const isLast = stepIndex === WIZARD_STEPS.length - 1;
 
   const commit = (def: FieldDef, raw: string) => {
     const value = def.verbatim ? raw : escapeMetadataValue(raw.trim());
     const current = fields.get(def.macro)?.value;
     if (current === undefined || current === value) return;
-    onApply(new Map([[def.macro, value]]));
+    const updates = new Map([[def.macro, value]]);
+    if (def.macro === "ehuab" && value === "nao") {
+      const polo = fields.get("localdopolo");
+      if (polo && polo.value !== "") updates.set("localdopolo", "");
+    }
+    onApply(updates);
   };
 
   const titulo = fields.get("titulo")?.value.trim() ?? "";
