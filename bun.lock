@@ -20,6 +20,21 @@
         "@radix-ui/react-tooltip": "^1.2.11",
         "@retorquere/bibtex-parser": "^10.0.0",
         "@tanstack/react-router": "^1.170.17",
+        "@tiptap/core": "^3.27.1",
+        "@tiptap/extension-blockquote": "^3.27.1",
+        "@tiptap/extension-bold": "^3.27.1",
+        "@tiptap/extension-bullet-list": "^3.27.1",
+        "@tiptap/extension-code": "^3.27.1",
+        "@tiptap/extension-code-block": "^3.27.1",
+        "@tiptap/extension-document": "^3.27.1",
+        "@tiptap/extension-heading": "^3.27.1",
+        "@tiptap/extension-italic": "^3.27.1",
+        "@tiptap/extension-list-item": "^3.27.1",
+        "@tiptap/extension-ordered-list": "^3.27.1",
+        "@tiptap/extension-paragraph": "^3.27.1",
+        "@tiptap/extension-text": "^3.27.1",
+        "@tiptap/extension-underline": "^3.27.1",
+        "@tiptap/extensions": "^3.27.1",
         "@tiptap/pm": "^3.27.1",
         "@tiptap/react": "^3.27.1",
         "@tiptap/starter-kit": "^3.27.1",
@@ -68,6 +83,15 @@
         "workbox-range-requests": "^7.4.1",
         "workbox-routing": "^7.4.1",
         "workbox-strategies": "^7.4.1",
+      },
+    },
+    "packages/latex-mapping": {
+      "name": "@uecetexlive/latex-mapping",
+      "version": "0.0.0",
+      "devDependencies": {
+        "happy-dom": "^20.10.6",
+        "typescript": "^6.0.3",
+        "vitest": "^4.1.9",
       },
     },
   },
@@ -817,6 +841,8 @@
     "@types/whatwg-mimetype": ["@types/whatwg-mimetype@3.0.2", "", {}, "sha512-c2AKvDT8ToxLIOUlN51gTiHXflsfIFisS4pO7pDPoKouJCESkhZnEy623gwP9laCy5lnLDAw1vAzu2vM2YLOrA=="],
 
     "@types/ws": ["@types/ws@8.18.1", "", { "dependencies": { "@types/node": "*" } }, "sha512-ThVF6DCVhA8kUGy+aazFQ4kXQ7E1Ty7A3ypFOe0IcJV8O/M511G99AW24irKrW56Wt44yG9+ij8FaqoBGkuBXg=="],
+
+    "@uecetexlive/latex-mapping": ["@uecetexlive/latex-mapping@workspace:packages/latex-mapping"],
 
     "@unified-latex/unified-latex-builder": ["@unified-latex/unified-latex-builder@1.8.4", "", { "dependencies": { "@unified-latex/unified-latex-types": "^1.8.4" } }, "sha512-Rw5XlVhJ50wk7J/hukJ0YBjLqaCjNTYDLZc6lNPH8Vji56YPzZbduuh/kY3ueME+CnxJq/34CGY8D/0cOZY8yw=="],
 
