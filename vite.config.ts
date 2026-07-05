@@ -5,10 +5,20 @@ import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 import { VitePWA } from "vite-plugin-pwa";
+import { computeVendorHash } from "./src/build/vendor-hash";
 
 // Project-page deploys (abraaoalves.github.io/uecetexlive) build with
 // BASE_PATH=/uecetexlive/ (deploy.yml); dev/preview/e2e stay at "/".
 const base = process.env.BASE_PATH ?? "/";
+
+// Fingerprint of the vendored WASM engines + template (src/build/vendor-hash.ts).
+// Exposed as VITE_-prefixed so it flows through import.meta.env into BOTH the
+// app bundle and the injectManifest service-worker bundle (src/sw.ts reads it
+// the same way it already reads import.meta.env.BASE_URL) — must be set before
+// defineConfig runs so Vite's env population picks it up.
+process.env.VITE_VENDOR_HASH = computeVendorHash(
+  fileURLToPath(new URL(".", import.meta.url)),
+);
 
 export default defineConfig({
   base,

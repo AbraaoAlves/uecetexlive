@@ -51,7 +51,27 @@ registerRoute(
   }),
 );
 
-const CACHE_NAME = "uecetex-assets";
+// Versioned with a hash of public/wasm + public/templates (src/build/vendor-hash.ts,
+// vite.config.ts) so a deploy that changes the vendored LaTeX engines/template
+// gets a FRESH cache bucket instead of silently reusing (and never refetching)
+// whatever CacheFirst already stored under the old, unversioned name. The
+// activate handler below evicts old vendor buckets once this one is current.
+const CACHE_PREFIX = "uecetex-assets-";
+const CACHE_NAME = `${CACHE_PREFIX}${import.meta.env.VITE_VENDOR_HASH}`;
+
+self.addEventListener("activate", (event) => {
+  event.waitUntil(
+    caches
+      .keys()
+      .then((keys) =>
+        Promise.all(
+          keys
+            .filter((key) => key.startsWith(CACHE_PREFIX) && key !== CACHE_NAME)
+            .map((key) => caches.delete(key)),
+        ),
+      ),
+  );
+});
 
 /** The big busytex binaries that ship with a gzip sidecar in production. */
 const GZ_SIDECAR = /\/wasm\/busytex\/[^/]+\.(?:data|wasm)$/;
