@@ -4,7 +4,15 @@ import { defineConfig, devices } from "@playwright/test";
  * E2E suite runs against the *built* app (`vite preview`) — the same bits a
  * static host would serve. WASM compiles are slow on cold cache, hence the
  * generous timeouts on the full-build spec (set per-test, not globally).
+ *
+ * Tests that click engine-full trigger a real multi-pass pdftex compile in
+ * the browser (minutes, not seconds) regardless of which file they live in —
+ * matched by title, not filename, so a fast/slow pair in the same spec file
+ * (see import-export.spec.ts) still splits across projects correctly.
  */
+const FULL_COMPILE_TITLES =
+  /full build: uecetex2 with citations|wysiwyg roundtrip: type|import \.bbl activates the Tier-4/;
+
 export default defineConfig({
   testDir: "./e2e",
   fullyParallel: false,
@@ -18,7 +26,13 @@ export default defineConfig({
   },
   projects: [
     {
-      name: "chromium",
+      name: "ui",
+      grepInvert: FULL_COMPILE_TITLES,
+      use: { ...devices["Desktop Chrome"] },
+    },
+    {
+      name: "full-compile",
+      grep: FULL_COMPILE_TITLES,
       use: { ...devices["Desktop Chrome"] },
     },
   ],

@@ -1,24 +1,23 @@
-name: CI
+name: E2E Full Compile
 
 on:
   push:
     branches: [main]
   pull_request:
+    paths:
+      - "src/features/compiler/**"
+      - "scripts/vendor-*.sh"
+      - "scripts/sync-texlive-cache.sh"
+      - "e2e/compile-full.spec.ts"
+      - "e2e/fixtures/**"
+      - "playwright.config.ts"
+      - "vite.config.ts"
+      - "bun.lock"
+  schedule:
+    - cron: "0 6 * * *"
 
 jobs:
-  check:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: oven-sh/setup-bun@v2
-      - run: bun install --frozen-lockfile
-      - run: bun run check
-      # Compliance AGPL (package_extraction.md §4): não bloqueia o engine
-      # SwiftLaTeX — falha se ele entrar sem LICENSE/licença mista/patches marcados.
-      - run: ./scripts/check-agpl-compliance.sh
-      - run: bun run build-storybook
-
-  e2e:
+  e2e-full:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
@@ -28,6 +27,7 @@ jobs:
 
       # Vendored WASM/template/TeX assets are large and content-stable → cache
       # them keyed by the vendor scripts (bump the key when a script changes).
+      # Same key as ci.yml so the two workflows share the cache entry.
       - name: Cache vendored assets
         id: vendor-cache
         uses: actions/cache@v4
@@ -47,9 +47,9 @@ jobs:
 
       - run: bunx playwright install --with-deps chromium
       - run: bun run build
-      - run: bunx playwright test --project=ui
+      - run: bunx playwright test --project=full-compile
       - uses: actions/upload-artifact@v4
         if: failure()
         with:
-          name: playwright-report
+          name: playwright-report-full-compile
           path: playwright-report/
