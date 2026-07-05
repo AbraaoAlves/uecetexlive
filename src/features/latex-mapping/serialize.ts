@@ -8,6 +8,7 @@
  *    blocks default to one blank line.
  *  - rawLatex nodes emit their stored text byte-for-byte.
  */
+import { ABNT_CITATION_PROFILE, type CitationProfile } from "./citation-profile";
 import type { PMDoc, PMMark, PMNode } from "./types";
 
 const DEFAULT_GAP = "\n\n";
@@ -83,14 +84,19 @@ function serializeInlines(content: PMNode[] | undefined): string {
   return (content ?? []).map(serializeInline).join("");
 }
 
-function serializeListItem(item: PMNode): string {
+function serializeListItem(item: PMNode, profile: CitationProfile): string {
   const parts = (item.content ?? []).map((block) =>
-    block.type === "paragraph" ? serializeInlines(block.content) : serializeBlock(block),
+    block.type === "paragraph"
+      ? serializeInlines(block.content)
+      : serializeBlock(block, profile),
   );
   return `\\item ${parts.join("\n")}`;
 }
 
-export function serializeBlock(node: PMNode): string {
+export function serializeBlock(
+  node: PMNode,
+  profile: CitationProfile = ABNT_CITATION_PROFILE,
+): string {
   const raw = node.attrs?.rawSource as string | undefined;
   if (raw != null) return raw;
 
@@ -122,12 +128,16 @@ export function serializeBlock(node: PMNode): string {
     case "bulletList":
     case "orderedList": {
       const env = node.type === "bulletList" ? "itemize" : "enumerate";
-      const items = (node.content ?? []).map(serializeListItem).join("\n");
+      const items = (node.content ?? [])
+        .map((item) => serializeListItem(item, profile))
+        .join("\n");
       return `\\begin{${env}}\n${items}\n\\end{${env}}`;
     }
     case "blockquote": {
-      const env = (node.attrs?.env as string) ?? "citacao";
-      const inner = (node.content ?? []).map(serializeBlock).join("\n\n");
+      const env = (node.attrs?.env as string) ?? profile.longQuoteEnv;
+      const inner = (node.content ?? [])
+        .map((block) => serializeBlock(block, profile))
+        .join("\n\n");
       return `\\begin{${env}}\n${inner}\n\\end{${env}}`;
     }
     case "mathBlock": {
@@ -174,7 +184,10 @@ export function serializeBlock(node: PMNode): string {
   }
 }
 
-export function serializeDoc(doc: PMDoc): string {
+export function serializeDoc(
+  doc: PMDoc,
+  profile: CitationProfile = ABNT_CITATION_PROFILE,
+): string {
   let content = doc.content ?? [];
   // The editor's TrailingNode keeps an empty paragraph at doc end; it has no
   // LaTeX meaning — drop it (and only it) on serialization.
@@ -196,7 +209,7 @@ export function serializeDoc(doc: PMDoc): string {
     // previous block (`\end{table}\chapter{…}`). Pathological sources that
     // really do glue blocks fall to the parser's Invariant #1 backstop.
     if (index > 0 && gap === "") gap = DEFAULT_GAP;
-    out += gap + serializeBlock(node);
+    out += gap + serializeBlock(node, profile);
   });
   out +=
     ((doc as unknown as { attrs?: Record<string, unknown> }).attrs?.gapAfter as

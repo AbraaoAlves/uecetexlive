@@ -13,6 +13,7 @@
  */
 import type * as Ast from "@unified-latex/unified-latex-types";
 import { parse as unifiedParse } from "@unified-latex/unified-latex-util-parse";
+import { ABNT_CITATION_PROFILE, type CitationProfile } from "./citation-profile";
 import { serializeBlock, serializeDoc, serializeInline } from "./serialize";
 import { sliceArgs } from "./slice-args";
 import type { ParseResult, PMDoc, PMNode } from "./types";
@@ -32,7 +33,8 @@ const MARK_CMDS: Record<string, { type: string }> = {
   texttt: { type: "code" },
 };
 
-const CITE_CMDS = new Set(["cite", "citeonline", "Citeonline", "citep", "citet"]);
+/** Convenção natbib/genérica — não varia por norma; o resto vem do CitationProfile. */
+const GENERIC_CITE_CMDS = ["cite", "citep", "citet"];
 const CROSSREF_CMDS = new Set(["ref", "autoref", "pageref"]);
 /** Escape macros whose content is a literal character. */
 const ESCAPE_CHARS = new Set(["%", "&", "#", "_", "$", "{", "}"]);
@@ -171,6 +173,8 @@ function _flattenArgText(nodes: Node[]): string {
 
 interface InlineCtx {
   source: string;
+  citeCmds: Set<string>;
+  longQuoteEnv: string;
 }
 
 /** Consume nodes[i…] as one inline element; returns [pmNodes, nextIndex, endOffset]. */
@@ -242,14 +246,14 @@ function promoteInlineAt(
 
     // Citations / crossrefs / footnote: args may or may not be attached by
     // unified-latex; slice them from source either way.
-    if (CITE_CMDS.has(name) || CROSSREF_CMDS.has(name) || name === "footnote") {
+    if (ctx.citeCmds.has(name) || CROSSREF_CMDS.has(name) || name === "footnote") {
       const nameEnd = start + 1 + name.length;
       const args = sliceArgs(source, nameEnd, true);
       if (args?.mandatory !== null && args !== null) {
         const fullEnd = args.end;
         const slice = source.slice(start, fullEnd);
         let candidate: PMNode;
-        if (CITE_CMDS.has(name)) {
+        if (ctx.citeCmds.has(name)) {
           candidate = {
             type: "citation",
             attrs: {
@@ -445,7 +449,7 @@ function promoteInlinesOfRange(
   } catch {
     return null;
   }
-  const subCtx: InlineCtx = { source: sub };
+  const subCtx: InlineCtx = { ...ctx, source: sub };
   const inner = promoteInlines(ast.content, subCtx);
   return inner;
 }
@@ -525,7 +529,7 @@ function promoteBlockquote(env: Ast.Environment, slice: string, ctx: InlineCtx):
   if (!innerBlocks) return rawBlock(slice);
   const candidate: PMNode = {
     type: "blockquote",
-    attrs: { env: "citacao" },
+    attrs: { env: ctx.longQuoteEnv },
     content: innerBlocks.map((b) => {
       const attrs = { ...b.attrs };
       delete attrs.gapBefore;
@@ -652,12 +656,11 @@ function promoteCodeInclude(slice: string): PMNode {
 }
 
 function promoteEnvironment(env: Ast.Environment, slice: string, ctx: InlineCtx): PMNode {
+  if (env.env === ctx.longQuoteEnv) return promoteBlockquote(env, slice, ctx);
   switch (env.env) {
     case "itemize":
     case "enumerate":
       return promoteList(env, slice, ctx);
-    case "citacao":
-      return promoteBlockquote(env, slice, ctx);
     case "figure":
       return promoteFigure(env, slice, ctx);
     case "table":
@@ -718,7 +721,7 @@ function promoteBlock(seg: Node[], slice: string, ctx: InlineCtx): PMNode {
   return withVerify(candidate, slice, false);
 }
 
-/** Segment + promote a node list (used for doc top level and citacao). */
+/** Segment + promote a node list (used for doc top level and the long-quote env). */
 function promoteBlocksOf(nodes: Node[], ctx: InlineCtx): PMNode[] | null {
   const segments = segmentBlocks(nodes);
   const out: PMNode[] = [];
@@ -741,7 +744,10 @@ function promoteBlocksOf(nodes: Node[], ctx: InlineCtx): PMNode[] | null {
 // Entry point
 // ---------------------------------------------------------------------------
 
-export function parseLatex(source: string): ParseResult {
+export function parseLatex(
+  source: string,
+  profile: CitationProfile = ABNT_CITATION_PROFILE,
+): ParseResult {
   if (source === "") return degenerate(source);
 
   let ast: Ast.Root;
@@ -752,7 +758,11 @@ export function parseLatex(source: string): ParseResult {
   }
 
   try {
-    const ctx: InlineCtx = { source };
+    const ctx: InlineCtx = {
+      source,
+      citeCmds: new Set([...GENERIC_CITE_CMDS, ...profile.citeCommands]),
+      longQuoteEnv: profile.longQuoteEnv,
+    };
     const segments = segmentBlocks(ast.content);
     const content: PMNode[] = [];
     let cursor = 0;
@@ -780,7 +790,7 @@ export function parseLatex(source: string): ParseResult {
     };
 
     // Unconditional Invariant #1 backstop.
-    if (serializeDoc(doc) !== source) return degenerate(source);
+    if (serializeDoc(doc, profile) !== source) return degenerate(source);
     return { doc };
   } catch {
     return degenerate(source);
