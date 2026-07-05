@@ -1,111 +1,48 @@
 /**
- * Page-side compile state machine. Engine modules load lazily on first use
- * (client-only discipline, §3.2).
+ * Compile do app: delega a máquina de estados ao useCompilerEngine do
+ * pacote e adiciona o que é responsabilidade deste app — montar o VFS a
+ * partir do Project e cachear o último PDF (IndexedDB).
  */
-
+import type { EngineId } from "@uecetexlive/compiler";
+import { type CompilerEngineState, useCompilerEngine } from "@uecetexlive/compiler/react";
 import type { Project } from "@uecetexlive/project-model";
-import { useCallback, useRef, useState } from "react";
+import { useCallback } from "react";
 import { cacheLastPdf } from "@/features/persistence/db";
-import { getCompiler } from "./index";
-import type { CompileResult } from "./types";
+import { ENGINE_ASSET_BASES } from "./index";
 
-export type CompileStatus = "idle" | "warming" | "compiling" | "ok" | "error";
-export type EngineId = "swiftlatex-draft" | "busytex-full";
-
-export interface CompileState {
-  status: CompileStatus;
-  engine: EngineId;
-  warmup: { loaded: number; total: number; label: string } | null;
-  progress: { fraction: number; label: string } | null;
-  result: CompileResult | null;
-  error: string | null;
-}
-
-const initial: CompileState = {
-  status: "idle",
-  engine: "swiftlatex-draft",
-  warmup: null,
-  progress: null,
-  result: null,
-  error: null,
-};
+export type { CompileStatus } from "@uecetexlive/compiler/react";
+export type { EngineId };
+export type CompileState = CompilerEngineState;
 
 export function useCompile() {
-  const [state, setState] = useState<CompileState>(initial);
-  const busy = useRef(false);
-
-  const setEngine = useCallback((engine: EngineId) => {
-    setState((prev) => ({ ...prev, engine }));
-  }, []);
+  const {
+    state,
+    compile: engineCompile,
+    setEngine,
+  } = useCompilerEngine({ assetBaseUrls: ENGINE_ASSET_BASES });
 
   const compile = useCallback(
     async (
       project: Project,
       options?: { engine?: EngineId; precompiledBbl?: Uint8Array },
     ) => {
-      if (busy.current) return;
-      busy.current = true;
-      const engine = options?.engine ?? state.engine;
-      try {
-        setState((prev) => ({
-          ...prev,
-          engine,
-          status: "warming",
-          warmup: null,
-          error: null,
-        }));
-        const compiler = await getCompiler(engine);
-        await compiler.warmup((loaded, total, label) => {
-          setState((prev) => ({ ...prev, warmup: { loaded, total, label } }));
-        });
-
-        setState((prev) => ({
-          ...prev,
-          status: "compiling",
-          warmup: null,
-          progress: { fraction: 0, label: "Compilando…" },
-        }));
-        const files: Record<string, Uint8Array> = {};
-        for (const f of project.files) files[f.path] = f.bytes;
-
-        const result = await compiler.compile(
-          {
-            entry: project.entry,
-            files,
-            mode: engine === "busytex-full" ? "full" : "draft",
-            precompiledBbl: options?.precompiledBbl,
-          },
-          (fraction, label) => {
-            setState((prev) => ({ ...prev, progress: { fraction, label } }));
-          },
-        );
-
-        if (result.ok && result.pdf) {
-          void cacheLastPdf({
-            pdf: result.pdf,
-            passes: result.passes,
-            timestamp: Date.now(),
-          }).catch(() => {});
-        }
-        setState((prev) => ({
-          ...prev,
-          status: result.ok ? "ok" : "error",
-          progress: null,
-          result,
-        }));
-      } catch (err) {
-        setState((prev) => ({
-          ...prev,
-          status: "error",
-          progress: null,
-          warmup: null,
-          error: (err as Error).message,
-        }));
-      } finally {
-        busy.current = false;
+      const files: Record<string, Uint8Array> = {};
+      for (const f of project.files) files[f.path] = f.bytes;
+      const result = await engineCompile({
+        entry: project.entry,
+        files,
+        engine: options?.engine,
+        precompiledBbl: options?.precompiledBbl,
+      });
+      if (result?.ok && result.pdf) {
+        void cacheLastPdf({
+          pdf: result.pdf,
+          passes: result.passes,
+          timestamp: Date.now(),
+        }).catch(() => {});
       }
     },
-    [state.engine],
+    [engineCompile],
   );
 
   return { state, compile, setEngine };
