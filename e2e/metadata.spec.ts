@@ -57,6 +57,47 @@ test("welcome → wizard fills title; documento.tex updated; persists", async ({
   await expect(page.getByTestId("welcome-dialog")).not.toBeVisible();
 });
 
+test("UAB toggle reveals local do polo and clears it when turned off", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await expect(page.getByTestId("welcome-dialog")).toBeVisible({ timeout: 15_000 });
+  await page.getByTestId("welcome-fill").click();
+  await expect(page.getByTestId("metadata-wizard")).toBeVisible();
+
+  // "tipo" is the 2nd step; ehuab defaults to "nao" so localdopolo starts hidden.
+  await page.getByTestId("wizard-step-2").click();
+  await expect(page.getByTestId("metadata-field-localdopolo")).not.toBeVisible();
+
+  await page.getByTestId("metadata-field-ehuab").selectOption("sim");
+  const polo = page.getByTestId("metadata-field-localdopolo");
+  await expect(polo).toBeVisible();
+  await polo.fill("Limoeiro do Norte -- Ceará");
+  await polo.blur();
+
+  await page.getByTestId("wizard-close").click();
+  await expect(page.getByTestId("metadata-wizard")).not.toBeVisible();
+
+  await page.getByTestId("advanced-toggle").check();
+  await page.getByTestId("rail-file-documento.tex").click();
+  await expect(page.getByTestId("source-editor-value")).toHaveValue(/\\ehuab\{sim\}/);
+  await expect(page.getByTestId("source-editor-value")).toHaveValue(
+    /\\localdopolo\{Limoeiro do Norte -- Ceará\}/,
+  );
+
+  // Reopen, turn UAB back off: the field disappears and its value is cleared
+  // surgically in the source, without touching any sibling macro.
+  await page.getByTestId("rail-metadata").click();
+  await expect(page.getByTestId("metadata-wizard")).toBeVisible();
+  await page.getByTestId("wizard-step-2").click();
+  await page.getByTestId("metadata-field-ehuab").selectOption("nao");
+  await expect(page.getByTestId("metadata-field-localdopolo")).not.toBeVisible();
+  await page.getByTestId("wizard-close").click();
+
+  await expect(page.getByTestId("source-editor-value")).toHaveValue(/\\ehuab\{nao\}/);
+  await expect(page.getByTestId("source-editor-value")).toHaveValue(/\\localdopolo\{\}/);
+});
+
 test("welcome 'Depois' leaves a pending badge; rail entry reopens the wizard", async ({
   page,
 }) => {

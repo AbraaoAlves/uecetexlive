@@ -15,6 +15,8 @@ const GRAD = fields({
   titulo: "Jogos Digitais no Ensino de Programação",
   autor: "Maria da Silva",
   trabalhoacademico: "tccgraduacao",
+  ehuab: "sim",
+  localdopolo: "Limoeiro do Norte -- Ceará",
   graduacaoem: "Licenciatura em Computação",
   habilitacao: "Licenciado em Computação",
   orientador: "Prof. Dr. João Souza",
