@@ -1,4 +1,10 @@
 import {
+  countLatexWords,
+  exportProjectZip,
+  importProjectZip,
+  UECETEX2_STRUCTURE,
+} from "@uecetexlive/project-model";
+import {
   Download,
   FileUp,
   Loader2,
@@ -36,8 +42,6 @@ import {
   railSectionOf,
   textToBytes,
 } from "@/features/project/vfs";
-import { countLatexWords } from "@/features/project/word-count";
-import { exportProjectZip, importProjectZip } from "@/features/project/zip";
 import { strings } from "@/lib/strings";
 import { useDebouncedValue } from "@/lib/use-debounced-value";
 import { cn, slugify } from "@/lib/utils";
@@ -353,7 +357,11 @@ function ShellInner() {
   const handleZipFile = async (file: File) => {
     try {
       const bytes = new Uint8Array(await file.arrayBuffer());
-      const imported = await importProjectZip(bytes, "uecetex2");
+      const imported = await importProjectZip(bytes, "uecetex2", {
+        structure: UECETEX2_STRUCTURE,
+        templateSource: "https://github.com/thiagodnf/uecetex2",
+        preferredEntry: "documento.tex",
+      });
       setImportState({
         kind: "zip-ok",
         fileCount: imported.files.length,
