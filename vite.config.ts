@@ -73,7 +73,6 @@ export default defineConfig({
     coverage: {
       provider: "v8",
       include: [
-        "src/features/latex-mapping/**/*.ts",
         "src/features/project/**/*.ts",
         "src/features/compiler/orchestrator.ts",
         "src/features/compiler/log-parser.ts",
