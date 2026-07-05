@@ -3,6 +3,8 @@
 /* katex CSS is imported from the lazy EditorSurface chunk, not here (§11.5). */
 @source "../src";
 @source "../.storybook";
+/* Componentes do pacote editor usam o mesmo vocabulário de tokens (§D13). */
+@source "../packages/editor/src";
 
 @custom-variant dark (&:is(.dark *));
 
