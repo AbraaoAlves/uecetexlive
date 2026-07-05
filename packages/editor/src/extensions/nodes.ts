@@ -91,7 +91,7 @@ export interface CitacaoOptions extends BlockquoteOptions {
 
 export const Citacao = Blockquote.extend<CitacaoOptions>({
   addOptions() {
-    return { ...this.parent?.(), env: "citacao" };
+    return { HTMLAttributes: {}, ...this.parent?.(), env: "citacao" };
   },
   addAttributes() {
     return { env: { default: this.options.env, rendered: false } };

@@ -450,6 +450,7 @@ function UploadImageRow({
   resources: EditorResources;
   onPick: (content: Record<string, unknown>) => void;
 }) {
+  const strings = useEditorStrings();
   const [error, setError] = useState<string | null>(null);
   return (
     <div className="border-b">

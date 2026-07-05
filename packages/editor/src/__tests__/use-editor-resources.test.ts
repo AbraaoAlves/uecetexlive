@@ -5,11 +5,9 @@
  * the .bib is re-parsed per keystroke.
  */
 import { renderHook } from "@testing-library/react";
-import type { Project } from "@uecetexlive/project-model";
+import { type Project, textToBytes } from "@uecetexlive/project-model";
 import { describe, expect, it } from "vitest";
-import type { IncludeGraph } from "@/features/project/include-graph";
-import { textToBytes } from "@/features/project/vfs";
-import { useEditorResources } from "../useEditorResources";
+import { type EditorResourceGraph, useEditorResources } from "../useEditorResources";
 
 const BIB =
   "@book{k1,\n  author = {Silva, Ana},\n  title = {Obra},\n  year = {2020},\n}\n";
@@ -39,12 +37,10 @@ function makeProject(texContent: string, extraPaths: string[] = []): Project {
   } as unknown as Project;
 }
 
-function makeGraph(labels: string[]): IncludeGraph {
+function makeGraph(labels: string[]): EditorResourceGraph {
   return {
-    inputs: [],
     labels,
     bibliography: "elementos-pos-textuais/referencias",
-    bibliographyStyle: null,
   };
 }
 
