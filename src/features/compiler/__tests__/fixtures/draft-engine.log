@@ -1,0 +1,14 @@
+This is pdfTeX, Version 3.14159265-2.6-1.40.21 (TeX Live 2020) (preloaded format=swiftlatexpdftex)
+entering extended mode
+(main.tex
+LaTeX2e <2020-02-02> patch level 2
+(geometry.sty) (article.cls
+Document Class: article 2019/12/20 v1.4l Standard LaTeX document class
+) (ot1cmr.fd
+! Undefined control sequence.
+l.23 \unknowncmd
+                {x}
+The control sequence at the end of the top line
+of your error message was never \def'ed.
+)
+No pages of output.

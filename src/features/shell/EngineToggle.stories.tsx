@@ -11,11 +11,8 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Draft: Story = {
-  args: { engine: "swiftlatex-draft", fullReady: false },
+  args: { engine: "busytex-draft" },
 };
-export const FullNotDownloaded: Story = {
-  args: { engine: "swiftlatex-draft", fullReady: false },
-};
-export const FullReady: Story = {
-  args: { engine: "busytex-full", fullReady: true },
+export const Full: Story = {
+  args: { engine: "busytex-full" },
 };

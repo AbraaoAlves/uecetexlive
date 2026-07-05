@@ -1,0 +1,16 @@
+This is pdfTeX, Version 3.141592653-2.6-1.40.24 (preloaded format=pdflatex)
+entering extended mode
+(./documento.tex
+(./elementos-textuais/introducao.tex
+./elementos-textuais/introducao.tex:42: Undefined control sequence.
+l.42 \badmacro
+              {oops}
+The control sequence at the end of the top line
+of your error message was never \def'ed.
+./elementos-textuais/introducao.tex:57: Missing $ inserted.
+<inserted text>
+                $
+l.57 x_1
+        ^2
+)
+Output written on documento.pdf (3 pages, 12345 bytes).

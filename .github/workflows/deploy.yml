@@ -25,24 +25,24 @@ jobs:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
       - run: bun install --frozen-lockfile
-      # Downloaded (not committed) vendor payloads: busytex binaries + the
-      # SwiftLaTeX TeX Live tree. The scripts are idempotent (size-checked),
-      # so a cache hit turns them into fast no-ops. Committed files under
-      # public/wasm are hashed into the key so a stale cache can never
-      # clobber a fresh checkout.
+      # Downloaded (not committed) vendor payloads: busytex binaries + CTAN
+      # inject pack. The scripts are idempotent (size-checked), so a cache
+      # hit turns them into fast no-ops. Committed files under public/wasm
+      # are hashed into the key so a stale cache can never clobber a fresh
+      # checkout.
       - uses: actions/cache@v4
         with:
-          path: |
-            public/wasm/busytex
-            public/wasm/swiftlatex/texlive
-          key: vendor-${{ hashFiles('scripts/vendor-busytex.sh', 'scripts/sync-texlive-cache.sh', 'public/wasm/busytex/**', 'public/wasm/swiftlatex/*.js', 'public/wasm/swiftlatex/*.wasm') }}
+          path: public/wasm/busytex
+          key: vendor-${{ hashFiles('scripts/vendor-busytex.sh', 'public/wasm/busytex/**') }}
       - run: ./scripts/vendor-uecetex2.sh
       - run: ./scripts/vendor-busytex.sh
-      - run: ./scripts/sync-texlive-cache.sh
       # App at the project-page root (abraaoalves.github.io/uecetexlive)…
       - run: bun run build
         env:
           BASE_PATH: /uecetexlive/
+      # GitHub Pages can't compress the big binaries — publish gzip sidecars
+      # that the service worker decompresses client-side (D12).
+      - run: ./scripts/precompress-wasm.sh dist/wasm/busytex
       # GitHub Pages has no SPA rewrite: deep links (/sobre) must fall back
       # to the app shell via the 404 page.
       - run: cp dist/index.html dist/404.html

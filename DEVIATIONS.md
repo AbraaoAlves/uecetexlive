@@ -76,7 +76,7 @@ draft in ~3 s.
 - Vite 8/rolldown: chunk splitting via `build.rolldownOptions.output.advancedChunks`
   (not the Vite-7 `manualChunks`). App-shell entry ~183 KB gz; Tiptap+KaTeX are
   a lazy chunk (WYSIWYG surface is `React.lazy`), pdf.js lazy on first preview.
-- `vite-plugin-pwa`: the ~216 MB WASM/TeX payload is **not** precached (that is
+- `vite-plugin-pwa`: the ~220 MB WASM/TeX payload is **not** precached (that is
   the app shell only); it is runtime CacheFirst so the first Completa warmup
   fills the cache and the app then works offline.
 
@@ -92,6 +92,69 @@ draft in ~3 s.
   flaky under Playwright's synthetic keystrokes; the roundtrip e2e creates
   the list via the new `/lista` slash command instead. Input-rule lists are
   still covered by the `latex-mapping` unit suite.
+
+## D11 — SwiftLaTeX removed; draft mode unified under busytex (2026-07)
+
+The AGPL-3.0 SwiftLaTeX draft engine (§3.4, D6–D8) was removed to keep the
+distribution MIT + permissive/TeX-aggregate only, and to stop maintaining two
+WASM pipelines with distinct cache/download contracts. "Rascunho" now runs
+busytex's pdflatex in a **single pass** (`runDraftBuild` in the orchestrator —
+no bibtex8/makeindex/rerun; citations still render as `[?]`), sharing the
+worker instance and the one-time ~220 MB warmup with "Completa" — switching
+modes never re-downloads or re-initializes anything. Deleted:
+`src/features/compiler/swiftlatex/`, `public/wasm/swiftlatex/`,
+`scripts/sync-texlive-cache.sh`. D6–D8 are now historical;
+`docs/prototype-compile-pipeline.md` is kept as a historical record only.
+Upside: the app is fully offline after the first compile of **either** mode
+(the SwiftLaTeX draft used to fetch TL2020 packages on demand).
+
+**Accepted trade-off — draft speed.** SwiftLaTeX's warm draft was ~3 s (D8);
+one busytex pdflatex pass over the 47-page template measured ~75 s warm /
+~85 s cold-with-warmup in the e2e environment (dev machine under heavy memory
+pressure — expect better on healthy hardware, but not "instant"). Draft stays
+≈3× faster than Completa (3.7 min e2e) and uses the same TL2023 trees, so
+draft and full can no longer disagree on rendering. If draft latency hurts,
+future avenues: trimming the mounted trees for the draft pass or a persistent
+`--fmt` warm state.
+
+## D12 — GitHub Pages deploy: gzip sidecars + idle warmup (2026-07)
+
+Two measures so the ~220 MB busytex payload (218 MB on disk) hurts less on
+the target host:
+
+- **gzip sidecars.** GitHub Pages offers no header control and no on-the-fly
+  compression for `application/octet-stream`/`wasm` — the payload would cross
+  the wire raw. `scripts/precompress-wasm.sh` (run by deploy.yml after the
+  build) publishes `*.data.gz` + `busytex.wasm.gz` next to the originals
+  (kept as a no-SW fallback), and the service worker — now a custom
+  `src/sw.ts` (`strategies: "injectManifest"`; precache and runtime routes
+  unchanged from the old generateSW config) — fetches the sidecar,
+  decompresses it via `DecompressionStream("gzip")` and caches the
+  *decompressed* bytes under the original URL. Measured over the sidecar set:
+  218.8 MB → 146.5 MB (busytex.wasm 30.4 → 12.2 MB; texlive-basic.data
+  104.6 → 77.3 MB). Brotli
+  was evaluated and rejected: `DecompressionStream` only speaks gzip/deflate
+  and Pages can't set `Content-Encoding` headers anyway. Missing sidecar
+  (dev/preview/CI serve the raw vendored files) falls back to the original
+  URL; SPA-fallback HTML (the D7 lesson) is detected via content-type, and
+  hosts that transparently content-decode are handled by peeking the gzip
+  magic bytes. Deploy must use the Pages *artifact* flow:
+  `texlive-basic.data` (104.6 MB) exceeds git's 100 MB blob limit, so a
+  gh-pages branch was never an option.
+- **Idle warmup.** `useIdleWarmup` starts the one-time warmup shortly after
+  boot — after `navigator.serviceWorker.ready`, so the download flows through
+  the sidecar route — with a discreet topbar indicator ("Preparando motor:
+  43%", `IdleWarmupIndicator`) that yields to the compile flow's own warmup
+  UI. Guards: skipped under `navigator.webdriver` (an eager ~600 MB worker
+  per page would sink e2e machines) and `navigator.connection.saveData`;
+  localStorage `uecetexlive:idle-warmup` = `force` / `off` overrides.
+  `BusytexCompiler.warmup` now fans progress out to a listener set (late
+  subscribers get the last event), so a compile clicked mid-prefetch still
+  shows byte progress.
+
+deploy.yml also stopped calling the deleted `scripts/sync-texlive-cache.sh`
+(D11 leftover — the deploy would have failed) and gained ci.yml's
+vendored-asset cache.
 
 ## Gate status (final)
 

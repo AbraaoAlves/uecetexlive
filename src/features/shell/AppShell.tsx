@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useCompile } from "@/features/compiler/useCompile";
+import { useIdleWarmup } from "@/features/compiler/useIdleWarmup";
 import { SourceEditor } from "@/features/editor/SourceEditor";
 import { useEditorResources } from "@/features/editor/useEditorResources";
 import { MetadataWizard } from "@/features/metadata/MetadataWizard";
@@ -42,6 +43,7 @@ import { useDebouncedValue } from "@/lib/use-debounced-value";
 import { cn, slugify } from "@/lib/utils";
 import { CompileButton } from "./CompileButton";
 import { EngineToggle } from "./EngineToggle";
+import { IdleWarmupIndicator } from "./IdleWarmupIndicator";
 import { ImportDialog, type ImportDialogState } from "./ImportDialog";
 import { NewChapterDialog } from "./NewChapterDialog";
 import { ProjectRail, type RailFile } from "./ProjectRail";
@@ -133,6 +135,7 @@ function ShellInner() {
   const zipInputRef = useRef<HTMLInputElement>(null);
   const bblInputRef = useRef<HTMLInputElement>(null);
   const { state: compileState, compile, setEngine } = useCompile();
+  const idleWarmup = useIdleWarmup();
 
   const texSources = useMemo(() => {
     const map: Record<string, string> = {};
@@ -498,15 +501,19 @@ function ShellInner() {
           />
           Avançado
         </label>
+        {/* Idle prefetch note (D12) — yields to the compile flow's own UI. */}
+        {idleWarmup.status === "running" && compileState.status === "idle" && (
+          <IdleWarmupIndicator
+            loaded={idleWarmup.loaded}
+            total={idleWarmup.total}
+            label={idleWarmup.label}
+          />
+        )}
         {compileState.status === "warming" && compileState.warmup && (
           <WarmupProgress {...compileState.warmup} />
         )}
         <ThemeToggle theme={ui.theme} onChange={(theme) => setUi({ theme })} />
-        <EngineToggle
-          engine={compileState.engine}
-          fullReady={false}
-          onChange={setEngine}
-        />
+        <EngineToggle engine={compileState.engine} onChange={setEngine} />
         <CompileButton
           status={compileState.status}
           progressLabel={compileState.progress?.label}
@@ -769,8 +776,7 @@ function ShellInner() {
                 log={compileState.result?.log ?? compileState.error ?? ""}
                 diagnostics={compileState.result?.diagnostics ?? []}
                 draftMode={
-                  compileState.engine === "swiftlatex-draft" &&
-                  compileState.result !== null
+                  compileState.engine === "busytex-draft" && compileState.result !== null
                 }
               />
             )}

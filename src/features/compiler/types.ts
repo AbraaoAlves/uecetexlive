@@ -1,6 +1,7 @@
 /**
- * PdfCompiler contract (§3.2) — one interface, two engines.
- * UI code never knows which ran.
+ * PdfCompiler contract (§3.2) — one interface, one engine (busytex), two
+ * modes (draft = single pdflatex pass, full = fixpoint). UI code never
+ * knows which ran beyond the mode it asked for.
  */
 export interface CompileInput {
   entry: string;
@@ -34,7 +35,7 @@ export type WarmupProgressFn = (loaded: number, total: number, label: string) =>
 export type CompileProgressFn = (fraction: number, label: string) => void;
 
 export interface PdfCompiler {
-  readonly id: "swiftlatex-draft" | "busytex-full";
+  readonly id: "busytex";
   /** Resolves when engine + data are loaded; reports download progress. */
   warmup(onProgress?: WarmupProgressFn): Promise<void>;
   compile(input: CompileInput, onProgress?: CompileProgressFn): Promise<CompileResult>;
