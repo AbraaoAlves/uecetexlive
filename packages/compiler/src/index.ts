@@ -1,2 +1,3 @@
-/** Casca da Fase 0 — o conteúdo real chega na fase de extração deste pacote. */
+/** Contratos do compilador (§3.2); engines/orquestração chegam na Fase 3. */
 export const PACKAGE_NAME = "@uecetexlive/compiler";
+export * from "./types";
