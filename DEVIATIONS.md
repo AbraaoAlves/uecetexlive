@@ -153,6 +153,33 @@ Unlike the original D12 (bundled with D11), this one only ever warms
 `e2e/sw-gzip.spec.ts` validates the SW serves busytex `.data` byte-perfect in
 both the sidecar and raw layouts, without booting the engine.
 
+## D13 — Extração de pacotes: decisões de estilo/copy do `@uecetexlive/editor` (2026-07-05)
+
+Execução do `package_extraction.md` (Fases 0–3). Duas decisões da Fase 2
+registradas aqui porque a implementação difere em grau do texto do plano:
+
+- **Estilo.** O plano pedia "não emite Tailwind utilitário opinativo".
+  Reescrever ~1.7k linhas de componentes para CSS neutro sem verificação
+  visual era troca ruim. Implementado o meio-termo: os componentes mantêm
+  utilitários Tailwind escritos sobre o **vocabulário de tokens semânticos**
+  (`surface`, `ink`, `accent`, `border`, `warning`, `danger`) — que no
+  Tailwind v4 resolvem para CSS custom properties definidas pelo *consumidor*
+  — mais ganchos estáveis (`data-testid`, classes `uecetex-*` nos nós do
+  schema). A skin é de quem consome (Papyru define seus próprios tokens); o
+  contrato está no README do pacote. Revisitar se o Papyru precisar de
+  desacoplamento total do Tailwind.
+- **Copy.** `EditorStringsProvider`/`useEditorStrings` cobre tudo que vinha
+  de `@/lib/strings` (+ tooltips que estavam duplicados hardcoded em
+  `nodes.ts`). Literais PT-BR que **já eram** inline nos componentes (títulos
+  de picker, estados vazios, rótulos do bubble menu) permanecem inline —
+  mesmo comportamento de antes; extração completa fica para quando um
+  consumidor precisar de i18n de verdade.
+- **Auditoria `include-graph`/`reorder`/`new-chapter` (Fase 2 item 5):**
+  `new-chapter.ts` hardcoda `elementos-textuais/` (acoplado ao template) —
+  **fica no app**. `include-graph.ts`/`reorder.ts` são genéricos, mas só têm
+  consumidores no app — **ficam no app** até haver demanda externa; o editor
+  foi desacoplado deles (`EditorResourceGraph` estrutural).
+
 ## Gate status (final)
 
 | Gate | Status | Evidence |
