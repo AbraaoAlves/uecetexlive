@@ -1,3 +1,5 @@
+import { SourceEditor, useEditorResources } from "@uecetexlive/editor";
+import { LogPane, PdfPane } from "@uecetexlive/editor/preview";
 import {
   countLatexWords,
   exportProjectZip,
@@ -16,13 +18,9 @@ import {
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useCompile } from "@/features/compiler/useCompile";
 import { useIdleWarmup } from "@/features/compiler/useIdleWarmup";
-import { SourceEditor } from "@/features/editor/SourceEditor";
-import { useEditorResources } from "@/features/editor/useEditorResources";
 import { MetadataWizard } from "@/features/metadata/MetadataWizard";
 import { WelcomeDialog } from "@/features/metadata/WelcomeDialog";
 import { deleteProject } from "@/features/persistence/db";
-import { LogPane } from "@/features/preview/LogPane";
-import { PdfPane } from "@/features/preview/PdfPane";
 import { buildIncludeGraph, type IncludeGraph } from "@/features/project/include-graph";
 import {
   applyMetadata,
@@ -60,7 +58,7 @@ import { WarmupProgress } from "./WarmupProgress";
 // Tiptap + KaTeX are the bulk of the JS (§11.5) — keep them out of the app
 // shell chunk; the WYSIWYG surface streams in on first use.
 const EditorSurface = lazy(() =>
-  import("@/features/editor/EditorSurface").then((m) => ({
+  import("@uecetexlive/editor").then((m) => ({
     default: m.EditorSurface,
   })),
 );

@@ -52,6 +52,7 @@
     "@tiptap/react": "^3.27.1",
     "@tiptap/starter-kit": "^3.27.1",
     "@tiptap/suggestion": "^3.27.1",
+    "@uecetexlive/editor": "workspace:*",
     "@uecetexlive/latex-mapping": "workspace:*",
     "@uecetexlive/project-model": "workspace:*",
     "@unified-latex/unified-latex-types": "^1.8.4",
