@@ -126,6 +126,11 @@ export const strings = {
     corruptState:
       "Encontramos um estado salvo incompatível. Seu estado anterior foi exportado como zip e o modelo foi restaurado.",
   },
+  shell: {
+    templateUpdateMessage:
+      "O modelo uecetex2 foi atualizado. Seu conteúdo não foi afetado.",
+    templateUpdateDismiss: "Dispensar",
+  },
   sobre: {
     title: "Sobre o UeceTexLive",
     privacy: "Tudo acontece no seu navegador: seu texto nunca sai do seu computador.",

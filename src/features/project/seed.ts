@@ -3,8 +3,10 @@
  * O import.meta.env fica aqui — o pacote recebe a base URL como argumento.
  */
 import {
+  fetchTemplateManifest as fetchManifestFromBase,
   type Project,
   seedTemplate as seedFromManifest,
+  type TemplateManifest,
   UECETEX2_STRUCTURE,
 } from "@uecetexlive/project-model";
 
@@ -16,4 +18,8 @@ export function seedTemplate(): Promise<Project> {
     templateBaseUrl: TEMPLATE_BASE,
     structure: UECETEX2_STRUCTURE,
   });
+}
+
+export function fetchTemplateManifest(): Promise<TemplateManifest> {
+  return fetchManifestFromBase(TEMPLATE_BASE);
 }

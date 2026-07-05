@@ -31,6 +31,7 @@ import { chapterScaffold, insertChapterInput } from "@/features/project/new-chap
 import { rewriteInputOrder } from "@/features/project/reorder";
 import { seedTemplate } from "@/features/project/seed";
 import { ProjectProvider, useProject } from "@/features/project/store";
+import { useTemplateUpdateNotice } from "@/features/project/useTemplateUpdateNotice";
 import {
   bytesToText,
   isAdvancedOnly,
@@ -49,6 +50,7 @@ import { IdleWarmupIndicator } from "./IdleWarmupIndicator";
 import { ImportDialog, type ImportDialogState } from "./ImportDialog";
 import { NewChapterDialog } from "./NewChapterDialog";
 import { ProjectRail, type RailFile } from "./ProjectRail";
+import { TemplateUpdateBanner } from "./TemplateUpdateBanner";
 import { ThemeToggle } from "./ThemeToggle";
 import { TopBar } from "./TopBar";
 import { useTheme } from "./useTheme";
@@ -125,6 +127,9 @@ function ShellInner() {
   const advanced = ui.advancedMode;
   const railCollapsed = ui.railCollapsed;
   useTheme(ui.theme, uiReady);
+  const { latestCommit: templateUpdateCommit } = useTemplateUpdateNotice(
+    project?.templateCommit,
+  );
   const [metadataOpen, setMetadataOpen] = useState(false);
   const [newChapterOpen, setNewChapterOpen] = useState(false);
   const [previewTab, setPreviewTab] = useState<"pdf" | "log">("pdf");
@@ -647,6 +652,11 @@ function ShellInner() {
           }}
         />
       </TopBar>
+      {templateUpdateCommit && ui.dismissedTemplateCommit !== templateUpdateCommit && (
+        <TemplateUpdateBanner
+          onDismiss={() => setUi({ dismissedTemplateCommit: templateUpdateCommit })}
+        />
+      )}
       <div className="flex min-h-0 flex-1">
         <aside
           className={cn(
