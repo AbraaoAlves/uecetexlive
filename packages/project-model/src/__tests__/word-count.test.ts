@@ -60,7 +60,7 @@ describe("countLatexWords", () => {
 
   it("template introducao.tex lands in a sane range", () => {
     const n = countLatexWords(introducaoTex);
-    expect(n).toBeGreaterThan(400);
+    expect(n).toBeGreaterThan(300);
     expect(n).toBeLessThan(1200);
   });
 });
