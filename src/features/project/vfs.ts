@@ -1,104 +1,27 @@
 /**
- * VFS helpers — pure functions over project file paths and bytes (§3.8, §4.1).
- * Binary fidelity rule: Uint8Array end-to-end; text conversion only at the
- * editor boundary, via TextEncoder/TextDecoder (UTF-8).
+ * Adapter do app: liga as funções genéricas do @uecetexlive/project-model à
+ * estrutura do uecetex2. Os call sites do app seguem com assinaturas por path.
  */
-import type { FileKind } from "./schema";
+import {
+  isAdvancedOnly as genericIsAdvancedOnly,
+  isSimpleModeVisible as genericIsSimpleModeVisible,
+  isWysiwygEligible as genericIsWysiwygEligible,
+  railSectionOf as genericRailSectionOf,
+  type RailSection,
+  UECETEX2_STRUCTURE,
+} from "@uecetexlive/project-model";
 
-const encoder = new TextEncoder();
-const decoder = new TextDecoder("utf-8", { fatal: false });
+export { bytesToText, kindOf, textToBytes } from "@uecetexlive/project-model";
+export type { RailSection };
 
-export function textToBytes(text: string): Uint8Array {
-  return encoder.encode(text);
-}
+export const isWysiwygEligible = (path: string): boolean =>
+  genericIsWysiwygEligible(UECETEX2_STRUCTURE, path);
 
-export function bytesToText(bytes: Uint8Array): string {
-  return decoder.decode(bytes);
-}
+export const railSectionOf = (path: string): RailSection =>
+  genericRailSectionOf(UECETEX2_STRUCTURE, path);
 
-export function kindOf(path: string): FileKind {
-  const name = path.split("/").pop() ?? path;
-  const ext = name.includes(".") ? (name.split(".").pop() ?? "") : "";
-  switch (ext.toLowerCase()) {
-    case "tex":
-      return "tex";
-    case "bib":
-      return "bib";
-    case "bst":
-      return "bst";
-    case "sty":
-      return "sty";
-    case "cls":
-      return "cls";
-    case "png":
-    case "jpg":
-    case "jpeg":
-    case "gif":
-    case "svg":
-      return "image";
-    case "pdf":
-      return "pdf";
-    case "cpp":
-    case "c":
-    case "h":
-    case "java":
-    case "py":
-    case "js":
-    case "ts":
-      return "code";
-    default:
-      return "other";
-  }
-}
+export const isAdvancedOnly = (path: string): boolean =>
+  genericIsAdvancedOnly(UECETEX2_STRUCTURE, path);
 
-/** Prose pre-textuals that are WYSIWYG-editable (§4.1 item 4). */
-const PROSE_PRE_TEXTUALS = new Set([
-  "elementos-pre-textuais/resumo.tex",
-  "elementos-pre-textuais/abstract.tex",
-  "elementos-pre-textuais/dedicatoria.tex",
-  "elementos-pre-textuais/epigrafe.tex",
-  "elementos-pre-textuais/agradecimentos.tex",
-]);
-
-export function isWysiwygEligible(path: string): boolean {
-  if (!path.endsWith(".tex")) return false;
-  if (path.startsWith("elementos-textuais/")) return true;
-  if (path.startsWith("elementos-pos-textuais/apendices/")) return true;
-  if (path.startsWith("elementos-pos-textuais/anexos/")) return true;
-  return PROSE_PRE_TEXTUALS.has(path);
-}
-
-export type RailSection =
-  | "root"
-  | "preTextual"
-  | "chapters"
-  | "postTextual"
-  | "library"
-  | "figures";
-
-export function railSectionOf(path: string): RailSection {
-  if (path.startsWith("elementos-pre-textuais/")) return "preTextual";
-  if (path.startsWith("elementos-textuais/")) return "chapters";
-  if (path.startsWith("elementos-pos-textuais/")) return "postTextual";
-  if (path.startsWith("lib/")) return "library";
-  if (path.startsWith("figuras/")) return "figures";
-  return "root";
-}
-
-/** Is this file locked to source view (avançado toggle)? (§4.1) */
-export function isAdvancedOnly(path: string): boolean {
-  return path.startsWith("lib/") || path === "documento.tex";
-}
-
-/**
- * Visible in the rail with "Avançado" off: only what a Perfil-A student
- * writes — prose (chapters, prose pre-textuals, apêndices/anexos),
- * bibliography and figures. Structural files (documento.tex, lib/, errata,
- * ficha catalográfica, listas de siglas/símbolos, glossário) stay hidden.
- */
-export function isSimpleModeVisible(path: string): boolean {
-  if (isWysiwygEligible(path)) return true;
-  if (path.endsWith(".bib")) return true;
-  if (railSectionOf(path) === "figures") return true;
-  return false;
-}
+export const isSimpleModeVisible = (path: string): boolean =>
+  genericIsSimpleModeVisible(UECETEX2_STRUCTURE, path);

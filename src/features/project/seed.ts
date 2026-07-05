@@ -1,49 +1,19 @@
 /**
- * Template seeding (§5.5): first boot fetches the vendored manifest, loads
- * all files into a new Project.
+ * Adapter do app: template uecetex2 servido dos assets estáticos do Vite.
+ * O import.meta.env fica aqui — o pacote recebe a base URL como argumento.
  */
-
-import { type Project, ProjectSchema, TemplateManifestSchema } from "./schema";
-import { isWysiwygEligible, kindOf } from "./vfs";
+import {
+  type Project,
+  seedTemplate as seedFromManifest,
+  UECETEX2_STRUCTURE,
+} from "@uecetexlive/project-model";
 
 // BASE_URL-prefixed: subpath deploys (GitHub Pages) serve templates under it.
 const TEMPLATE_BASE = `${import.meta.env.BASE_URL}templates/uecetex2`;
 
-export async function seedTemplate(): Promise<Project> {
-  const manifestRes = await fetch(`${TEMPLATE_BASE}/manifest.json`);
-  if (!manifestRes.ok) {
-    throw new Error(`template manifest: HTTP ${manifestRes.status}`);
-  }
-  const manifest = TemplateManifestSchema.parse(await manifestRes.json());
-
-  const files = await Promise.all(
-    manifest.files.map(async (entry) => {
-      const res = await fetch(`${TEMPLATE_BASE}/files/${entry.path}`);
-      if (!res.ok) {
-        throw new Error(`template file ${entry.path}: HTTP ${res.status}`);
-      }
-      const bytes = new Uint8Array(await res.arrayBuffer());
-      if (bytes.length !== entry.size) {
-        throw new Error(
-          `template file ${entry.path}: size ${bytes.length} != manifest ${entry.size}`,
-        );
-      }
-      return {
-        path: entry.path,
-        bytes,
-        kind: kindOf(entry.path),
-        editable: isWysiwygEligible(entry.path),
-      };
-    }),
-  );
-
-  return ProjectSchema.parse({
-    schemaVersion: 1,
-    id: manifest.name,
-    name: manifest.name,
-    entry: manifest.entry,
-    templateSource: manifest.source,
-    files,
-    updatedAt: Date.now(),
+export function seedTemplate(): Promise<Project> {
+  return seedFromManifest({
+    templateBaseUrl: TEMPLATE_BASE,
+    structure: UECETEX2_STRUCTURE,
   });
 }
