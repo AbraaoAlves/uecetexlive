@@ -266,6 +266,15 @@ for pkg in "${PACKAGES_2019[@]}"; do
   printf "  ok (2019) %-20s (%d files)\n" "$pkg" "$count"
 done
 
+# l3backend-pdfmode.def stub (docs/prototype-compile-pipeline.md §7): the
+# recovered .fmt's custom L3 layer asks for "l3backend-pdfmode.def" at
+# \begin{document}, a filename no TeX Live release ships. Aliasing it to the
+# real l3backend-pdftex.def trips "Mismatched LaTeX support files" (version
+# header mismatch against the .fmt's preloaded L3 layer), so ship an empty
+# stub instead — placed after the package loops so real files always win.
+# Same trap/workaround busytex needs (scripts/vendor-busytex.sh).
+printf '%s\n' '\endinput' > "$CACHE/pdftex/26/l3backend-pdfmode.def"
+
 # Synthesize unified pdftex.map. The engine asks for "pdftex.map" but TeX Live
 # ships per-encoding maps (cm.map, cm-super-t1.map, etc.). updmap normally
 # merges them at install time; we cat them.

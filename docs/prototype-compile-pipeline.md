@@ -220,7 +220,12 @@ Workaround: ship an **empty stub** at `pdftex/26/l3backend-pdfmode.def`:
 \endinput
 ```
 
-(See [`public/wasm/swiftlatex/texlive/pdftex/26/l3backend-pdfmode.def`](public/wasm/swiftlatex/texlive/pdftex/26/l3backend-pdfmode.def).)
+`scripts/sync-texlive-cache.sh` writes this stub automatically (after the
+package loops, so a real file — should one ever ship — always wins) to
+[`public/wasm/swiftlatex/texlive/pdftex/26/l3backend-pdfmode.def`](public/wasm/swiftlatex/texlive/pdftex/26/l3backend-pdfmode.def).
+That whole tree is gitignored and downloaded fresh on every cache miss, so the
+stub must come from the script, not a manually placed file — a manually
+placed copy only masks the bug locally and still breaks CI.
 
 This clears the version check, lets the compile proceed, and **probably
 disables hyperref's PDF interactivity** (bookmarks, colored links). Plain
