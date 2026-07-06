@@ -1,6 +1,6 @@
+import { parseLatex } from "@papyru/latex-mapping";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { EditorContent, useEditor } from "@tiptap/react";
-import { parseLatex } from "@uecetexlive/latex-mapping";
 import { EditorToolbar } from "./EditorToolbar";
 import { buildExtensions } from "./extensions";
 

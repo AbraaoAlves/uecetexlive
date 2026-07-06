@@ -2,8 +2,9 @@
  * Builds EditorResources from the live project: object URLs for figures,
  * parsed bibliography for citation chips/picker, harvested labels.
  */
+
+import { bytesToText, type Project } from "@papyru/project-model";
 import { parse as parseBib } from "@retorquere/bibtex-parser";
-import { bytesToText, type Project } from "@uecetexlive/project-model";
 import { useEffect, useMemo, useRef } from "react";
 import type { BibEntry, EditorResources } from "./resources";
 import { slugify } from "./utils";

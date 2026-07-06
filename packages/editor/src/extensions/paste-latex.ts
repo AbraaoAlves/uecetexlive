@@ -2,9 +2,10 @@
  * PasteLatex (§4.4): pasted text containing LaTeX commands runs through
  * parseLatex and inserts the mapped fragment instead of raw text.
  */
+
+import { parseLatex } from "@papyru/latex-mapping";
 import { Extension } from "@tiptap/core";
 import { Plugin, PluginKey } from "@tiptap/pm/state";
-import { parseLatex } from "@uecetexlive/latex-mapping";
 
 export const PasteLatex = Extension.create({
   name: "pasteLatex",

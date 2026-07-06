@@ -1,18 +1,18 @@
-# @uecetexlive/editor
+# @papyru/editor
 
 Superfície de edição WYSIWYG (Tiptap) + editor de fonte LaTeX (CodeMirror)
 do UeceTexLive, extraídos como pacote. O sub-export `./preview` traz os
 painéis de PDF (pdf.js) e de log de compilação.
 
 ```ts
-import { EditorSurface, SourceEditor, useEditorResources } from "@uecetexlive/editor";
-import { LogPane, PdfPane } from "@uecetexlive/editor/preview";
+import { EditorSurface, SourceEditor, useEditorResources } from "@papyru/editor";
+import { LogPane, PdfPane } from "@papyru/editor/preview";
 ```
 
 ## Norma de citação
 
 O schema, o parse e o serialize compartilham **um** objeto de configuração:
-o `CitationProfile` de `@uecetexlive/latex-mapping` (default ABNT —
+o `CitationProfile` de `@papyru/latex-mapping` (default ABNT —
 `citeonline`/`Citeonline` + ambiente `citacao`). Passe outro perfil via
 `<EditorSurface citationProfile={...}>` ou `buildExtensions({ citationProfile })`.
 
@@ -41,7 +41,7 @@ O pacote **não embarca CSS**. A skin chega por três ganchos:
    `ink-muted`, `ink-subtle`, `accent`, `accent-soft`, `accent-strong`,
    `border`, `ring`, `warning`, `danger`. Num app Tailwind v4, declare esses
    tokens no seu `@theme` (viram CSS custom properties) e inclua o source do
-   pacote no scan (`@source "../node_modules/@uecetexlive/editor/src";`) —
+   pacote no scan (`@source "../node_modules/@papyru/editor/src";`) —
    o UeceTexLive é o exemplo de referência.
 2. **Ganchos de dados.** Todo elemento relevante carrega `data-testid`
    estável (`editor-toolbar`, `find-panel`, `pdf-pane`, …) e os nós do

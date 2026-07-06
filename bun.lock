@@ -39,10 +39,10 @@
         "@tiptap/react": "^3.27.1",
         "@tiptap/starter-kit": "^3.27.1",
         "@tiptap/suggestion": "^3.27.1",
-        "@uecetexlive/compiler": "workspace:*",
-        "@uecetexlive/editor": "workspace:*",
-        "@uecetexlive/latex-mapping": "workspace:*",
-        "@uecetexlive/project-model": "workspace:*",
+        "@papyru/compiler": "workspace:*",
+        "@papyru/editor": "workspace:*",
+        "@papyru/latex-mapping": "workspace:*",
+        "@papyru/project-model": "workspace:*",
         "@unified-latex/unified-latex-types": "^1.8.4",
         "@unified-latex/unified-latex-util-parse": "^1.8.4",
         "clsx": "^2.1.1",
@@ -90,7 +90,7 @@
       },
     },
     "packages/compiler": {
-      "name": "@uecetexlive/compiler",
+      "name": "@papyru/compiler",
       "version": "0.0.0",
       "devDependencies": {
         "@testing-library/react": "^16.3.2",
@@ -107,7 +107,7 @@
       ],
     },
     "packages/editor": {
-      "name": "@uecetexlive/editor",
+      "name": "@papyru/editor",
       "version": "0.0.0",
       "dependencies": {
         "@codemirror/commands": "^6.10.4",
@@ -117,9 +117,9 @@
         "@codemirror/state": "^6.7.0",
         "@codemirror/view": "^6.43.5",
         "@retorquere/bibtex-parser": "^10.0.0",
-        "@uecetexlive/compiler": "workspace:*",
-        "@uecetexlive/latex-mapping": "workspace:*",
-        "@uecetexlive/project-model": "workspace:*",
+        "@papyru/compiler": "workspace:*",
+        "@papyru/latex-mapping": "workspace:*",
+        "@papyru/project-model": "workspace:*",
         "clsx": "^2.1.1",
         "katex": "^0.17.0",
         "lucide-react": "^1.23.0",
@@ -160,7 +160,7 @@
       },
     },
     "packages/latex-mapping": {
-      "name": "@uecetexlive/latex-mapping",
+      "name": "@papyru/latex-mapping",
       "version": "0.0.0",
       "dependencies": {
         "@unified-latex/unified-latex-types": "^1.8.4",
@@ -174,7 +174,7 @@
       },
     },
     "packages/project-model": {
-      "name": "@uecetexlive/project-model",
+      "name": "@papyru/project-model",
       "version": "0.0.0",
       "dependencies": {
         "fflate": "^0.8.3",
@@ -935,13 +935,13 @@
 
     "@types/ws": ["@types/ws@8.18.1", "", { "dependencies": { "@types/node": "*" } }, "sha512-ThVF6DCVhA8kUGy+aazFQ4kXQ7E1Ty7A3ypFOe0IcJV8O/M511G99AW24irKrW56Wt44yG9+ij8FaqoBGkuBXg=="],
 
-    "@uecetexlive/compiler": ["@uecetexlive/compiler@workspace:packages/compiler"],
+    "@papyru/compiler": ["@papyru/compiler@workspace:packages/compiler"],
 
-    "@uecetexlive/editor": ["@uecetexlive/editor@workspace:packages/editor"],
+    "@papyru/editor": ["@papyru/editor@workspace:packages/editor"],
 
-    "@uecetexlive/latex-mapping": ["@uecetexlive/latex-mapping@workspace:packages/latex-mapping"],
+    "@papyru/latex-mapping": ["@papyru/latex-mapping@workspace:packages/latex-mapping"],
 
-    "@uecetexlive/project-model": ["@uecetexlive/project-model@workspace:packages/project-model"],
+    "@papyru/project-model": ["@papyru/project-model@workspace:packages/project-model"],
 
     "@unified-latex/unified-latex-builder": ["@unified-latex/unified-latex-builder@1.8.4", "", { "dependencies": { "@unified-latex/unified-latex-types": "^1.8.4" } }, "sha512-Rw5XlVhJ50wk7J/hukJ0YBjLqaCjNTYDLZc6lNPH8Vji56YPzZbduuh/kY3ueME+CnxJq/34CGY8D/0cOZY8yw=="],
 

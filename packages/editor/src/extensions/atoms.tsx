@@ -2,18 +2,14 @@
  * Inline/block atom nodes with React node views (§4.2/§4.4): citation,
  * crossref, math (KaTeX), figure, table projection, code include, footnote.
  */
+
+import { editCell, parseTable, serializeTable, tableRows } from "@papyru/latex-mapping";
 import { mergeAttributes, Node } from "@tiptap/core";
 import {
   type NodeViewProps,
   NodeViewWrapper,
   ReactNodeViewRenderer,
 } from "@tiptap/react";
-import {
-  editCell,
-  parseTable,
-  serializeTable,
-  tableRows,
-} from "@uecetexlive/latex-mapping";
 import katex from "katex";
 import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import { EditorResourcesContext } from "../resources";

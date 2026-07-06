@@ -153,7 +153,7 @@ Unlike the original D12 (bundled with D11), this one only ever warms
 `e2e/sw-gzip.spec.ts` validates the SW serves busytex `.data` byte-perfect in
 both the sidecar and raw layouts, without booting the engine.
 
-## D13 — Extração de pacotes: decisões de estilo/copy do `@uecetexlive/editor` (2026-07-05)
+## D13 — Extração de pacotes: decisões de estilo/copy do `@papyru/editor` (2026-07-05)
 
 Execução do `package_extraction.md` (Fases 0–3). Duas decisões da Fase 2
 registradas aqui porque a implementação difere em grau do texto do plano:

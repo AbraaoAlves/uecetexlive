@@ -1,11 +1,11 @@
-import { SourceEditor, useEditorResources } from "@uecetexlive/editor";
-import { LogPane, PdfPane } from "@uecetexlive/editor/preview";
+import { SourceEditor, useEditorResources } from "@papyru/editor";
+import { LogPane, PdfPane } from "@papyru/editor/preview";
 import {
   countLatexWords,
   exportProjectZip,
   importProjectZip,
   UECETEX2_STRUCTURE,
-} from "@uecetexlive/project-model";
+} from "@papyru/project-model";
 import {
   Download,
   FileUp,
@@ -61,7 +61,7 @@ import { WarmupProgress } from "./WarmupProgress";
 // Tiptap + KaTeX are the bulk of the JS (§11.5) — keep them out of the app
 // shell chunk; the WYSIWYG surface streams in on first use.
 const EditorSurface = lazy(() =>
-  import("@uecetexlive/editor").then((m) => ({
+  import("@papyru/editor").then((m) => ({
     default: m.EditorSurface,
   })),
 );

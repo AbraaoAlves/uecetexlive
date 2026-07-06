@@ -4,7 +4,7 @@
  * OS preference changes.
  */
 
-import type { UiSettings } from "@uecetexlive/project-model";
+import type { UiSettings } from "@papyru/project-model";
 import { useEffect } from "react";
 
 export type Theme = UiSettings["theme"];

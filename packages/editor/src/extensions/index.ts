@@ -2,6 +2,8 @@
  * Extension assembly (§4.4). One place decides the schema; latex-mapping's
  * PM-JSON must load into this schema unchanged.
  */
+
+import { ABNT_CITATION_PROFILE, type CitationProfile } from "@papyru/latex-mapping";
 import type { Extension } from "@tiptap/core";
 import { BulletList } from "@tiptap/extension-bullet-list";
 import { Document } from "@tiptap/extension-document";
@@ -16,7 +18,6 @@ import {
   TrailingNode,
   UndoRedo,
 } from "@tiptap/extensions";
-import { ABNT_CITATION_PROFILE, type CitationProfile } from "@uecetexlive/latex-mapping";
 import { SlashMenu, type SlashMenuOptions } from "../slash-menu/slash-menu";
 import { DEFAULT_EDITOR_STRINGS, type EditorStrings } from "../strings";
 import {
@@ -56,7 +57,7 @@ const LatexDocument = Document.extend({
 
 export interface BuildExtensionsOptions {
   openPicker: SlashMenuOptions["openPicker"];
-  /** Norma de citação — mesmo objeto de config do @uecetexlive/latex-mapping. */
+  /** Norma de citação — mesmo objeto de config do @papyru/latex-mapping. */
   citationProfile?: CitationProfile;
   /** Copy dos textos que vivem dentro do schema (placeholder, tooltips). */
   strings?: EditorStrings;

@@ -3,14 +3,14 @@
  * pacote e adiciona o que é responsabilidade deste app — montar o VFS a
  * partir do Project e cachear o último PDF (IndexedDB).
  */
-import type { EngineId } from "@uecetexlive/compiler";
-import { type CompilerEngineState, useCompilerEngine } from "@uecetexlive/compiler/react";
-import type { Project } from "@uecetexlive/project-model";
+import type { EngineId } from "@papyru/compiler";
+import { type CompilerEngineState, useCompilerEngine } from "@papyru/compiler/react";
+import type { Project } from "@papyru/project-model";
 import { useCallback } from "react";
 import { cacheLastPdf } from "@/features/persistence/db";
 import { ENGINE_ASSET_BASES } from "./index";
 
-export type { CompileStatus } from "@uecetexlive/compiler/react";
+export type { CompileStatus } from "@papyru/compiler/react";
 export type { EngineId };
 export type CompileState = CompilerEngineState;
 

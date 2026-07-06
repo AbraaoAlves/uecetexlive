@@ -1,4 +1,4 @@
-import type { CompileDiagnostic } from "@uecetexlive/compiler";
+import type { CompileDiagnostic } from "@papyru/compiler";
 import { useEditorStrings } from "../strings";
 import { cn } from "../utils";
 

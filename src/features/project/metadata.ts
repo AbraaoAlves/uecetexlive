@@ -8,7 +8,7 @@
  * reproduce the source byte-for-byte.
  */
 
-import { sliceArgs } from "@uecetexlive/latex-mapping";
+import { sliceArgs } from "@papyru/latex-mapping";
 import type * as Ast from "@unified-latex/unified-latex-types";
 import { parse } from "@unified-latex/unified-latex-util-parse";
 import { walk } from "./include-graph";

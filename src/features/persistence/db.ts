@@ -1,12 +1,12 @@
 /**
  * Adapter do app: banco IndexedDB `uecetexlive` (§5.2) sobre o factory do
- * @uecetexlive/project-model — o nome do banco é configuração deste app.
+ * @papyru/project-model — o nome do banco é configuração deste app.
  */
 import {
   type CachedPdf,
   createProjectDb,
   type LoadProjectResult,
-} from "@uecetexlive/project-model";
+} from "@papyru/project-model";
 
 export type { CachedPdf, LoadProjectResult };
 

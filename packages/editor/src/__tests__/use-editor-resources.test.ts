@@ -4,8 +4,9 @@
  * is unchanged — otherwise every citation/figure node view re-renders and
  * the .bib is re-parsed per keystroke.
  */
+
+import { type Project, textToBytes } from "@papyru/project-model";
 import { renderHook } from "@testing-library/react";
-import { type Project, textToBytes } from "@uecetexlive/project-model";
 import { describe, expect, it } from "vitest";
 import { type EditorResourceGraph, useEditorResources } from "../useEditorResources";
 

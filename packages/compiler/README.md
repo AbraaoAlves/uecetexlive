@@ -1,4 +1,4 @@
-# @uecetexlive/compiler
+# @papyru/compiler
 
 Compilação LaTeX no navegador com **dois engines** atrás da mesma interface
 `PdfCompiler` (`warmup`/`compile`/`dispose`):
@@ -10,7 +10,7 @@ Compilação LaTeX no navegador com **dois engines** atrás da mesma interface
   `[?]` (contrato do modo rascunho).
 
 ```ts
-import { getCompiler } from "@uecetexlive/compiler";
+import { getCompiler } from "@papyru/compiler";
 
 const compiler = await getCompiler("swiftlatex-draft", "/wasm/swiftlatex/");
 const result = await compiler.compile({ entry, files, mode: "draft" });

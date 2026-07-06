@@ -8,7 +8,7 @@ import {
   seedTemplate as seedFromManifest,
   type TemplateManifest,
   UECETEX2_STRUCTURE,
-} from "@uecetexlive/project-model";
+} from "@papyru/project-model";
 
 // BASE_URL-prefixed: subpath deploys (GitHub Pages) serve templates under it.
 const TEMPLATE_BASE = `${import.meta.env.BASE_URL}templates/uecetex2`;

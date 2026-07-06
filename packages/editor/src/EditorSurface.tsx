@@ -3,15 +3,16 @@
  * file switch (§12), serialize-on-update through latex-mapping. Ground truth
  * is always the LaTeX source (§4.1).
  */
-import { EditorContent, type Range, useEditor, useEditorState } from "@tiptap/react";
-import { BubbleMenu } from "@tiptap/react/menus";
+
 import {
   ABNT_CITATION_PROFILE,
   type CitationProfile,
   type PMDoc,
   parseLatex,
   serializeDoc,
-} from "@uecetexlive/latex-mapping";
+} from "@papyru/latex-mapping";
+import { EditorContent, type Range, useEditor, useEditorState } from "@tiptap/react";
+import { BubbleMenu } from "@tiptap/react/menus";
 import { Bold, Code, ImagePlus, Italic, Underline as UnderlineIcon } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { EditorToolbar } from "./EditorToolbar";

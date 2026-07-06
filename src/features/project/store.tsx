@@ -2,7 +2,7 @@
  * Project state — load-or-seed on boot, 500 ms debounced autosave (§5.2).
  */
 
-import type { Project } from "@uecetexlive/project-model";
+import type { Project } from "@papyru/project-model";
 import {
   createContext,
   type ReactNode,

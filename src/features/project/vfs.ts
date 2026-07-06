@@ -1,5 +1,5 @@
 /**
- * Adapter do app: liga as funções genéricas do @uecetexlive/project-model à
+ * Adapter do app: liga as funções genéricas do @papyru/project-model à
  * estrutura do uecetex2. Os call sites do app seguem com assinaturas por path.
  */
 import {
@@ -9,9 +9,9 @@ import {
   railSectionOf as genericRailSectionOf,
   type RailSection,
   UECETEX2_STRUCTURE,
-} from "@uecetexlive/project-model";
+} from "@papyru/project-model";
 
-export { bytesToText, kindOf, textToBytes } from "@uecetexlive/project-model";
+export { bytesToText, kindOf, textToBytes } from "@papyru/project-model";
 export type { RailSection };
 
 export const isWysiwygEligible = (path: string): boolean =>
