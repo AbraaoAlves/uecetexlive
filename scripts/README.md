@@ -39,6 +39,13 @@ Not part of the chain above:
   regression gate. **Manual/local-only** — not called by any CI workflow;
   you run it and commit the regenerated fixtures when the template changes
   structurally enough to need a new reference.
+- **`publish-packages.sh`** — publishes `@papyru/{latex-mapping,project-model,
+  compiler,editor}` to npm in dependency order (`package_extraction.md`,
+  Fase 4). Validates each package is out of workspace-dev mode (version
+  bumped, `exports` pointing at `dist/`) before building, running `check`,
+  and `check-agpl-compliance.sh`. Does not edit `version`/`exports` itself —
+  that bump is a manual release decision. **Manual/local-only**, run by a
+  human when deciding to cut a release; supports `--dry-run` and `--yes`.
 
 ## Who calls what
 
