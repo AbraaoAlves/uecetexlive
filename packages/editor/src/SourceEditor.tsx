@@ -23,11 +23,13 @@ import {
   type Panel,
   placeholder as placeholderExt,
 } from "@codemirror/view";
+import * as TooltipPrimitive from "@radix-ui/react-tooltip";
 import { Search } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { type FindReplaceOptions, FindReplacePanel } from "./FindReplacePanel";
 import { type EditorStrings, useEditorStrings } from "./strings";
+import { Tooltip } from "./Tooltip";
 
 export interface SourceEditorProps {
   path: string;
@@ -126,13 +128,19 @@ function CMSearchPanel({
 }
 
 /** CM panel host: one React root, re-rendered when doc/selection change.
- * A copy atravessa por argumento — context não cruza a fronteira de roots. */
+ * A copy atravessa por argumento — context não cruza a fronteira de roots.
+ * TooltipPrimitive.Provider is re-declared locally for the same reason: the
+ * app's router-level provider lives in the main React tree, not this one. */
 function createFindPanel(view: EditorView, strings: EditorStrings): Panel {
   const dom = document.createElement("div");
   const root = createRoot(dom);
   let version = 0;
   const render = () =>
-    root.render(<CMSearchPanel view={view} version={version} strings={strings} />);
+    root.render(
+      <TooltipPrimitive.Provider delayDuration={400}>
+        <CMSearchPanel view={view} version={version} strings={strings} />
+      </TooltipPrimitive.Provider>,
+    );
   return {
     dom,
     top: true,
@@ -268,20 +276,21 @@ export function SourceEditor({
       data-testid="source-editor"
     >
       <div className="flex h-8 shrink-0 items-center justify-end border-b bg-surface px-2">
-        <button
-          type="button"
-          data-testid="source-find"
-          title={strings.editor.findHint}
-          className="flex items-center gap-1 rounded px-2 py-0.5 text-ink-muted text-xs hover:bg-accent-soft"
-          onClick={() => {
-            const view = viewRef.current;
-            if (!view) return;
-            openSearchPanel(view);
-          }}
-        >
-          <Search className="size-3.5" />
-          {strings.editor.find}
-        </button>
+        <Tooltip content={strings.editor.findHint}>
+          <button
+            type="button"
+            data-testid="source-find"
+            className="flex items-center gap-1 rounded px-2 py-0.5 text-ink-muted text-xs hover:bg-accent-soft"
+            onClick={() => {
+              const view = viewRef.current;
+              if (!view) return;
+              openSearchPanel(view);
+            }}
+          >
+            <Search className="size-3.5" />
+            {strings.editor.find}
+          </button>
+        </Tooltip>
       </div>
       <div ref={hostRef} className="min-h-0 flex-1 overflow-hidden" />
       <textarea

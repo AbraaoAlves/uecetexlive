@@ -26,6 +26,7 @@ import {
 import type { PickerKind } from "./slash-menu/slash-menu";
 import { getSlashCommand } from "./slash-menu/slash-menu";
 import { useEditorStrings } from "./strings";
+import { Tooltip } from "./Tooltip";
 import { cn } from "./utils";
 
 export interface EditorToolbarProps {
@@ -230,20 +231,21 @@ function ToolbarButton({
   children: React.ReactNode;
 }) {
   return (
-    <button
-      type="button"
-      data-testid={testid}
-      aria-label={label}
-      aria-pressed={active}
-      title={label}
-      onMouseDown={(e) => e.preventDefault()}
-      onClick={onClick}
-      className={cn(
-        "rounded p-1.5 text-ink-muted hover:bg-accent-soft",
-        active && "bg-accent-soft text-accent-strong",
-      )}
-    >
-      {children}
-    </button>
+    <Tooltip content={label}>
+      <button
+        type="button"
+        data-testid={testid}
+        aria-label={label}
+        aria-pressed={active}
+        onMouseDown={(e) => e.preventDefault()}
+        onClick={onClick}
+        className={cn(
+          "rounded p-1.5 text-ink-muted hover:bg-accent-soft",
+          active && "bg-accent-soft text-accent-strong",
+        )}
+      >
+        {children}
+      </button>
+    </Tooltip>
   );
 }

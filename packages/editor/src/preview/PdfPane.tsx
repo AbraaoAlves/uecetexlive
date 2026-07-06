@@ -1,6 +1,7 @@
 import { Contrast, ZoomIn, ZoomOut } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useEditorStrings } from "../strings";
+import { Tooltip } from "../Tooltip";
 import { cn } from "../utils";
 
 function isDarkTheme(): boolean {
@@ -191,35 +192,40 @@ export function PdfPane({ pdf, compiling, debugHook = true }: PdfPaneProps) {
           {Math.min(currentPage, numPages || 1)} / {numPages || 1}
         </span>
         <span className="mx-2 h-4 w-px bg-border" />
-        <button
-          type="button"
-          className="rounded p-1 hover:bg-accent-soft"
-          onClick={() => setZoom((z) => Math.max(0.5, z - 0.2))}
-          aria-label="Reduzir zoom"
-        >
-          <ZoomOut className="size-4" />
-        </button>
-        <button
-          type="button"
-          className="rounded p-1 hover:bg-accent-soft"
-          onClick={() => setZoom((z) => Math.min(3, z + 0.2))}
-          aria-label="Aumentar zoom"
-        >
-          <ZoomIn className="size-4" />
-        </button>
-        <button
-          type="button"
-          data-testid="pdf-invert"
-          aria-pressed={invert}
-          title={strings.invert}
-          className={cn(
-            "rounded p-1 hover:bg-accent-soft",
-            invert && "bg-accent-soft text-accent-strong",
-          )}
-          onClick={() => setInvert((v) => !v)}
-        >
-          <Contrast className="size-4" />
-        </button>
+        <Tooltip content={strings.zoomOut}>
+          <button
+            type="button"
+            className="rounded p-1 hover:bg-accent-soft"
+            onClick={() => setZoom((z) => Math.max(0.5, z - 0.2))}
+            aria-label={strings.zoomOut}
+          >
+            <ZoomOut className="size-4" />
+          </button>
+        </Tooltip>
+        <Tooltip content={strings.zoomIn}>
+          <button
+            type="button"
+            className="rounded p-1 hover:bg-accent-soft"
+            onClick={() => setZoom((z) => Math.min(3, z + 0.2))}
+            aria-label={strings.zoomIn}
+          >
+            <ZoomIn className="size-4" />
+          </button>
+        </Tooltip>
+        <Tooltip content={strings.invert}>
+          <button
+            type="button"
+            data-testid="pdf-invert"
+            aria-pressed={invert}
+            className={cn(
+              "rounded p-1 hover:bg-accent-soft",
+              invert && "bg-accent-soft text-accent-strong",
+            )}
+            onClick={() => setInvert((v) => !v)}
+          >
+            <Contrast className="size-4" />
+          </button>
+        </Tooltip>
       </div>
       <div
         ref={scrollRef}

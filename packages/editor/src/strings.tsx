@@ -49,6 +49,8 @@ export interface EditorStrings {
     empty: string;
     stale: string;
     invert: string;
+    zoomIn: string;
+    zoomOut: string;
     draftBanner: string;
   };
 }
@@ -101,6 +103,8 @@ export const DEFAULT_EDITOR_STRINGS: EditorStrings = {
     empty: "Compile para ver o PDF aqui.",
     stale: "Compilando…",
     invert: "Modo escuro do PDF (inverter cores)",
+    zoomIn: "Aumentar zoom",
+    zoomOut: "Reduzir zoom",
     draftBanner:
       "Modo rascunho: citações, glossário e índice não são resolvidos. Use a compilação Completa para o PDF final.",
   },

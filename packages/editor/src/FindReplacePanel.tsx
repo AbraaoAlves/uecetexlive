@@ -6,6 +6,7 @@
 import { X } from "lucide-react";
 import { useEffect, useRef } from "react";
 import { type EditorStrings, useEditorStrings } from "./strings";
+import { Tooltip } from "./Tooltip";
 import { cn } from "./utils";
 
 export interface FindReplaceOptions {
@@ -118,16 +119,17 @@ export function FindReplacePanel({
           active={options.regex}
           onClick={() => onOptionsChange({ ...options, regex: !options.regex })}
         />
-        <button
-          type="button"
-          data-testid="find-close"
-          title={strings.editor.findClose}
-          aria-label={strings.editor.findClose}
-          onClick={onClose}
-          className="ml-auto rounded p-1 text-ink-muted hover:bg-accent-soft"
-        >
-          <X className="size-3.5" />
-        </button>
+        <Tooltip content={strings.editor.findClose}>
+          <button
+            type="button"
+            data-testid="find-close"
+            aria-label={strings.editor.findClose}
+            onClick={onClose}
+            className="ml-auto rounded p-1 text-ink-muted hover:bg-accent-soft"
+          >
+            <X className="size-3.5" />
+          </button>
+        </Tooltip>
       </div>
       <div className="flex flex-wrap items-center gap-1.5">
         <input
@@ -195,19 +197,20 @@ function OptionToggle({
   onClick: () => void;
 }) {
   return (
-    <button
-      type="button"
-      data-testid={testid}
-      title={label}
-      aria-label={label}
-      aria-pressed={active}
-      onClick={onClick}
-      className={cn(
-        "rounded border px-1.5 py-0.5 font-mono text-ink-muted",
-        active && "border-accent bg-accent-soft text-accent-strong",
-      )}
-    >
-      {short}
-    </button>
+    <Tooltip content={label}>
+      <button
+        type="button"
+        data-testid={testid}
+        aria-label={label}
+        aria-pressed={active}
+        onClick={onClick}
+        className={cn(
+          "rounded border px-1.5 py-0.5 font-mono text-ink-muted",
+          active && "border-accent bg-accent-soft text-accent-strong",
+        )}
+      >
+        {short}
+      </button>
+    </Tooltip>
   );
 }

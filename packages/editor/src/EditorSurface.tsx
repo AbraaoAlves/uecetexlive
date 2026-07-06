@@ -21,6 +21,7 @@ import { type FindReplaceOptions, FindReplacePanel } from "./FindReplacePanel";
 import { type EditorResources, EditorResourcesContext } from "./resources";
 import type { PickerKind } from "./slash-menu/slash-menu";
 import { useEditorStrings } from "./strings";
+import { Tooltip } from "./Tooltip";
 import { cn } from "./utils";
 import "katex/dist/katex.min.css";
 
@@ -265,19 +266,20 @@ function BubbleButton({
   children: React.ReactNode;
 }) {
   return (
-    <button
-      type="button"
-      aria-label={label}
-      title={label}
-      onMouseDown={(e) => e.preventDefault()}
-      onClick={onClick}
-      className={cn(
-        "rounded p-1.5 hover:bg-accent-soft",
-        active && "bg-accent-soft text-accent-strong",
-      )}
-    >
-      {children}
-    </button>
+    <Tooltip content={label}>
+      <button
+        type="button"
+        aria-label={label}
+        onMouseDown={(e) => e.preventDefault()}
+        onClick={onClick}
+        className={cn(
+          "rounded p-1.5 hover:bg-accent-soft",
+          active && "bg-accent-soft text-accent-strong",
+        )}
+      >
+        {children}
+      </button>
+    </Tooltip>
   );
 }
 
