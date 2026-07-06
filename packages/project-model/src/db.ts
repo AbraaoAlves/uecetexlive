@@ -30,6 +30,8 @@ export interface CachedPdf {
 
 export interface ProjectDb {
   loadProject(id: string): Promise<LoadProjectResult>;
+  /** Every valid stored project — corrupt entries are skipped, not thrown. */
+  listProjects(): Promise<Project[]>;
   saveProject(project: Project): Promise<void>;
   deleteProject(id: string): Promise<void>;
   loadCompileSettings(): Promise<CompileSettings>;
@@ -76,6 +78,15 @@ export function createProjectDb(dbName: string): ProjectDb {
       // Rescue: stash the corrupt blob so Phase-5 zip export can offer it back.
       await db.put("rescue", raw, `${id}@${Date.now()}`);
       return { status: "corrupt" };
+    },
+
+    async listProjects() {
+      const db = await getDb();
+      const raw: unknown[] = await db.getAll("projects");
+      return raw.flatMap((entry) => {
+        const parsed = ProjectSchema.safeParse(entry);
+        return parsed.success ? [parsed.data] : [];
+      });
     },
 
     async saveProject(project) {
