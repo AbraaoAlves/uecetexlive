@@ -216,6 +216,7 @@ export function PdfPane({ pdf, compiling, debugHook = true }: PdfPaneProps) {
           <button
             type="button"
             data-testid="pdf-invert"
+            aria-label={strings.invert}
             aria-pressed={invert}
             className={cn(
               "rounded p-1 hover:bg-accent-soft",

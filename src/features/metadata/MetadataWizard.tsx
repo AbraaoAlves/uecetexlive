@@ -102,6 +102,7 @@ export function MetadataWizard({ fields, onApply, onClose }: MetadataWizardProps
             <button
               type="button"
               data-testid="wizard-close"
+              aria-label={strings.metadata.close}
               className="ml-auto rounded p-1.5 text-ink-muted hover:bg-accent-soft"
               onClick={onClose}
             >

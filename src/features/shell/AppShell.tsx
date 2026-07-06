@@ -485,6 +485,7 @@ function ShellInner() {
               ref={railToggleRef}
               type="button"
               data-testid="rail-toggle"
+              aria-label={strings.topbar.toggleRail}
               aria-expanded={!railCollapsed}
               className="relative rounded p-1.5 text-ink-muted hover:bg-accent-soft"
               onClick={toggleRail}
@@ -543,6 +544,7 @@ function ShellInner() {
           <button
             type="button"
             data-testid="export-pdf"
+            aria-label={strings.topbar.exportPdf}
             disabled={!compileState.result?.pdf}
             className="rounded p-1.5 text-ink-muted hover:bg-accent-soft disabled:opacity-40"
             onClick={() => {
@@ -558,6 +560,7 @@ function ShellInner() {
             <button
               type="button"
               data-testid="menu-button"
+              aria-label={strings.topbar.menu}
               className="rounded p-1.5 text-ink-muted hover:bg-accent-soft"
               onClick={() => setMenuOpen((v) => !v)}
             >
