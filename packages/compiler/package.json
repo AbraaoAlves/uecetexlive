@@ -29,6 +29,7 @@
   "files": [
     "dist",
     "src",
+    "static",
     "README.md"
   ]
 }

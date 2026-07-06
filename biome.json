@@ -9,6 +9,7 @@
     "includes": [
       "**",
       "!public",
+      "!packages/compiler/static",
       "!dist",
       "!storybook-static",
       "!coverage",

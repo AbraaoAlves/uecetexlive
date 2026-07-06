@@ -13,6 +13,12 @@ BASE="https://github.com/busytex/busytex/releases/download/build_wasm_4499aa69fd
 DEST="public/wasm/busytex"
 mkdir -p "$DEST"
 
+# The worker glue (§3.3) is this repo's own code, but BusytexFullCompiler
+# hardcodes its filename as part of @papyru/compiler's asset contract — it
+# lives canonically in the package (packages/compiler/static/) so every
+# consumer of the package, not just this app, gets the same copy.
+cp packages/compiler/static/uecetexlive.worker.js "$DEST/uecetexlive.worker.js"
+
 # name expected_bytes
 ASSETS="
 busytex.js 295606

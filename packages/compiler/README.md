@@ -22,6 +22,12 @@ assets estáticos (eles **não** entram no pacote npm) — os scripts
 `scripts/vendor-busytex.sh` e `scripts/sync-texlive-cache.sh` do repositório
 mostram como montá-los.
 
+`BusytexFullCompiler` carrega o worker por nome fixo
+(`${assetBaseUrl}uecetexlive.worker.js`) — esse arquivo **é** distribuído com
+o pacote, em `static/uecetexlive.worker.js`; copie-o para o `assetBaseUrl` do
+engine `busytex-full` junto com os binários (é isso que
+`scripts/vendor-busytex.sh` faz).
+
 O sub-export `./react` traz `useCompilerEngine` (máquina de estados de
 compilação, engine dual, sem persistência) e `useIdleWarmup` (pré-aquecimento
 ocioso) — `react` é peer dependency opcional, só para quem usa esse entry.
