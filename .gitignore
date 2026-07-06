@@ -25,3 +25,4 @@ blob-report/
 *.local
 *.log
 .gstack/
+.env

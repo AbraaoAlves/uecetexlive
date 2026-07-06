@@ -1,11 +1,14 @@
 import { RouterProvider } from "@tanstack/react-router";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
+import { initTelemetry } from "@/lib/telemetry";
 import { router } from "@/router";
 import "@/styles.css";
 
 const rootEl = document.getElementById("root");
 if (!rootEl) throw new Error("#root not found");
+
+initTelemetry();
 
 createRoot(rootEl).render(
   <StrictMode>

@@ -42,6 +42,7 @@ import {
   textToBytes,
 } from "@/features/project/vfs";
 import { strings } from "@/lib/strings";
+import { isTelemetryEnabled, track } from "@/lib/telemetry";
 import { useDebouncedValue } from "@/lib/use-debounced-value";
 import { cn, slugify } from "@/lib/utils";
 import { CompileButton } from "./CompileButton";
@@ -50,6 +51,7 @@ import { IdleWarmupIndicator } from "./IdleWarmupIndicator";
 import { ImportDialog, type ImportDialogState } from "./ImportDialog";
 import { NewChapterDialog } from "./NewChapterDialog";
 import { ProjectRail, type RailFile } from "./ProjectRail";
+import { TelemetryNotice } from "./TelemetryNotice";
 import { TemplateUpdateBanner } from "./TemplateUpdateBanner";
 import { ThemeToggle } from "./ThemeToggle";
 import { Tooltip } from "./Tooltip";
@@ -140,10 +142,15 @@ function ShellInner() {
     (ImportDialogState & { payload?: unknown }) | null
   >(null);
   const [precompiledBbl, setPrecompiledBbl] = useState<Uint8Array | undefined>();
+  const [telemetryDismissed, setTelemetryDismissed] = useState(false);
   const zipInputRef = useRef<HTMLInputElement>(null);
   const bblInputRef = useRef<HTMLInputElement>(null);
   const { state: compileState, compile, setEngine } = useCompile();
   const idleWarmup = useIdleWarmup();
+
+  useEffect(() => {
+    track("app_loaded");
+  }, []);
 
   const texSources = useMemo(() => {
     const map: Record<string, string> = {};
@@ -549,7 +556,10 @@ function ShellInner() {
             className="rounded p-1.5 text-ink-muted hover:bg-accent-soft disabled:opacity-40"
             onClick={() => {
               const pdf = compileState.result?.pdf;
-              if (pdf) download("documento.pdf", pdf, "application/pdf");
+              if (pdf) {
+                track("export_pdf_clicked");
+                download("documento.pdf", pdf, "application/pdf");
+              }
             }}
           >
             <Download className="size-4" />
@@ -587,6 +597,7 @@ function ShellInner() {
                 testid="menu-export-zip"
                 onClick={() => {
                   setMenuOpen(false);
+                  track("export_zip_clicked");
                   download(
                     `${project.name}.zip`,
                     exportProjectZip(project),
@@ -663,6 +674,9 @@ function ShellInner() {
         <TemplateUpdateBanner
           onDismiss={() => setUi({ dismissedTemplateCommit: templateUpdateCommit })}
         />
+      )}
+      {isTelemetryEnabled() && !telemetryDismissed && (
+        <TelemetryNotice onDismiss={() => setTelemetryDismissed(true)} />
       )}
       <div className="flex min-h-0 flex-1">
         <aside
