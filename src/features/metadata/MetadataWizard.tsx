@@ -13,6 +13,7 @@ import {
   TEMPLATE_PLACEHOLDER_TITLE,
   workTypeOf,
 } from "@/features/project/metadata";
+import { Tooltip } from "@/features/shell/Tooltip";
 import { strings } from "@/lib/strings";
 import { cn } from "@/lib/utils";
 import { type FieldDef, WIZARD_STEPS } from "./fields";
@@ -80,32 +81,33 @@ export function MetadataWizard({ fields, onApply, onClose }: MetadataWizardProps
           <span className="font-display text-base">{strings.metadata.title}</span>
           <nav aria-label={strings.metadata.stepsLabel} className="flex gap-1">
             {WIZARD_STEPS.map((s, i) => (
-              <button
-                key={s.id}
-                type="button"
-                data-testid={`wizard-step-${i + 1}`}
-                title={s.title}
-                onClick={() => setStepIndex(i)}
-                className={cn(
-                  "rounded-full px-2.5 py-0.5 text-xs",
-                  i === stepIndex
-                    ? "bg-accent-soft font-medium text-accent-strong"
-                    : "text-ink-muted hover:bg-accent-soft/60",
-                )}
-              >
-                {i + 1}
-              </button>
+              <Tooltip content={s.title} key={s.id}>
+                <button
+                  type="button"
+                  data-testid={`wizard-step-${i + 1}`}
+                  onClick={() => setStepIndex(i)}
+                  className={cn(
+                    "rounded-full px-2.5 py-0.5 text-xs",
+                    i === stepIndex
+                      ? "bg-accent-soft font-medium text-accent-strong"
+                      : "text-ink-muted hover:bg-accent-soft/60",
+                  )}
+                >
+                  {i + 1}
+                </button>
+              </Tooltip>
             ))}
           </nav>
-          <button
-            type="button"
-            data-testid="wizard-close"
-            title={strings.metadata.close}
-            className="ml-auto rounded p-1.5 text-ink-muted hover:bg-accent-soft"
-            onClick={onClose}
-          >
-            <X className="size-4" />
-          </button>
+          <Tooltip content={strings.metadata.close}>
+            <button
+              type="button"
+              data-testid="wizard-close"
+              className="ml-auto rounded p-1.5 text-ink-muted hover:bg-accent-soft"
+              onClick={onClose}
+            >
+              <X className="size-4" />
+            </button>
+          </Tooltip>
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto">
