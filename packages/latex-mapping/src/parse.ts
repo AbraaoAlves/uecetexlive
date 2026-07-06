@@ -161,16 +161,6 @@ function segmentRange(seg: Node[]): [number, number] | null {
 // Inline promotion
 // ---------------------------------------------------------------------------
 
-function _flattenArgText(nodes: Node[]): string {
-  let out = "";
-  for (const node of nodes) {
-    if (node.type === "string") out += node.content;
-    else if (node.type === "whitespace") out += " ";
-    else if (node.type === "group") out += _flattenArgText(node.content);
-  }
-  return out;
-}
-
 interface InlineCtx {
   source: string;
   citeCmds: Set<string>;
