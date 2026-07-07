@@ -534,8 +534,10 @@ function CitationResultList({
 }
 
 /** Second step for a search result (v0.4 §2): indireta/direta + an optional
- * page number for a direct quote, then resources.confirmCitation resolves
- * dedup/collisions before the citeonline node is built. Direta longa isn't
+ * page number for a direct quote, plus narrativa/parentética (ufcTexcite.sty:
+ * \citeonline → "Silva (2020)", \cite → "(SILVA, 2020)" — both already exist
+ * and work, this just exposes the choice), then resources.confirmCitation
+ * resolves dedup/collisions before the node is built. Direta longa isn't
  * here — it's the existing separate "citacao-longa" slash command. */
 function CitationTypeStep({
   entry,
@@ -550,11 +552,13 @@ function CitationTypeStep({
 }) {
   const [direct, setDirect] = useState(false);
   const [page, setPage] = useState("");
+  const [parenthetical, setParenthetical] = useState(false);
 
   const confirm = () => {
     const key = resources.confirmCitation(entry.key);
     const opt = direct && page.trim() ? `p. ${page.trim()}` : null;
-    onPick({ type: "citation", attrs: { cmd: "citeonline", keys: [key], opt } });
+    const cmd = parenthetical ? "cite" : "citeonline";
+    onPick({ type: "citation", attrs: { cmd, keys: [key], opt } });
   };
 
   return (
@@ -580,6 +584,24 @@ function CitationTypeStep({
           data-testid="citation-type-direta"
         />
         Direta (com página)
+      </label>
+      <label className="flex items-center gap-2">
+        <input
+          type="radio"
+          checked={!parenthetical}
+          onChange={() => setParenthetical(false)}
+          data-testid="citation-form-narrativa"
+        />
+        Narrativa — Silva (2020)
+      </label>
+      <label className="flex items-center gap-2">
+        <input
+          type="radio"
+          checked={parenthetical}
+          onChange={() => setParenthetical(true)}
+          data-testid="citation-form-parentetica"
+        />
+        Parentética — (SILVA, 2020)
       </label>
       {direct && (
         <input

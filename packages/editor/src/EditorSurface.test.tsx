@@ -173,4 +173,22 @@ describe("EditorSurface citation picker", () => {
     await screen.findByTestId("citation-chip");
     expect(citationChipTitle()).toBe("\\citeonline{existing2019}");
   });
+
+  it("Parentética inserts a plain \\cite instead of \\citeonline", async () => {
+    renderSurface(
+      makeResources({ searchCitations: vi.fn().mockResolvedValue([SEARCH_HIT]) }),
+    );
+    await openCitationPicker();
+    fireEvent.change(screen.getByTestId("picker-search"), {
+      target: { value: "trabalho novo" },
+    });
+    fireEvent.click(await screen.findByTestId("pick-cite-novo2024"));
+    await screen.findByTestId("citation-type-step");
+
+    fireEvent.click(screen.getByTestId("citation-form-parentetica"));
+    fireEvent.click(screen.getByTestId("citation-type-confirm"));
+
+    await screen.findByTestId("citation-chip");
+    expect(citationChipTitle()).toBe("\\cite{novo2024}");
+  });
 });
