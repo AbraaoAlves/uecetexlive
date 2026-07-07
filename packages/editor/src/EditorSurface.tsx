@@ -19,7 +19,7 @@ import { EditorToolbar } from "./EditorToolbar";
 import { buildExtensions } from "./extensions";
 import { searchPluginKey } from "./extensions/search";
 import { type FindReplaceOptions, FindReplacePanel } from "./FindReplacePanel";
-import { type EditorResources, EditorResourcesContext } from "./resources";
+import { type BibEntry, type EditorResources, EditorResourcesContext } from "./resources";
 import type { PickerKind } from "./slash-menu/slash-menu";
 import { useEditorStrings } from "./strings";
 import { Tooltip } from "./Tooltip";
@@ -311,34 +311,7 @@ function PickerDialog({
 
   let body: React.ReactNode;
   if (kind === "citation") {
-    const results = resources.bibEntries.filter(
-      (e) =>
-        e.key.toLowerCase().includes(q) ||
-        e.title.toLowerCase().includes(q) ||
-        e.author.toLowerCase().includes(q) ||
-        e.year.includes(q),
-    );
-    body = results.length ? (
-      results.map((entry) => (
-        <PickerRow
-          key={entry.key}
-          testid={`pick-cite-${entry.key}`}
-          onClick={() =>
-            onPick({
-              type: "citation",
-              attrs: { cmd: "cite", keys: [entry.key], opt: null },
-            })
-          }
-        >
-          <span className="font-medium">
-            {entry.author.toUpperCase()}, {entry.year}
-          </span>{" "}
-          <span className="text-ink-subtle">{entry.title.slice(0, 60)}</span>
-        </PickerRow>
-      ))
-    ) : (
-      <Empty>Nenhuma referência encontrada</Empty>
-    );
+    body = <CitationPicker query={query} resources={resources} onPick={onPick} />;
   } else if (kind === "crossref") {
     const results = resources.labels.filter((l) => l.toLowerCase().includes(q));
     body = results.length ? (
@@ -440,6 +413,195 @@ function PickerDialog({
           data-testid="picker-search"
         />
         <div className="max-h-64 overflow-y-auto py-1">{body}</div>
+      </div>
+    </div>
+  );
+}
+
+/** Debounce delay before firing an external search (v0.4 §2 of the Papyru
+ * roadmap) — long enough that typing a title doesn't hammer the app's
+ * searchCitations on every keystroke. */
+const CITATION_SEARCH_DEBOUNCE_MS = 400;
+const CITATION_SEARCH_MIN_LENGTH = 3;
+
+/**
+ * Citation picker (v0.4 §2): library matches (existing behavior, single
+ * click) plus a debounced external search whose results go through
+ * CitationTypeStep before insertion. resources.searchCitations/
+ * confirmCitation keep this package ignorant of CSL-JSON/DOI/ISBN — it only
+ * ever sees the same BibEntry shape as the library list.
+ */
+function CitationPicker({
+  query,
+  resources,
+  onPick,
+}: {
+  query: string;
+  resources: EditorResources;
+  onPick: (content: Record<string, unknown>) => void;
+}) {
+  const q = query.toLowerCase();
+  const libraryResults = resources.bibEntries.filter(
+    (e) =>
+      e.key.toLowerCase().includes(q) ||
+      e.title.toLowerCase().includes(q) ||
+      e.author.toLowerCase().includes(q) ||
+      e.year.includes(q),
+  );
+
+  const [searchResults, setSearchResults] = useState<BibEntry[]>([]);
+  const [pending, setPending] = useState<BibEntry | null>(null);
+
+  useEffect(() => {
+    setPending(null);
+    if (query.trim().length < CITATION_SEARCH_MIN_LENGTH) {
+      setSearchResults([]);
+      return;
+    }
+    let cancelled = false;
+    const timer = setTimeout(() => {
+      resources.searchCitations(query).then((results) => {
+        if (!cancelled) setSearchResults(results);
+      });
+    }, CITATION_SEARCH_DEBOUNCE_MS);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [query, resources]);
+
+  if (pending) {
+    return (
+      <CitationTypeStep
+        entry={pending}
+        resources={resources}
+        onPick={onPick}
+        onCancel={() => setPending(null)}
+      />
+    );
+  }
+
+  if (libraryResults.length === 0 && searchResults.length === 0) {
+    return <Empty>Nenhuma referência encontrada</Empty>;
+  }
+
+  return (
+    <>
+      <CitationResultList
+        entries={libraryResults}
+        onSelect={(entry) =>
+          onPick({
+            type: "citation",
+            attrs: { cmd: "citeonline", keys: [entry.key], opt: null },
+          })
+        }
+      />
+      {searchResults.length > 0 && (
+        <>
+          <div className="border-t px-3 py-1 text-ink-subtle text-xs uppercase tracking-wide">
+            Resultados da busca
+          </div>
+          <CitationResultList entries={searchResults} onSelect={setPending} />
+        </>
+      )}
+    </>
+  );
+}
+
+function CitationResultList({
+  entries,
+  onSelect,
+}: {
+  entries: BibEntry[];
+  onSelect: (entry: BibEntry) => void;
+}) {
+  return (
+    <>
+      {entries.map((entry) => (
+        <PickerRow
+          key={entry.key}
+          testid={`pick-cite-${entry.key}`}
+          onClick={() => onSelect(entry)}
+        >
+          <span className="font-medium">
+            {entry.author.toUpperCase()}, {entry.year}
+          </span>{" "}
+          <span className="text-ink-subtle">{entry.title.slice(0, 60)}</span>
+        </PickerRow>
+      ))}
+    </>
+  );
+}
+
+/** Second step for a search result (v0.4 §2): indireta/direta + an optional
+ * page number for a direct quote, then resources.confirmCitation resolves
+ * dedup/collisions before the citeonline node is built. Direta longa isn't
+ * here — it's the existing separate "citacao-longa" slash command. */
+function CitationTypeStep({
+  entry,
+  resources,
+  onPick,
+  onCancel,
+}: {
+  entry: BibEntry;
+  resources: EditorResources;
+  onPick: (content: Record<string, unknown>) => void;
+  onCancel: () => void;
+}) {
+  const [direct, setDirect] = useState(false);
+  const [page, setPage] = useState("");
+
+  const confirm = () => {
+    const key = resources.confirmCitation(entry.key);
+    const opt = direct && page.trim() ? `p. ${page.trim()}` : null;
+    onPick({ type: "citation", attrs: { cmd: "citeonline", keys: [key], opt } });
+  };
+
+  return (
+    <div className="flex flex-col gap-2 p-3 text-sm" data-testid="citation-type-step">
+      <p className="font-medium">
+        {entry.author.toUpperCase()}, {entry.year}
+      </p>
+      <p className="text-ink-subtle text-xs">{entry.title}</p>
+      <label className="flex items-center gap-2">
+        <input
+          type="radio"
+          checked={!direct}
+          onChange={() => setDirect(false)}
+          data-testid="citation-type-indireta"
+        />
+        Indireta
+      </label>
+      <label className="flex items-center gap-2">
+        <input
+          type="radio"
+          checked={direct}
+          onChange={() => setDirect(true)}
+          data-testid="citation-type-direta"
+        />
+        Direta (com página)
+      </label>
+      {direct && (
+        <input
+          className="rounded border px-2 py-1"
+          placeholder="Página (ex.: 45)"
+          value={page}
+          onChange={(e) => setPage(e.target.value)}
+          data-testid="citation-page-input"
+        />
+      )}
+      <div className="flex justify-end gap-2">
+        <button type="button" data-testid="citation-type-cancel" onClick={onCancel}>
+          Cancelar
+        </button>
+        <button
+          type="button"
+          data-testid="citation-type-confirm"
+          onClick={confirm}
+          className="rounded bg-accent px-2 py-1 text-white"
+        >
+          Inserir
+        </button>
       </div>
     </div>
   );

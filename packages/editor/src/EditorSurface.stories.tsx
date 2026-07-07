@@ -19,6 +19,18 @@ const resources: EditorResources = {
   imageFiles: ["figuras/figura-1.jpg", "figuras/figura-3.png"],
   codeFiles: ["figuras/main.cpp"],
   uploadImage: async (file) => `figuras/${file.name}`,
+  searchCitations: async (query) =>
+    query.length >= 3
+      ? [
+          {
+            key: "storybook2026",
+            author: "Storybook",
+            title: `Resultado para "${query}"`,
+            year: "2026",
+          },
+        ]
+      : [],
+  confirmCitation: (key) => key,
 };
 
 const meta = {

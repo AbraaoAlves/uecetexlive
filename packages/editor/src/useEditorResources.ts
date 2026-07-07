@@ -158,6 +158,12 @@ export function useEditorResources(
         addFile(path, new Uint8Array(await file.arrayBuffer()));
         return path;
       },
+      // No-op defaults (v0.4 §2): searching external sources and resolving
+      // library dedup are product concerns the consuming app owns — see
+      // EditorArea.tsx in Papyru, which overrides both on top of this hook's
+      // result. This package has no notion of CSL-JSON/DOI/ISBN.
+      searchCitations: async () => [],
+      confirmCitation: (key) => key,
     };
   }, [bibEntries, pathsKey, labelsKey, addFile, figuresDir]);
 }

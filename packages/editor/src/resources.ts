@@ -31,6 +31,20 @@ export interface EditorResources {
    * when rejected (unsupported type, too big, read-only context).
    */
   uploadImage: (file: File) => Promise<string | null>;
+  /**
+   * Free-text/DOI/ISBN search for the citation picker (v0.4 §2) — the app
+   * decides how to route the query and normalizes results down to
+   * BibEntry; this package never sees CSL-JSON, DOI, or any external API,
+   * same boundary as bibEntries above.
+   */
+  searchCitations: (query: string) => Promise<BibEntry[]>;
+  /**
+   * Called when the user commits to inserting a search result identified by
+   * `key` — returns the key to actually cite, letting the app resolve
+   * dedup/collisions (e.g. the work is already in the library) before the
+   * citation node is created.
+   */
+  confirmCitation: (key: string) => string;
 }
 
 export const emptyResources: EditorResources = {
@@ -42,6 +56,8 @@ export const emptyResources: EditorResources = {
   imageFiles: [],
   codeFiles: [],
   uploadImage: async () => null,
+  searchCitations: async () => [],
+  confirmCitation: (key) => key,
 };
 
 export const EditorResourcesContext = createContext<EditorResources>(emptyResources);
