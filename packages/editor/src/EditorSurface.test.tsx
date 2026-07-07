@@ -191,4 +191,32 @@ describe("EditorSurface citation picker", () => {
     await screen.findByTestId("citation-chip");
     expect(citationChipTitle()).toBe("\\cite{novo2024}");
   });
+
+  it("Parentética + Direta with a page number round-trips through opt in the serialized LaTeX", async () => {
+    renderSurface(
+      makeResources({ searchCitations: vi.fn().mockResolvedValue([SEARCH_HIT]) }),
+    );
+    await openCitationPicker();
+    fireEvent.change(screen.getByTestId("picker-search"), {
+      target: { value: "trabalho novo" },
+    });
+    fireEvent.click(await screen.findByTestId("pick-cite-novo2024"));
+    await screen.findByTestId("citation-type-step");
+
+    fireEvent.click(screen.getByTestId("citation-form-parentetica"));
+    fireEvent.click(screen.getByTestId("citation-type-direta"));
+    fireEvent.change(screen.getByTestId("citation-page-input"), {
+      target: { value: "45" },
+    });
+    fireEvent.click(screen.getByTestId("citation-type-confirm"));
+    await screen.findByTestId("citation-chip");
+
+    const win = window as unknown as {
+      __uecetexEditor: { getJSON: () => unknown };
+      __serialize: (json: unknown) => string;
+    };
+    expect(win.__serialize(win.__uecetexEditor.getJSON())).toContain(
+      "\\cite[p. 45]{novo2024}",
+    );
+  });
 });
