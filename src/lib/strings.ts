@@ -146,6 +146,10 @@ export const strings = {
     templateUpdateMessage:
       "O modelo uecetex2 foi atualizado. Seu conteúdo não foi afetado.",
     templateUpdateDismiss: "Dispensar",
+    engineUpdateMessage:
+      "Uma nova versão do UeceTexLive já foi baixada e está pronta. Seu trabalho está salvo.",
+    engineUpdateReload: "Atualizar agora",
+    engineUpdateDismiss: "Depois",
     bblImportedNote:
       "O próximo PDF completo usará esta bibliografia pré-compilada e pulará o BibTeX (útil para projetos biber).",
     telemetryNoticeMessage:

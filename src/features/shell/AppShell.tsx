@@ -70,6 +70,7 @@ import { cn, slugify } from "@/lib/utils";
 import { CompileButton } from "./CompileButton";
 import { DiagnosticsList } from "./DiagnosticsList";
 import { EngineToggle } from "./EngineToggle";
+import { EngineUpdateBanner } from "./EngineUpdateBanner";
 import { IdleWarmupIndicator } from "./IdleWarmupIndicator";
 import { ImportDialog, type ImportDialogState } from "./ImportDialog";
 import { NewChapterDialog } from "./NewChapterDialog";
@@ -79,6 +80,7 @@ import { TemplateUpdateBanner } from "./TemplateUpdateBanner";
 import { ThemeToggle } from "./ThemeToggle";
 import { Tooltip } from "./Tooltip";
 import { TopBar } from "./TopBar";
+import { useEngineUpdateNotice } from "./useEngineUpdateNotice";
 import { useTheme } from "./useTheme";
 import { useUiSettings } from "./useUiSettings";
 import { WarmupProgress } from "./WarmupProgress";
@@ -162,6 +164,8 @@ function ShellInner() {
   const { latestCommit: templateUpdateCommit } = useTemplateUpdateNotice(
     project?.templateCommit,
   );
+  const { updateAvailable: engineUpdateAvailable } = useEngineUpdateNotice();
+  const [engineUpdateDismissed, setEngineUpdateDismissed] = useState(false);
   const [metadataOpen, setMetadataOpen] = useState(false);
   const [checklistOpen, setChecklistOpen] = useState(false);
   const [newChapterOpen, setNewChapterOpen] = useState(false);
@@ -902,6 +906,12 @@ function ShellInner() {
       {templateUpdateCommit && ui.dismissedTemplateCommit !== templateUpdateCommit && (
         <TemplateUpdateBanner
           onDismiss={() => setUi({ dismissedTemplateCommit: templateUpdateCommit })}
+        />
+      )}
+      {engineUpdateAvailable && !engineUpdateDismissed && (
+        <EngineUpdateBanner
+          onReload={() => window.location.reload()}
+          onDismiss={() => setEngineUpdateDismissed(true)}
         />
       )}
       {isTelemetryEnabled() && !telemetryDismissed && (
