@@ -213,6 +213,7 @@ export const strings = {
     addedToastPrefix: "Adicionada! Para citar no texto use",
     addedToastCopy: "copiar",
     addedToastCopied: "copiado!",
+    insertCitation: "Inserir citação no texto",
   },
   sobre: {
     title: "Sobre o UeceTexLive",

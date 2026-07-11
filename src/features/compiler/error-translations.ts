@@ -7,8 +7,9 @@
  * citação foi usado (\citeonline, \cite, \citep…) — não precisa reconhecer
  * `CitationProfile.citeCommands` aqui, só no .tex fonte.
  *
- * A ação de citação-não-encontrada abre o .bib pra edição manual — um
- * substituto honesto até a busca da Fase 2 existir (troca só o `onClick`).
+ * A ação de citação-não-encontrada abre a busca do B4 com a key como query
+ * (§5.6/§5.7 B5) quando ela existe; sem busca disponível, cai pra abrir o
+ * .bib direto pra edição manual.
  */
 import type { CompileDiagnostic } from "@papyru/compiler";
 
@@ -26,6 +27,8 @@ export interface TranslateContext {
   /** Caminho do .bib canônico do projeto, se descoberto (include-graph). */
   bibPath: string | null;
   openFile: (path: string) => void;
+  /** Abre o painel Referências com a busca já rodando pela key citada (B4/B5). */
+  onSearchCitation?: (key: string) => void;
 }
 
 function commandFromExcerpt(excerpt: string): string | null {
@@ -76,16 +79,20 @@ const MATCHERS: Matcher[] = [
     test: (m) => /^Citation `[^']*'.*undefined/i.test(m),
     translate: (d, ctx) => {
       const key = d.message.match(/Citation `([^']*)'/i)?.[1];
+      const action =
+        key && ctx.onSearchCitation
+          ? { label: "Buscar e adicionar", onClick: () => ctx.onSearchCitation?.(key) }
+          : ctx.bibPath
+            ? {
+                label: "Ver referências",
+                onClick: () => ctx.openFile(ctx.bibPath as string),
+              }
+            : undefined;
       return {
         message: key
           ? `Você citou "${key}", mas essa referência não está na sua lista.`
           : "Uma citação no texto não está na sua lista de referências.",
-        action: ctx.bibPath
-          ? {
-              label: "Ver referências",
-              onClick: () => ctx.openFile(ctx.bibPath as string),
-            }
-          : undefined,
+        action,
       };
     },
   },

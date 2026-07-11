@@ -1,5 +1,13 @@
+import {
+  addEntry,
+  buildCitationKey,
+  candidateToNewEntryInput,
+  type ReferenceCandidate,
+  searchReferences,
+} from "@papyru/bibliography";
 import { SourceEditor, useEditorResources } from "@papyru/editor";
 import { LogPane, PdfPane } from "@papyru/editor/preview";
+import { ABNT_CITATION_PROFILE } from "@papyru/latex-mapping";
 import {
   countLatexWords,
   exportProjectZip,
@@ -69,6 +77,11 @@ const EditorSurface = lazy(() =>
     default: m.EditorSurface,
   })),
 );
+
+/** Minimal shape of the global Tiptap handle EditorSurface exposes (window.__uecetexEditor). */
+interface TiptapEditorHandle {
+  commands: { insertContent: (content: Record<string, unknown>) => void };
+}
 
 /** Settle window for keystroke-heavy derivations (graph, total word count). */
 const DERIVED_MS = 300;
@@ -150,6 +163,17 @@ function ShellInner() {
   const bblInputRef = useRef<HTMLInputElement>(null);
   const { state: compileState, compile, setEngine } = useCompile();
   const idleWarmup = useIdleWarmup();
+  // B5: "Citation undefined" (1.5) hands the missing key here to pre-run a
+  // search in the Referências tab — cleared once ReferencesPanel consumes it
+  // so re-rendering doesn't keep re-triggering the same search.
+  const [pendingSearchQuery, setPendingSearchQuery] = useState<string | null>(null);
+  const onSearchCitation = useCallback(
+    (key: string) => {
+      setUi({ railTab: "references" });
+      setPendingSearchQuery(key);
+    },
+    [setUi],
+  );
 
   useEffect(() => {
     track("app_loaded");
@@ -256,7 +280,51 @@ function ShellInner() {
     (path: string, bytes: Uint8Array) => createFile(path, bytes, { open: false }),
     [createFile],
   );
-  const resources = useEditorResources(project, graph, addImageFile);
+  const baseResources = useEditorResources(project, graph, addImageFile);
+  // Override on top of the package's no-op defaults (its own comment points
+  // here: "the consuming app owns search/dedup" — packages/editor never sees
+  // CSL-JSON/DOI). searchCitations proposes a key per candidate and stashes
+  // the full candidate; confirmCitation (sync, called once the user commits
+  // in CitationTypeStep) resolves it into a real addEntry write — or, if the
+  // key already made it into bibEntries by then, just returns it unchanged.
+  const pendingCandidatesRef = useRef(new Map<string, ReferenceCandidate>());
+  const resources = useMemo<typeof baseResources>(
+    () => ({
+      ...baseResources,
+      searchCitations: async (query) => {
+        const { candidates } = await searchReferences(query);
+        const used = new Set(baseResources.bibEntries.map((e) => e.key));
+        pendingCandidatesRef.current.clear();
+        return candidates.map((candidate) => {
+          let key = buildCitationKey({
+            authorSurname: candidate.authors[0]?.lastName,
+            year: candidate.year ?? undefined,
+            title: candidate.title,
+          });
+          for (let n = 0; used.has(key); n++)
+            key = `${key}${String.fromCharCode(97 + n)}`;
+          used.add(key);
+          pendingCandidatesRef.current.set(key, candidate);
+          return {
+            key,
+            author: candidate.authors[0]?.lastName ?? "",
+            title: candidate.title,
+            year: candidate.year ?? "",
+          };
+        });
+      },
+      confirmCitation: (key) => {
+        if (baseResources.bibEntries.some((e) => e.key === key)) return key;
+        const candidate = pendingCandidatesRef.current.get(key);
+        if (!candidate || bibText === null || !bibPath) return key;
+        const result = addEntry(bibText, candidateToNewEntryInput(candidate));
+        if (!result.ok) return key;
+        updateFileText(bibPath, result.value.bibText);
+        return result.value.citationKey;
+      },
+    }),
+    [baseResources, bibText, bibPath, updateFileText],
+  );
 
   // Rail upload (QA §A4): images, PDFs and code files land in figuras/ —
   // the template's own convention (main.cpp lives there).
@@ -307,6 +375,20 @@ function ShellInner() {
     currentFile.kind === "tex" &&
     isWysiwygEligible(currentFile.path);
   const showWysiwyg = wysiwygCapable && !sourceView;
+  // B5(b): "Inserir citação no texto" from the Referências row. Only safe
+  // when the WYSIWYG surface for a .tex file is actually mounted — otherwise
+  // window.__uecetexEditor is stale (a different/no-longer-open file) and
+  // inserting into it would silently corrupt the wrong document.
+  const insertCitationAtCursor = showWysiwyg
+    ? (key: string) => {
+        const editor = (window as unknown as { __uecetexEditor?: TiptapEditorHandle })
+          .__uecetexEditor;
+        editor?.commands.insertContent({
+          type: "citation",
+          attrs: { cmd: ABNT_CITATION_PROFILE.citeCommands[0], keys: [key], opt: null },
+        });
+      }
+    : undefined;
 
   // Word count (QA Fase 1): current prose file + whole work. The current-file
   // memo keys on the source *string*, so it holds while typing elsewhere.
@@ -769,6 +851,9 @@ function ShellInner() {
                   onWriteBib={
                     bibPath ? (next) => updateFileText(bibPath, next) : undefined
                   }
+                  initialSearchQuery={pendingSearchQuery}
+                  onSearchQueryConsumed={() => setPendingSearchQuery(null)}
+                  onInsertCitation={insertCitationAtCursor}
                 />
               )}
             </div>
@@ -877,7 +962,7 @@ function ShellInner() {
               <div className="flex h-full flex-col">
                 <DiagnosticsList
                   diagnostics={compileState.result?.diagnostics ?? []}
-                  ctx={{ bibPath, openFile }}
+                  ctx={{ bibPath, openFile, onSearchCitation }}
                 />
                 <div className="min-h-0 flex-1">
                   <LogPane

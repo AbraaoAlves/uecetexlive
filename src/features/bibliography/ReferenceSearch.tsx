@@ -5,7 +5,7 @@
  */
 import type { ReferenceCandidate, SearchResult } from "@papyru/bibliography";
 import { searchReferences } from "@papyru/bibliography";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { strings } from "@/lib/strings";
 import { EntryTypeIcon } from "./entry-type-icon";
 
@@ -14,6 +14,9 @@ export interface ReferenceSearchProps {
   existingDois: ReadonlySet<string>;
   onAdd: (candidate: ReferenceCandidate) => void;
   onAddManually: (initialTitle: string) => void;
+  /** Pre-fills and auto-runs the search once (B5c — "Citation undefined" hands the missing key here). */
+  initialQuery?: string;
+  onInitialQueryConsumed?: () => void;
 }
 
 type Status = "idle" | "loading" | "done";
@@ -23,8 +26,10 @@ export function ReferenceSearch({
   existingDois,
   onAdd,
   onAddManually,
+  initialQuery,
+  onInitialQueryConsumed,
 }: ReferenceSearchProps) {
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState(initialQuery ?? "");
   const [status, setStatus] = useState<Status>("idle");
   const [result, setResult] = useState<SearchResult | null>(null);
   const [addedDois, setAddedDois] = useState<ReadonlySet<string>>(new Set());
@@ -32,8 +37,8 @@ export function ReferenceSearch({
 
   const rateLimited = Date.now() < rateLimitedUntil;
 
-  const run = async () => {
-    const trimmed = query.trim();
+  const run = async (explicitQuery?: string) => {
+    const trimmed = (explicitQuery ?? query).trim();
     if (!trimmed || rateLimited) return;
     setStatus("loading");
     const searchResult = await searchReferences(trimmed);
@@ -43,6 +48,14 @@ export function ReferenceSearch({
       setRateLimitedUntil(Date.now() + RATE_LIMIT_COOLDOWN_MS);
     }
   };
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: runs once per fresh initialQuery, not on every render — run/onInitialQueryConsumed identity isn't the trigger.
+  useEffect(() => {
+    if (!initialQuery) return;
+    setQuery(initialQuery);
+    void run(initialQuery);
+    onInitialQueryConsumed?.();
+  }, [initialQuery]);
 
   const handleAdd = (candidate: ReferenceCandidate) => {
     onAdd(candidate);

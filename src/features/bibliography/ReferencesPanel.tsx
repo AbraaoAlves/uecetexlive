@@ -13,7 +13,7 @@ import {
   type ReferenceCandidate,
 } from "@papyru/bibliography";
 import { ABNT_CITATION_PROFILE } from "@papyru/latex-mapping";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { strings } from "@/lib/strings";
 import { cn } from "@/lib/utils";
 import { AddReferenceDialog } from "./AddReferenceDialog";
@@ -26,6 +26,11 @@ export interface ReferencesPanelProps {
   bibText: string | null;
   /** Persists the new bibText (e.g. updateFileText(bibPath, next)) — omitted when there's no .bib to write to. */
   onWriteBib?: (nextBibText: string) => void;
+  /** Set by "Citation undefined" (1.5/B5): opens search pre-run with the missing key. */
+  initialSearchQuery?: string | null;
+  onSearchQueryConsumed?: () => void;
+  /** "Inserir citação no texto" per row (B5b) — omitted when no WYSIWYG surface is mounted to insert into. */
+  onInsertCitation?: (key: string) => void;
 }
 
 type SortMode = "file" | "author" | "year";
@@ -50,7 +55,13 @@ const SORT_OPTIONS: { mode: SortMode; label: "sortFile" | "sortAuthor" | "sortYe
     { mode: "year", label: "sortYear" },
   ];
 
-export function ReferencesPanel({ bibText, onWriteBib }: ReferencesPanelProps) {
+export function ReferencesPanel({
+  bibText,
+  onWriteBib,
+  initialSearchQuery,
+  onSearchQueryConsumed,
+  onInsertCitation,
+}: ReferencesPanelProps) {
   const [sort, setSort] = useState<SortMode>("file");
   const [showRaw, setShowRaw] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
@@ -59,6 +70,10 @@ export function ReferencesPanel({ bibText, onWriteBib }: ReferencesPanelProps) {
   const [searchOpen, setSearchOpen] = useState(false);
   const [addedToastKey, setAddedToastKey] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    if (initialSearchQuery) setSearchOpen(true);
+  }, [initialSearchQuery]);
 
   const existingDois = useMemo(() => {
     if (bibText === null) return new Set<string>();
@@ -209,6 +224,8 @@ export function ReferencesPanel({ bibText, onWriteBib }: ReferencesPanelProps) {
       {searchOpen && onWriteBib ? (
         <ReferenceSearch
           existingDois={existingDois}
+          initialQuery={initialSearchQuery ?? undefined}
+          onInitialQueryConsumed={onSearchQueryConsumed}
           onAdd={handleSearchAdd}
           onAddManually={(title) => {
             setSearchOpen(false);
@@ -278,9 +295,23 @@ export function ReferencesPanel({ bibText, onWriteBib }: ReferencesPanelProps) {
                       <span>{entryTypeLabelPt(row.entry.entryType)}</span>
                     </div>
                     <div className="font-medium">{row.titleLabel}</div>
-                    <div className="text-ink-muted text-xs">
-                      <span>{row.authorsLabel ?? strings.references.unknownAuthor}</span>{" "}
-                      · <span>{row.yearLabel}</span>
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-ink-muted text-xs">
+                        <span>
+                          {row.authorsLabel ?? strings.references.unknownAuthor}
+                        </span>{" "}
+                        · <span>{row.yearLabel}</span>
+                      </span>
+                      {onInsertCitation && (
+                        <button
+                          type="button"
+                          data-testid={`reference-insert-${row.key}`}
+                          className="shrink-0 text-accent text-xs underline hover:no-underline"
+                          onClick={() => onInsertCitation(row.key)}
+                        >
+                          {strings.references.insertCitation}
+                        </button>
+                      )}
                     </div>
                   </li>
                 ))}

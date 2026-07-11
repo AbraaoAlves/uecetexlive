@@ -36,24 +36,40 @@ describe("translateDiagnostic", () => {
     expect(translateDiagnostic(d, noOpenFile).message).toContain("figuras/foo.png");
   });
 
-  it("names the undefined citation key and offers to open the .bib", () => {
-    const openFile = vi.fn();
-    const d = diag(
+  const citationDiag = () =>
+    diag(
       "Citation `alves2010' on page 12 undefined on input line 8.",
       "LaTeX Warning: Citation `alves2010' on page 12 undefined on input line 8.",
       { severity: "warning" },
     );
-    const result = translateDiagnostic(d, {
+
+  it("prefers 'Buscar e adicionar' (B4/B5) over opening the .bib when search is wired", () => {
+    const onSearchCitation = vi.fn();
+    const openFile = vi.fn();
+    const result = translateDiagnostic(citationDiag(), {
+      bibPath: "elementos-pos-textuais/referencias.bib",
+      openFile,
+      onSearchCitation,
+    });
+    expect(result.message).toContain('"alves2010"');
+    expect(result.action?.label).toBe("Buscar e adicionar");
+    result.action?.onClick();
+    expect(onSearchCitation).toHaveBeenCalledWith("alves2010");
+    expect(openFile).not.toHaveBeenCalled();
+  });
+
+  it("falls back to opening the .bib when no search callback is wired", () => {
+    const openFile = vi.fn();
+    const result = translateDiagnostic(citationDiag(), {
       bibPath: "elementos-pos-textuais/referencias.bib",
       openFile,
     });
-    expect(result.message).toContain('"alves2010"');
-    expect(result.action?.label).toBeTruthy();
+    expect(result.action?.label).toBe("Ver referências");
     result.action?.onClick();
     expect(openFile).toHaveBeenCalledWith("elementos-pos-textuais/referencias.bib");
   });
 
-  it("omits the action when no .bib was discovered", () => {
+  it("omits the action when neither search nor a .bib path is available", () => {
     const d = diag("Citation `alves2010' on page 12 undefined on input line 8.");
     expect(translateDiagnostic(d, noOpenFile).action).toBeUndefined();
   });
