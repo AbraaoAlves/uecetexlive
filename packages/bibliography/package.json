@@ -1,0 +1,22 @@
+{
+  "name": "@papyru/bibliography",
+  "version": "0.0.0",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "check": "tsc --noEmit && vitest run"
+  },
+  "devDependencies": {
+    "fast-check": "^4.8.0",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.9"
+  },
+  "files": [
+    "dist",
+    "src"
+  ]
+}

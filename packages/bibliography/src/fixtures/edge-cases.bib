@@ -1,0 +1,27 @@
+@comment{
+  Este arquivo testa casos extremos do parser: @string, comentário livre,
+  chaves aninhadas em título, UTF-8 acentuado e uma entry malformada no fim.
+}
+
+@string{acm = "Association for Computing Machinery"}
+
+@article{silva2020ambiguidade,
+  author = {Silva, João da},
+  title = {A {Grande} Teoria da Ambiguidade: um estudo sobre {UTF-8} e acentuação},
+  journal = acm,
+  year = {2020},
+  note = {Título com chaves aninhadas para proteger maiúsculas}
+}
+
+% comentário de linha solto entre entries, precisa ser preservado
+@book{sousa1999educacao,
+  author = {Sousa, Maria José de},
+  title = {Educação e Cidadania: reflexões sobre a Amazônia},
+  publisher = {Edições Loyola},
+  year = {1999},
+  address = {São Paulo}
+}
+
+@article{quebrado2021,
+  author = {Autor, Sem Chave de Fechamento},
+  title = {Esta entry nunca fecha as chaves

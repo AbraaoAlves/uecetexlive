@@ -1,0 +1,156 @@
+import { describe, expect, it } from "vitest";
+import { addEntry, removeEntry, renameKey, updateEntry } from "../domain/commands";
+
+describe("addEntry", () => {
+  it("appends a well-formed entry to the end of an empty file", () => {
+    const result = addEntry("", {
+      citationKey: "freire1970",
+      entryType: "book",
+      fields: new Map([
+        ["author", "Freire, Paulo"],
+        ["title", "Pedagogia do Oprimido"],
+        ["publisher", "Paz e Terra"],
+        ["year", "1970"],
+      ]),
+    });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.value).toContain("@book{freire1970,");
+    expect(result.value).toContain("author = {Freire, Paulo}");
+  });
+
+  it("never touches existing bytes — Given/When/Then", () => {
+    const given = "@misc{a, title = {A}}\n";
+    const result = addEntry(given, {
+      citationKey: "b",
+      entryType: "misc",
+      fields: new Map([["title", "B"]]),
+    });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.value.startsWith(given)).toBe(true);
+    expect(result.value).toBe(`${given}\n@misc{b,\n  title = {B}\n}\n`);
+  });
+
+  it("resolves a key collision by suffixing a, b, c…", () => {
+    const given = addEntry("", {
+      citationKey: "freire1970pedagogia",
+      entryType: "book",
+      fields: new Map([["title", "Pedagogia do Oprimido"]]),
+    });
+    expect(given.ok).toBe(true);
+    if (!given.ok) return;
+
+    const second = addEntry(given.value, {
+      citationKey: "freire1970pedagogia",
+      entryType: "book",
+      fields: new Map([["title", "Outra obra, mesma key gerada"]]),
+    });
+    expect(second.ok).toBe(true);
+    if (!second.ok) return;
+    expect(second.value).toContain("@book{freire1970pedagogiaa,");
+    // The first entry's bytes are still there, untouched.
+    expect(second.value.startsWith(given.value)).toBe(true);
+
+    const third = addEntry(second.value, {
+      citationKey: "freire1970pedagogia",
+      entryType: "book",
+      fields: new Map([["title", "Uma terceira, mesma key"]]),
+    });
+    expect(third.ok).toBe(true);
+    if (third.ok) expect(third.value).toContain("@book{freire1970pedagogiab,");
+  });
+
+  it("rejects a field value with unbalanced braces", () => {
+    const result = addEntry("", {
+      citationKey: "k",
+      entryType: "misc",
+      fields: new Map([["title", "Uma { chave sem fechar"]]),
+    });
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.error.kind).toBe("InvalidField");
+  });
+});
+
+describe("updateEntry", () => {
+  const given = "@article{k,\n  title = {Old},\n  year = {2020}\n}\n";
+
+  it("re-serializes only the target chunk — diff mínimo", () => {
+    const other = "@misc{other, title = {Untouched}}\n";
+    const combined = `${other}\n${given}`;
+    const result = updateEntry(combined, "k", {
+      fields: new Map([
+        ["title", "Old"],
+        ["year", "2021"],
+      ]),
+    });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.value).toContain(other.trimEnd());
+    expect(result.value).toContain("year = {2021}");
+    expect(result.value).not.toContain("year = {2020}");
+  });
+
+  it("returns KeyNotFound for a key that doesn't exist", () => {
+    const result = updateEntry(given, "nope", { fields: new Map() });
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.error).toEqual({ kind: "KeyNotFound", key: "nope" });
+  });
+
+  it("returns MalformedEntry when the target chunk failed to parse", () => {
+    const broken = "@article{broken, title = {unterminated\n";
+    const result = updateEntry(broken, "broken", { fields: new Map() });
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.error.kind).toBe("MalformedEntry");
+  });
+});
+
+describe("removeEntry", () => {
+  it("removes exactly the target entry, leaves everything else byte-identical", () => {
+    const a = "@misc{a, title = {A}}\n";
+    const b = "@misc{b, title = {B}}\n";
+    const combined = `${a}\n${b}`;
+    const result = removeEntry(combined, "a");
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.value).not.toContain("title = {A}");
+    expect(result.value).toContain(b);
+  });
+
+  it("returns KeyNotFound for a key that doesn't exist", () => {
+    const result = removeEntry("@misc{a, title={A}}", "z");
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.error).toEqual({ kind: "KeyNotFound", key: "z" });
+  });
+});
+
+describe("renameKey", () => {
+  it("renames the key and re-serializes only that chunk", () => {
+    const other = "@misc{other, title = {Untouched}}\n";
+    const combined = `${other}\n@misc{old, title = {X}}\n`;
+    const result = renameKey(combined, "old", "new");
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.value).toContain(other.trimEnd());
+    expect(result.value).toContain("@misc{new,");
+    expect(result.value).not.toContain("@misc{old,");
+  });
+
+  it("returns KeyCollision when the new key already exists", () => {
+    const combined = "@misc{a, title={A}}\n@misc{b, title={B}}\n";
+    const result = renameKey(combined, "a", "b");
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.error).toEqual({ kind: "KeyCollision", key: "b" });
+  });
+
+  it("returns KeyNotFound when the old key doesn't exist", () => {
+    const result = renameKey("@misc{a, title={A}}", "nope", "new");
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.error).toEqual({ kind: "KeyNotFound", key: "nope" });
+  });
+
+  it("is a no-op collision check when renaming a key to itself", () => {
+    const result = renameKey("@misc{a, title={A}}", "a", "a");
+    expect(result.ok).toBe(true);
+  });
+});

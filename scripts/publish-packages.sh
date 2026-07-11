@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# Publica @papyru/{latex-mapping,project-model,compiler,editor} no npm, na
-# ordem de dependência (package_extraction.md, Fase 4 — runbook do primeiro
-# publish). editor depende dos outros três via workspace:*; os outros três
-# não dependem entre si.
+# Publica @papyru/{latex-mapping,project-model,compiler,editor,bibliography}
+# no npm, na ordem de dependência (package_extraction.md, Fase 4 — runbook
+# do primeiro publish). editor depende dos outros via workspace:*; os
+# demais (incl. bibliography, UI_UX_PLAN §5.5) não dependem entre si.
 #
 # O que este script de propósito NÃO faz: não edita "version" nem "exports"
 # em packages/*/package.json. Bump de versão e a troca de exports de src/
@@ -34,8 +34,8 @@ for arg in "$@"; do
   esac
 done
 
-# Ordem de dependência — package_extraction.md §"Os 4 pacotes".
-PACKAGES=(latex-mapping project-model compiler editor)
+# Ordem de dependência — package_extraction.md §"Os 4 pacotes" + bibliography (UI_UX_PLAN §5.5).
+PACKAGES=(latex-mapping project-model compiler editor bibliography)
 
 read_json_field() {
   bun -e '
