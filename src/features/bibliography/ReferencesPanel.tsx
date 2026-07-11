@@ -1,4 +1,5 @@
 import {
+  addEntry,
   type BibliographyEntry,
   type Chunk,
   ENTRY_TYPE_LABELS_PT,
@@ -6,17 +7,21 @@ import {
   entryTypeName,
   isKnownEntryType,
   isParseFailure,
+  type NewEntryInput,
   parseBibFile,
 } from "@papyru/bibliography";
 import { useMemo, useState } from "react";
 import { strings } from "@/lib/strings";
 import { cn } from "@/lib/utils";
+import { AddReferenceDialog } from "./AddReferenceDialog";
 import { EntryTypeIcon } from "./entry-type-icon";
 import { formatAuthorsList } from "./format-authors";
 
 export interface ReferencesPanelProps {
   /** null = no .bib discovered yet in the project (see include-graph). */
   bibText: string | null;
+  /** Persists the new bibText (e.g. updateFileText(bibPath, next)) — omitted when there's no .bib to write to. */
+  onWriteBib?: (nextBibText: string) => void;
 }
 
 type SortMode = "file" | "author" | "year";
@@ -34,15 +39,30 @@ function entryTypeLabelPt(type: EntryTypeTag): string {
   return isKnownEntryType(type) ? ENTRY_TYPE_LABELS_PT[type] : entryTypeName(type);
 }
 
-const SORT_OPTIONS: { mode: SortMode; label: keyof typeof strings.references }[] = [
-  { mode: "file", label: "sortFile" },
-  { mode: "author", label: "sortAuthor" },
-  { mode: "year", label: "sortYear" },
-];
+const SORT_OPTIONS: { mode: SortMode; label: "sortFile" | "sortAuthor" | "sortYear" }[] =
+  [
+    { mode: "file", label: "sortFile" },
+    { mode: "author", label: "sortAuthor" },
+    { mode: "year", label: "sortYear" },
+  ];
 
-export function ReferencesPanel({ bibText }: ReferencesPanelProps) {
+export function ReferencesPanel({ bibText, onWriteBib }: ReferencesPanelProps) {
   const [sort, setSort] = useState<SortMode>("file");
   const [showRaw, setShowRaw] = useState(false);
+  const [addOpen, setAddOpen] = useState(false);
+  const [addError, setAddError] = useState<string | null>(null);
+
+  const handleAdd = (input: NewEntryInput) => {
+    if (bibText === null || !onWriteBib) return;
+    const result = addEntry(bibText, input);
+    if (!result.ok) {
+      setAddError(strings.references.saveError);
+      return;
+    }
+    onWriteBib(result.value);
+    setAddError(null);
+    setAddOpen(false);
+  };
 
   const { rows, failures } = useMemo(() => {
     if (bibText === null)
@@ -89,6 +109,18 @@ export function ReferencesPanel({ bibText }: ReferencesPanelProps) {
 
   return (
     <div className="flex h-full flex-col" data-testid="references-panel">
+      {onWriteBib && (
+        <div className="border-b p-2">
+          <button
+            type="button"
+            data-testid="add-reference-open"
+            onClick={() => setAddOpen(true)}
+            className="w-full rounded-md bg-accent px-3 py-1.5 text-accent-foreground text-sm hover:bg-accent-strong"
+          >
+            + {strings.references.addNew}
+          </button>
+        </div>
+      )}
       <div className="flex items-center justify-between gap-2 border-b px-3 py-2 text-xs">
         <div
           className="flex items-center gap-1"
@@ -160,6 +192,16 @@ export function ReferencesPanel({ bibText }: ReferencesPanelProps) {
             <FailureCard key={i} chunk={chunk} />
           ))}
         </div>
+      )}
+      {addOpen && (
+        <AddReferenceDialog
+          onSubmit={handleAdd}
+          onClose={() => {
+            setAddOpen(false);
+            setAddError(null);
+          }}
+          error={addError}
+        />
       )}
     </div>
   );

@@ -764,7 +764,12 @@ function ShellInner() {
                   metadataPending={metadataPending}
                 />
               ) : (
-                <ReferencesPanel bibText={bibText} />
+                <ReferencesPanel
+                  bibText={bibText}
+                  onWriteBib={
+                    bibPath ? (next) => updateFileText(bibPath, next) : undefined
+                  }
+                />
               )}
             </div>
           </div>
