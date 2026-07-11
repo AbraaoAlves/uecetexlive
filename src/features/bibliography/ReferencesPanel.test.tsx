@@ -26,6 +26,14 @@ const WITH_FAILURE = `${SAMPLE}
 @article{broken, title = {unterminated
 `;
 
+const WITH_INCOMPLETE = `${SAMPLE}
+@book{incomplete1980,
+  author = {Autor, Sem},
+  title = {Um Livro Sem Editora},
+  year = {1980}
+}
+`;
+
 describe("ReferencesPanel", () => {
   it("lists every entry from the .bib fixture", () => {
     render(<ReferencesPanel bibText={SAMPLE} />);
@@ -74,7 +82,7 @@ describe("ReferencesPanel", () => {
     fireEvent.click(screen.getByTestId("add-reference-submit"));
 
     expect(onWriteBib).toHaveBeenCalledTimes(1);
-    const next = onWriteBib.mock.calls[0][0] as string;
+    const next = onWriteBib.mock.calls[0]?.[0] as string;
     expect(next).toContain("year = {1968}");
     expect(next).not.toContain("year = {1970}");
     // The other entry's bytes are untouched.
@@ -90,7 +98,7 @@ describe("ReferencesPanel", () => {
     fireEvent.click(screen.getByTestId("remove-reference-confirm"));
 
     expect(onWriteBib).toHaveBeenCalledTimes(1);
-    const next = onWriteBib.mock.calls[0][0] as string;
+    const next = onWriteBib.mock.calls[0]?.[0] as string;
     expect(next).not.toContain("freire1970");
     expect(next).toContain("lamport1986");
   });
@@ -114,5 +122,28 @@ describe("ReferencesPanel", () => {
     fireEvent.click(screen.getByTestId("remove-reference-cancel"));
     expect(onWriteBib).not.toHaveBeenCalled();
     expect(screen.getByTestId("reference-freire1970")).toBeTruthy();
+  });
+
+  it("flags a book missing its publisher and offers 'completar'", () => {
+    const onWriteBib = vi.fn();
+    render(<ReferencesPanel bibText={WITH_INCOMPLETE} onWriteBib={onWriteBib} />);
+    const badge = screen.getByTestId("reference-incomplete-incomplete1980");
+    expect(badge.textContent).toContain("Editora");
+    expect(screen.getByTestId("references-incomplete-aggregate").textContent).toContain(
+      "1 referência incompleta",
+    );
+
+    // "completar" opens the edit dialog for that exact entry.
+    const completar = badge.querySelector("button") as HTMLButtonElement;
+    fireEvent.click(completar);
+    expect((screen.getByTestId("reference-field-title") as HTMLInputElement).value).toBe(
+      "Um Livro Sem Editora",
+    );
+  });
+
+  it("shows no incomplete badge/aggregate when every entry has its required fields", () => {
+    render(<ReferencesPanel bibText={SAMPLE} />);
+    expect(screen.queryByTestId("references-incomplete-aggregate")).toBeNull();
+    expect(screen.queryByTestId("reference-incomplete-freire1970")).toBeNull();
   });
 });

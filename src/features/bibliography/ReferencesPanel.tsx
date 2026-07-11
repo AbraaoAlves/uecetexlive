@@ -3,12 +3,14 @@ import {
   type BibliographyEntry,
   type Chunk,
   candidateToNewEntryInput,
+  ENTRY_FIELD_SPECS,
   ENTRY_TYPE_LABELS_PT,
   type EntryPatch,
   type EntryTypeTag,
   entryTypeName,
   isKnownEntryType,
   isParseFailure,
+  missingRequiredFields,
   type NewEntryInput,
   parseBibFile,
   type ReferenceCandidate,
@@ -48,10 +50,19 @@ interface ListRow {
   authorsLabel: string | null;
   titleLabel: string;
   yearLabel: string;
+  missingFieldLabels: string[];
 }
 
 function entryTypeLabelPt(type: EntryTypeTag): string {
   return isKnownEntryType(type) ? ENTRY_TYPE_LABELS_PT[type] : entryTypeName(type);
+}
+
+function missingFieldLabelsFor(entry: BibliographyEntry): string[] {
+  if (!isKnownEntryType(entry.entryType)) return [];
+  const specs = ENTRY_FIELD_SPECS[entry.entryType];
+  return missingRequiredFields(entry.entryType, entry.fields).map(
+    (name) => specs.find((s) => s.name === name)?.labelPt ?? name,
+  );
 }
 
 const SORT_OPTIONS: { mode: SortMode; label: "sortFile" | "sortAuthor" | "sortYear" }[] =
@@ -182,10 +193,13 @@ export function ReferencesPanel({
         authorsLabel: formatAuthorsList(entry.fields.get("author")?.value),
         titleLabel: entry.fields.get("title")?.value ?? strings.references.untitled,
         yearLabel: entry.fields.get("year")?.value ?? strings.references.unknownYear,
+        missingFieldLabels: missingFieldLabelsFor(entry),
       });
     }
     return { rows, failures };
   }, [bibText]);
+
+  const incompleteCount = rows.filter((r) => r.missingFieldLabels.length > 0).length;
 
   const sortedRows = useMemo(() => {
     if (sort === "file") return rows;
@@ -316,6 +330,20 @@ export function ReferencesPanel({
             </button>
           </div>
 
+          {incompleteCount > 0 && !showRaw && (
+            <div
+              className="border-b bg-warning/10 px-3 py-1.5 text-warning text-xs"
+              data-testid="references-incomplete-aggregate"
+            >
+              {incompleteCount === 1
+                ? strings.references.incompleteAggregateOne
+                : strings.references.incompleteAggregateMany.replace(
+                    "{n}",
+                    String(incompleteCount),
+                  )}
+            </div>
+          )}
+
           {showRaw ? (
             <pre
               className="min-h-0 flex-1 overflow-auto whitespace-pre-wrap p-3 font-mono text-[11px] leading-relaxed text-ink-muted"
@@ -342,6 +370,26 @@ export function ReferencesPanel({
                       <span>{entryTypeLabelPt(row.entry.entryType)}</span>
                     </div>
                     <div className="font-medium">{row.titleLabel}</div>
+                    {row.missingFieldLabels.length > 0 && (
+                      <div
+                        className="mt-0.5 text-warning text-xs"
+                        data-testid={`reference-incomplete-${row.key}`}
+                      >
+                        {strings.references.incompleteMissingPrefix}{" "}
+                        {row.missingFieldLabels.join(", ")}.{" "}
+                        {onWriteBib && isKnownEntryType(row.entry.entryType) && (
+                          <button
+                            type="button"
+                            className="underline hover:no-underline"
+                            onClick={() =>
+                              setEditing({ citationKey: row.key, entry: row.entry })
+                            }
+                          >
+                            {strings.references.incompleteAction}
+                          </button>
+                        )}
+                      </div>
+                    )}
                     <div className="flex items-center justify-between gap-2">
                       <span className="text-ink-muted text-xs">
                         <span>

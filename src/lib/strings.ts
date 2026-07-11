@@ -198,6 +198,10 @@ export const strings = {
     removeConfirmCancel: "Cancelar",
     removeConfirmButton: "Remover mesmo assim",
     removeError: "Não foi possível remover — tente de novo.",
+    incompleteMissingPrefix: "Faltam:",
+    incompleteAction: "completar",
+    incompleteAggregateOne: "1 referência incompleta",
+    incompleteAggregateMany: "{n} referências incompletas",
     typeDescriptions: {
       article: "Publicado em periódico científico",
       inproceedings: "Publicado nos anais de um evento/congresso",
