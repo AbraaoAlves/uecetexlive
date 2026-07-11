@@ -44,6 +44,11 @@ export function SobreRoute() {
       </section>
 
       <section className="mt-8">
+        <h2 className="font-display text-2xl">{strings.sobre.backupTitle}</h2>
+        <p className="mt-2 text-ink-muted leading-relaxed">{strings.sobre.backupBody}</p>
+      </section>
+
+      <section className="mt-8">
         <h2 className="font-display text-2xl">Licenças</h2>
         <p className="mt-2 text-ink-muted leading-relaxed">
           UeceTexLive é software livre (MIT). Componentes de terceiros — abnTeX2 (LPPL),

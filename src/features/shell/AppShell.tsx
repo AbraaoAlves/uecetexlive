@@ -35,6 +35,7 @@ import {
 import { MetadataWizard } from "@/features/metadata/MetadataWizard";
 import { WelcomeDialog } from "@/features/metadata/WelcomeDialog";
 import { deleteProject } from "@/features/persistence/db";
+import { useStoragePersistence } from "@/features/persistence/useStoragePersistence";
 import { buildIncludeGraph, type IncludeGraph } from "@/features/project/include-graph";
 import {
   applyMetadata,
@@ -67,6 +68,7 @@ import { strings } from "@/lib/strings";
 import { isTelemetryEnabled, track } from "@/lib/telemetry";
 import { useDebouncedValue } from "@/lib/use-debounced-value";
 import { cn, slugify } from "@/lib/utils";
+import { BackupReminderBanner } from "./BackupReminderBanner";
 import { CompileButton } from "./CompileButton";
 import { DiagnosticsList } from "./DiagnosticsList";
 import { EngineToggle } from "./EngineToggle";
@@ -80,6 +82,7 @@ import { TemplateUpdateBanner } from "./TemplateUpdateBanner";
 import { ThemeToggle } from "./ThemeToggle";
 import { Tooltip } from "./Tooltip";
 import { TopBar } from "./TopBar";
+import { useBackupReminder } from "./useBackupReminder";
 import { useEngineUpdateNotice } from "./useEngineUpdateNotice";
 import { useTheme } from "./useTheme";
 import { useUiSettings } from "./useUiSettings";
@@ -166,6 +169,9 @@ function ShellInner() {
   );
   const { updateAvailable: engineUpdateAvailable } = useEngineUpdateNotice();
   const [engineUpdateDismissed, setEngineUpdateDismissed] = useState(false);
+  useStoragePersistence();
+  const { showReminder: showBackupReminder, resetReminder: resetBackupReminder } =
+    useBackupReminder(ui, setUi, uiReady);
   const [metadataOpen, setMetadataOpen] = useState(false);
   const [checklistOpen, setChecklistOpen] = useState(false);
   const [newChapterOpen, setNewChapterOpen] = useState(false);
@@ -598,6 +604,13 @@ function ShellInner() {
     URL.revokeObjectURL(url);
   };
 
+  const exportBackupZip = () => {
+    if (!project) return;
+    track("export_zip_clicked");
+    download(`${project.name}.zip`, exportProjectZip(project), "application/zip");
+    resetBackupReminder();
+  };
+
   const handleZipFile = async (file: File) => {
     try {
       const bytes = new Uint8Array(await file.arrayBuffer());
@@ -830,12 +843,7 @@ function ShellInner() {
                 testid="menu-export-zip"
                 onClick={() => {
                   setMenuOpen(false);
-                  track("export_zip_clicked");
-                  download(
-                    `${project.name}.zip`,
-                    exportProjectZip(project),
-                    "application/zip",
-                  );
+                  exportBackupZip();
                 }}
               >
                 <Download className="size-3.5" /> {strings.topbar.exportZip}
@@ -912,6 +920,12 @@ function ShellInner() {
         <EngineUpdateBanner
           onReload={() => window.location.reload()}
           onDismiss={() => setEngineUpdateDismissed(true)}
+        />
+      )}
+      {project && showBackupReminder && (
+        <BackupReminderBanner
+          onExport={exportBackupZip}
+          onDismiss={resetBackupReminder}
         />
       )}
       {isTelemetryEnabled() && !telemetryDismissed && (

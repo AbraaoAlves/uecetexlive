@@ -81,6 +81,13 @@ export const UiSettingsSchema = z.object({
   theme: z.enum(["system", "light", "dark"]).default("system"),
   /** Which tab the rail shows (ADR-03/5.10 — Referências reuses the existing rail, not a separate panel). */
   railTab: z.enum(["files", "references"]).default("files"),
+  /** Lifetime app-boot count (3.5 — backup reminder cadence). Never decreases. */
+  sessionCount: z.number().int().nonnegative().default(0),
+  /** Lifetime milliseconds the app was open+visible (3.5). Never decreases. */
+  cumulativeEditMs: z.number().nonnegative().default(0),
+  /** sessionCount/cumulativeEditMs at the last export or reminder dismissal — the reminder fires N sessions or M minutes past this baseline. */
+  backupReminderBaselineSession: z.number().int().nonnegative().default(0),
+  backupReminderBaselineEditMs: z.number().nonnegative().default(0),
 });
 export type UiSettings = z.infer<typeof UiSettingsSchema>;
 

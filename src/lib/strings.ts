@@ -150,6 +150,9 @@ export const strings = {
       "Uma nova versão do UeceTexLive já foi baixada e está pronta. Seu trabalho está salvo.",
     engineUpdateReload: "Atualizar agora",
     engineUpdateDismiss: "Depois",
+    backupReminderMessage: "Já faz um tempo — que tal baixar uma cópia de segurança?",
+    backupReminderExport: "Baixar backup (.zip)",
+    backupReminderDismiss: "Depois",
     bblImportedNote:
       "O próximo PDF completo usará esta bibliografia pré-compilada e pulará o BibTeX (útil para projetos biber).",
     telemetryNoticeMessage:
@@ -240,6 +243,9 @@ export const strings = {
   sobre: {
     title: "Sobre o UeceTexLive",
     privacy: "Tudo acontece no seu navegador: seu texto nunca sai do seu computador.",
+    backupTitle: "Backup",
+    backupBody:
+      "Seu trabalho vive neste navegador, neste computador. Não há servidor, não há conta — o que é ótimo pra privacidade, mas quer dizer que limpar os dados do site (ou trocar de computador) apaga tudo. Exporte cópias regularmente pelo menu “Exportar projeto (.zip)” — o UeceTexLive também lembra você disso de vez em quando.",
   },
   compliance: {
     title: "Meu trabalho está certo?",

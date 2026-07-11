@@ -83,6 +83,10 @@ describe("UiSettingsSchema", () => {
       dismissedTemplateCommit: null,
       theme: "system",
       railTab: "files",
+      sessionCount: 0,
+      cumulativeEditMs: 0,
+      backupReminderBaselineSession: 0,
+      backupReminderBaselineEditMs: 0,
     });
   });
 
