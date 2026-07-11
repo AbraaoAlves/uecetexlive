@@ -2,6 +2,7 @@ import {
   ChevronDown,
   ClipboardList,
   FileWarning,
+  ListChecks,
   Lock,
   Plus,
   Upload,
@@ -43,6 +44,11 @@ export interface ProjectRailProps {
   metadataActive?: boolean;
   /** Title still the template placeholder — nudge the student. */
   metadataPending?: boolean;
+  /** Opens the "Meu trabalho está certo?" checklist (3.2). */
+  onOpenChecklist?: () => void;
+  checklistActive?: boolean;
+  /** Number of checklist items currently failing — 0 hides the badge. */
+  checklistWarnCount?: number;
 }
 
 const SECTION_ORDER: RailSection[] = [
@@ -82,6 +88,9 @@ export function ProjectRail({
   onOpenMetadata,
   metadataActive = false,
   metadataPending = false,
+  onOpenChecklist,
+  checklistActive = false,
+  checklistWarnCount = 0,
 }: ProjectRailProps) {
   const uploadInputRef = useRef<HTMLInputElement>(null);
   // Uncontrolled fallback (stories/tests without the persisted UiSettings).
@@ -137,6 +146,30 @@ export function ProjectRail({
                 className="ml-auto size-1.5 shrink-0 rounded-full bg-warning"
                 data-testid="metadata-pending-dot"
               />
+            </Tooltip>
+          )}
+        </button>
+      )}
+      {onOpenChecklist && (
+        <button
+          type="button"
+          data-testid="rail-checklist"
+          onClick={onOpenChecklist}
+          className={cn(
+            "mb-1 flex w-full items-center gap-2 px-3 py-1.5 text-left font-medium hover:bg-accent-soft/60",
+            checklistActive && "bg-accent-soft text-accent-strong",
+          )}
+        >
+          <ListChecks className="size-3.5 shrink-0" />
+          <span className="truncate">{strings.compliance.railEntry}</span>
+          {checklistWarnCount > 0 && (
+            <Tooltip content={strings.compliance.pendingHint}>
+              <span
+                className="ml-auto rounded-full bg-warning/20 px-1.5 py-0.5 text-[10px] text-warning"
+                data-testid="checklist-pending-count"
+              >
+                {checklistWarnCount}
+              </span>
             </Tooltip>
           )}
         </button>

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { countCitationUsages } from "./citation-usage";
+import { countCitationUsages, extractCitedKeys } from "./citation-usage";
 
 const CITE_COMMANDS = ["citeonline", "Citeonline"];
 
@@ -41,5 +41,28 @@ describe("countCitationUsages", () => {
     expect(
       countCitationUsages({ "a.tex": "sem citação" }, "freire1970", CITE_COMMANDS),
     ).toBe(0);
+  });
+});
+
+describe("extractCitedKeys", () => {
+  it("collects every key across every file, deduped", () => {
+    const sources = {
+      "a.tex": "\\citeonline{freire1970,lamport1986}",
+      "b.tex": "\\Citeonline{freire1970}",
+    };
+    expect(extractCitedKeys(sources, CITE_COMMANDS)).toEqual(
+      new Set(["freire1970", "lamport1986"]),
+    );
+  });
+
+  it("ignores a different command name", () => {
+    const sources = { "a.tex": "\\cite{freire1970}" };
+    expect(extractCitedKeys(sources, CITE_COMMANDS)).toEqual(new Set());
+  });
+
+  it("returns an empty set for no citations", () => {
+    expect(extractCitedKeys({ "a.tex": "sem citação" }, CITE_COMMANDS)).toEqual(
+      new Set(),
+    );
   });
 });

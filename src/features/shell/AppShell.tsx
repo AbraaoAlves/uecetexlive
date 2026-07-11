@@ -27,6 +27,11 @@ import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } fro
 import { ReferencesPanel } from "@/features/bibliography/ReferencesPanel";
 import { useCompile } from "@/features/compiler/useCompile";
 import { useIdleWarmup } from "@/features/compiler/useIdleWarmup";
+import { ComplianceChecklist } from "@/features/compliance/ComplianceChecklist";
+import {
+  type ComplianceAction,
+  computeComplianceChecklist,
+} from "@/features/compliance/compliance-checklist";
 import { MetadataWizard } from "@/features/metadata/MetadataWizard";
 import { WelcomeDialog } from "@/features/metadata/WelcomeDialog";
 import { deleteProject } from "@/features/persistence/db";
@@ -36,6 +41,7 @@ import {
   extractMetadata,
   type MetadataField,
   TEMPLATE_PLACEHOLDER_TITLE,
+  workTypeOf,
 } from "@/features/project/metadata";
 import { chapterScaffold, insertChapterInput } from "@/features/project/new-chapter";
 import { rewriteInputOrder } from "@/features/project/reorder";
@@ -157,6 +163,7 @@ function ShellInner() {
     project?.templateCommit,
   );
   const [metadataOpen, setMetadataOpen] = useState(false);
+  const [checklistOpen, setChecklistOpen] = useState(false);
   const [newChapterOpen, setNewChapterOpen] = useState(false);
   const [previewTab, setPreviewTab] = useState<"pdf" | "log">("pdf");
   const [sourceView, setSourceView] = useState(false);
@@ -424,6 +431,35 @@ function ShellInner() {
   }, [entrySource, resumoField, abstractField]);
   const workTitle = meta.get("titulo")?.value.trim() ?? "";
   const metadataPending = workTitle === "" || workTitle === TEMPLATE_PLACEHOLDER_TITLE;
+
+  // 3.2 — not a per-keystroke hot path (opened deliberately from the rail),
+  // so it can key on the debounced source map like the include graph does.
+  const complianceChecks = useMemo(
+    () =>
+      computeComplianceChecklist({
+        meta,
+        workType: workTypeOf(meta),
+        bibText,
+        texSources: derivedTexSources,
+        citeCommands: ABNT_CITATION_PROFILE.citeCommands,
+      }),
+    [meta, bibText, derivedTexSources],
+  );
+  const checklistWarnCount = complianceChecks.filter((c) => c.status === "warn").length;
+
+  const handleComplianceAction = useCallback(
+    (action: ComplianceAction) => {
+      setChecklistOpen(false);
+      if (action.kind === "openMetadata") {
+        setMetadataOpen(true);
+      } else if (action.kind === "openReferences") {
+        setUi({ railTab: "references" });
+      } else if (action.kind === "openFile") {
+        openFile(action.path);
+      }
+    },
+    [setUi, openFile],
+  );
 
   const applyWorkMetadata = useCallback(
     (updates: Map<string, string>) => {
@@ -945,6 +981,9 @@ function ShellInner() {
                   onOpenMetadata={() => setMetadataOpen(true)}
                   metadataActive={metadataOpen}
                   metadataPending={metadataPending}
+                  onOpenChecklist={() => setChecklistOpen(true)}
+                  checklistActive={checklistOpen}
+                  checklistWarnCount={checklistWarnCount}
                 />
               ) : (
                 <ReferencesPanel
@@ -1086,6 +1125,13 @@ function ShellInner() {
           fields={meta}
           onApply={applyWorkMetadata}
           onClose={() => setMetadataOpen(false)}
+        />
+      )}
+      {checklistOpen && (
+        <ComplianceChecklist
+          checks={complianceChecks}
+          onAction={handleComplianceAction}
+          onClose={() => setChecklistOpen(false)}
         />
       )}
       {newChapterOpen && (

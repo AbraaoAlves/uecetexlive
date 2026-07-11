@@ -32,3 +32,23 @@ export function countCitationUsages(
   }
   return count;
 }
+
+/** Every citation key invoked anywhere in the project (3.2 — citações órfãs / nunca citadas). */
+export function extractCitedKeys(
+  texSources: Record<string, string>,
+  citeCommands: readonly string[],
+): Set<string> {
+  const re = citationRegex(citeCommands);
+  const keys = new Set<string>();
+  for (const source of Object.values(texSources)) {
+    re.lastIndex = 0;
+    let match: RegExpExecArray | null = re.exec(source);
+    while (match !== null) {
+      for (const key of (match[1] ?? "").split(",").map((k) => k.trim())) {
+        if (key) keys.add(key);
+      }
+      match = re.exec(source);
+    }
+  }
+  return keys;
+}
