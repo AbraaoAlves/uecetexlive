@@ -1,4 +1,5 @@
 import { AlertCircle, CheckCircle2, FileUp } from "lucide-react";
+import { strings } from "@/lib/strings";
 
 export type ImportDialogState =
   | { kind: "zip-ok"; fileCount: number; entry: string }
@@ -49,8 +50,7 @@ export function ImportDialog({ state, onConfirm, onClose }: ImportDialogProps) {
               <FileUp className="size-4" /> .bbl importado
             </div>
             <p className="mt-2 text-ink-muted text-sm">
-              {(state.sizeBytes / 1024).toFixed(1)} KB. O próximo PDF completo usará esta
-              bibliografia pré-compilada e pulará o BibTeX (útil para projetos biber).
+              {(state.sizeBytes / 1024).toFixed(1)} KB. {strings.shell.bblImportedNote}
             </p>
           </>
         )}

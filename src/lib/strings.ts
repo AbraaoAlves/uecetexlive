@@ -144,6 +144,8 @@ export const strings = {
     templateUpdateMessage:
       "O modelo uecetex2 foi atualizado. Seu conteúdo não foi afetado.",
     templateUpdateDismiss: "Dispensar",
+    bblImportedNote:
+      "O próximo PDF completo usará esta bibliografia pré-compilada e pulará o BibTeX (útil para projetos biber).",
     telemetryNoticeMessage:
       "Entre 06 e 09/07 esta versão coleta eventos anônimos de uso (gerar PDF, exportar) para um TCC — nenhum conteúdo do seu documento é enviado.",
     telemetryNoticeLink: "Saiba mais / dê seu feedback",
