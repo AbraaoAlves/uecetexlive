@@ -25,10 +25,19 @@ export function useCompile() {
   const compile = useCallback(
     async (
       project: Project,
-      options?: { engine?: EngineId; precompiledBbl?: Uint8Array },
+      options?: {
+        engine?: EngineId;
+        precompiledBbl?: Uint8Array;
+        /**
+         * "auto" = compile de boot (preview inicial), sem clique — o funil do
+         * TCC ("o aluno achou o Gerar PDF?") filtra por trigger:"user".
+         */
+        trigger?: "user" | "auto";
+      },
     ) => {
       const engine = options?.engine ?? state.engine;
-      track("compile_clicked", { engine });
+      const trigger = options?.trigger ?? "user";
+      track("compile_clicked", { engine, trigger });
       const files: Record<string, Uint8Array> = {};
       for (const f of project.files) files[f.path] = f.bytes;
       const result = await engineCompile({
@@ -38,14 +47,14 @@ export function useCompile() {
         precompiledBbl: options?.precompiledBbl,
       });
       if (result?.ok && result.pdf) {
-        track("compile_success", { engine, passes: result.passes?.length });
+        track("compile_success", { engine, trigger, passes: result.passes?.length });
         void cacheLastPdf({
           pdf: result.pdf,
           passes: result.passes,
           timestamp: Date.now(),
         }).catch(() => {});
       } else if (result) {
-        track("compile_error", { engine });
+        track("compile_error", { engine, trigger });
       }
     },
     [engineCompile, state.engine],

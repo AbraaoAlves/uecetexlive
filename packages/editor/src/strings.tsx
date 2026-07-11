@@ -52,6 +52,9 @@ export interface EditorStrings {
     zoomIn: string;
     zoomOut: string;
     draftBanner: string;
+    prevPage: string;
+    nextPage: string;
+    pageInput: string;
   };
 }
 
@@ -107,6 +110,9 @@ export const DEFAULT_EDITOR_STRINGS: EditorStrings = {
     zoomOut: "Reduzir zoom",
     draftBanner:
       "Modo rascunho: citações, glossário e índice não são resolvidos. Use a compilação Completa para o PDF final.",
+    prevPage: "Página anterior",
+    nextPage: "Próxima página",
+    pageInput: "Ir para a página",
   },
 };
 

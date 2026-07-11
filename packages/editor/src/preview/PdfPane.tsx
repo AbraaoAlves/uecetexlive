@@ -1,4 +1,4 @@
-import { Contrast, ZoomIn, ZoomOut } from "lucide-react";
+import { ChevronDown, ChevronUp, Contrast, ZoomIn, ZoomOut } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useEditorStrings } from "../strings";
 import { Tooltip } from "../Tooltip";
@@ -161,14 +161,40 @@ export function PdfPane({ pdf, compiling, debugHook = true }: PdfPaneProps) {
   const scale = fitScale * zoom;
   const pageNumbers = Array.from({ length: numPages }, (_, i) => i + 1);
 
-  // Track the page nearest the viewport top for the indicator.
+  // Track the page nearest the viewport top for the indicator. Math.round,
+  // not floor: goToPage lands scrollTop exactly on a page boundary, and the
+  // browser may round it a sub-pixel short — floor would then derive n-1 and
+  // make prev/next appear to jump wrong or do nothing.
   const onScroll = useCallback(() => {
     const el = scrollRef.current;
     if (!el || !base || numPages === 0) return;
     const pageHeight = base.h * scale + PAGE_GAP;
-    const p = Math.floor(el.scrollTop / pageHeight) + 1;
+    const p = Math.round(el.scrollTop / pageHeight) + 1;
     setCurrentPage(Math.min(Math.max(1, p), numPages));
   }, [base, scale, numPages]);
+
+  // The input mirrors the scroll position, except while the user is typing.
+  const [pageInput, setPageInput] = useState("1");
+  const pageInputFocused = useRef(false);
+  useEffect(() => {
+    if (!pageInputFocused.current)
+      setPageInput(String(Math.min(currentPage, numPages || 1)));
+  }, [currentPage, numPages]);
+
+  // Same page-height formula as onScroll, inverted — keeps the jump target,
+  // the indicator and the input consistent with each other.
+  const goToPage = useCallback(
+    (page: number) => {
+      const el = scrollRef.current;
+      if (!el || !base || numPages === 0) return;
+      const target = Math.min(Math.max(1, page), numPages);
+      const pageHeight = base.h * scale + PAGE_GAP;
+      el.scrollTop = (target - 1) * pageHeight;
+      setCurrentPage(target);
+      setPageInput(String(target));
+    },
+    [base, scale, numPages],
+  );
 
   if (!pdf) {
     return (
@@ -187,10 +213,58 @@ export function PdfPane({ pdf, compiling, debugHook = true }: PdfPaneProps) {
       data-testid="pdf-pane"
       data-pages={numPages}
     >
-      <div className="flex h-9 shrink-0 items-center justify-center gap-2 border-b bg-surface text-xs">
-        <span data-testid="pdf-page-indicator">
-          {Math.min(currentPage, numPages || 1)} / {numPages || 1}
+      <div className="flex h-9 shrink-0 items-center justify-center gap-1 border-b bg-surface text-xs">
+        <Tooltip content={strings.prevPage}>
+          <button
+            type="button"
+            data-testid="pdf-prev-page"
+            aria-label={strings.prevPage}
+            disabled={currentPage <= 1}
+            className="rounded p-1 hover:bg-accent-soft disabled:opacity-40"
+            onClick={() => goToPage(currentPage - 1)}
+          >
+            <ChevronUp className="size-4" />
+          </button>
+        </Tooltip>
+        <input
+          type="text"
+          inputMode="numeric"
+          data-testid="pdf-page-input"
+          aria-label={strings.pageInput}
+          className="w-10 rounded border bg-surface px-1 py-0.5 text-center"
+          value={pageInput}
+          onFocus={(e) => {
+            pageInputFocused.current = true;
+            e.currentTarget.select();
+          }}
+          onBlur={() => {
+            pageInputFocused.current = false;
+            setPageInput(String(Math.min(currentPage, numPages || 1)));
+          }}
+          onChange={(e) => setPageInput(e.target.value.replace(/\D/g, ""))}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              const n = Number.parseInt(pageInput, 10);
+              if (!Number.isNaN(n)) goToPage(n);
+              e.currentTarget.blur();
+            }
+          }}
+        />
+        <span data-testid="pdf-page-indicator" className="text-ink-subtle">
+          / {numPages || 1}
         </span>
+        <Tooltip content={strings.nextPage}>
+          <button
+            type="button"
+            data-testid="pdf-next-page"
+            aria-label={strings.nextPage}
+            disabled={currentPage >= numPages}
+            className="rounded p-1 hover:bg-accent-soft disabled:opacity-40"
+            onClick={() => goToPage(currentPage + 1)}
+          >
+            <ChevronDown className="size-4" />
+          </button>
+        </Tooltip>
         <span className="mx-2 h-4 w-px bg-border" />
         <Tooltip content={strings.zoomOut}>
           <button

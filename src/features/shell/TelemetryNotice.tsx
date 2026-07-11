@@ -10,8 +10,10 @@
  */
 import { strings } from "@/lib/strings";
 
-// TODO(abraao): trocar pelo link real do Google Forms antes de publicar.
-const FEEDBACK_FORM_URL = "https://forms.gle/SEU_FORMULARIO_AQUI";
+// Definido por build (VITE_FEEDBACK_FORM_URL no .env). Enquanto não estiver
+// configurado o aviso sai sem o link — melhor do que publicar um placeholder
+// quebrado dentro da janela de coleta.
+const FEEDBACK_FORM_URL: string | undefined = import.meta.env.VITE_FEEDBACK_FORM_URL;
 
 export interface TelemetryNoticeProps {
   onDismiss: () => void;
@@ -24,15 +26,20 @@ export function TelemetryNotice({ onDismiss }: TelemetryNoticeProps) {
       data-testid="telemetry-notice"
     >
       <span>
-        {strings.shell.telemetryNoticeMessage}{" "}
-        <a
-          href={FEEDBACK_FORM_URL}
-          target="_blank"
-          rel="noreferrer"
-          className="underline"
-        >
-          {strings.shell.telemetryNoticeLink}
-        </a>
+        {strings.shell.telemetryNoticeMessage}
+        {FEEDBACK_FORM_URL && (
+          <>
+            {" "}
+            <a
+              href={FEEDBACK_FORM_URL}
+              target="_blank"
+              rel="noreferrer"
+              className="underline"
+            >
+              {strings.shell.telemetryNoticeLink}
+            </a>
+          </>
+        )}
       </span>
       <button
         type="button"

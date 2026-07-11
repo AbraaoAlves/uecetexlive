@@ -34,7 +34,7 @@ import {
 } from "@/features/compliance/compliance-checklist";
 import { MetadataWizard } from "@/features/metadata/MetadataWizard";
 import { WelcomeDialog } from "@/features/metadata/WelcomeDialog";
-import { deleteProject } from "@/features/persistence/db";
+import { deleteProject, loadLastPdf } from "@/features/persistence/db";
 import { useStoragePersistence } from "@/features/persistence/useStoragePersistence";
 import { buildIncludeGraph, type IncludeGraph } from "@/features/project/include-graph";
 import {
@@ -205,15 +205,39 @@ function ShellInner() {
 
   // 1.2 AC: a visitor sees a PDF without having to find "Gerar PDF" first
   // ("nunca encara tela vazia") — compile once as soon as the project is
-  // ready. Skipped under automation so it doesn't race e2e specs that drive
-  // their own compile (same navigator.webdriver guard useIdleWarmup uses,
-  // for the same reason).
+  // ready, tagged trigger:"auto" so the TCC funnel can filter it out of the
+  // real-click metrics. Skipped under automation (would race e2e specs that
+  // drive their own compile), offline (would boot the app straight into an
+  // error state) and Data Saver (an unrequested engine download on a metered
+  // link) — the same reasons useIdleWarmup skips its prefetch.
   const autoCompiledRef = useRef(false);
   useEffect(() => {
-    if (autoCompiledRef.current || !project || navigator.webdriver) return;
+    if (autoCompiledRef.current || !project) return;
+    const connection = (navigator as { connection?: { saveData?: boolean } }).connection;
+    if (navigator.webdriver || !navigator.onLine || connection?.saveData) return;
     autoCompiledRef.current = true;
-    void compile(project);
+    void compile(project, { trigger: "auto" });
   }, [project, compile]);
+
+  // Último PDF compilado (IndexedDB) — preview instantâneo no boot enquanto o
+  // auto-compile roda (ou quando ele não roda: offline, Data Saver), marcado
+  // como desatualizado pelo overlay `compiling` do PdfPane. Um resultado real
+  // tem precedência e libera a cópia cacheada.
+  const [cachedPdf, setCachedPdf] = useState<Uint8Array | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    loadLastPdf()
+      .then((entry) => {
+        if (!cancelled && entry) setCachedPdf(entry.pdf);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+  useEffect(() => {
+    if (compileState.result?.pdf) setCachedPdf(null);
+  }, [compileState.result]);
 
   const texSources = useMemo(() => {
     const map: Record<string, string> = {};
@@ -780,14 +804,18 @@ function ShellInner() {
           />
           Avançado
         </label>
-        {/* Idle prefetch note (D12) — yields to the compile flow's own UI. */}
-        {idleWarmup.status === "running" && compileState.status === "idle" && (
-          <IdleWarmupIndicator
-            loaded={idleWarmup.loaded}
-            total={idleWarmup.total}
-            label={idleWarmup.label}
-          />
-        )}
+        {/* Idle prefetch note (D12) — yields to the compile flow's own topbar
+            UI while a compile is active, but must come back afterwards: with
+            the boot auto-compile the status never returns to "idle". */}
+        {idleWarmup.status === "running" &&
+          compileState.status !== "warming" &&
+          compileState.status !== "compiling" && (
+            <IdleWarmupIndicator
+              loaded={idleWarmup.loaded}
+              total={idleWarmup.total}
+              label={idleWarmup.label}
+            />
+          )}
         {compileState.status === "warming" && compileState.warmup && (
           <WarmupProgress {...compileState.warmup} />
         )}
@@ -1129,8 +1157,10 @@ function ShellInner() {
           <div className="min-h-0 flex-1">
             {previewTab === "pdf" ? (
               <PdfPane
-                pdf={compileState.result?.pdf ?? null}
-                compiling={compileState.status === "compiling"}
+                pdf={compileState.result?.pdf ?? cachedPdf}
+                compiling={
+                  compileState.status === "compiling" || compileState.status === "warming"
+                }
               />
             ) : (
               <div className="flex h-full flex-col">
