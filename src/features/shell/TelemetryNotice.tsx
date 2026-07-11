@@ -3,6 +3,10 @@
  * MY_TCC/entregaveis/fase-5-validacao/plano-integracao-posthog.md). Só
  * renderiza quando a telemetria está de fato ligada (build da janela de
  * coleta); dispensável, sem persistência entre sessões.
+ *
+ * Escopado ao painel de preview (o pai passa `position: relative`) em vez de
+ * `fixed` na viewport inteira — um overlay de viewport cobria o scroll do
+ * editor e do rail esquerdo, que ficam fora do preview.
  */
 import { strings } from "@/lib/strings";
 
@@ -16,7 +20,7 @@ export interface TelemetryNoticeProps {
 export function TelemetryNotice({ onDismiss }: TelemetryNoticeProps) {
   return (
     <div
-      className="fixed inset-x-0 bottom-0 z-50 flex items-center justify-between gap-4 border-t bg-accent-soft px-3 py-1.5 text-sm"
+      className="absolute inset-x-0 bottom-0 z-10 flex items-center justify-between gap-4 border-t bg-accent-soft px-3 py-1.5 text-sm"
       data-testid="telemetry-notice"
     >
       <span>

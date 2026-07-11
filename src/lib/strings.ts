@@ -64,6 +64,8 @@ export const strings = {
     uploadFileError:
       "Não foi possível enviar (use PNG, JPG, PDF ou código-fonte de até 10 MB):",
     unsavedChanges: "Alterações não salvas",
+    bibFileHint:
+      "Este arquivo guarda suas referências bibliográficas. Edite pela aba “Referências”, ao lado de “Arquivos”.",
   },
   editor: {
     rawLatexTooltip:
@@ -156,7 +158,7 @@ export const strings = {
     bblImportedNote:
       "O próximo PDF completo usará esta bibliografia pré-compilada e pulará o BibTeX (útil para projetos biber).",
     telemetryNoticeMessage:
-      "Entre 06 e 09/07 esta versão coleta eventos anônimos de uso (gerar PDF, exportar) para um TCC — nenhum conteúdo do seu documento é enviado.",
+      "Entre 11 e 13/07 esta versão coleta eventos anônimos de uso (gerar PDF, exportar) para um TCC — nenhum conteúdo do seu documento é enviado.",
     telemetryNoticeLink: "Saiba mais / dê seu feedback",
     telemetryNoticeDismiss: "Fechar aviso",
   },

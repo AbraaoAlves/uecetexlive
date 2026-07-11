@@ -1,4 +1,5 @@
 import {
+  BookMarked,
   ChevronDown,
   ClipboardList,
   FileWarning,
@@ -255,6 +256,14 @@ export function ProjectRail({
                       )}
                     >
                       <span className="truncate">{baseName(file.path)}</span>
+                      {file.path.endsWith(".bib") && (
+                        <Tooltip content={strings.rail.bibFileHint}>
+                          <BookMarked
+                            className="size-3 shrink-0 text-ink-subtle"
+                            aria-label={strings.rail.bibFileHint}
+                          />
+                        </Tooltip>
+                      )}
                       {file.dirty && (
                         <Tooltip content={strings.rail.unsavedChanges}>
                           <span

@@ -203,6 +203,18 @@ function ShellInner() {
     track("app_loaded");
   }, []);
 
+  // 1.2 AC: a visitor sees a PDF without having to find "Gerar PDF" first
+  // ("nunca encara tela vazia") — compile once as soon as the project is
+  // ready. Skipped under automation so it doesn't race e2e specs that drive
+  // their own compile (same navigator.webdriver guard useIdleWarmup uses,
+  // for the same reason).
+  const autoCompiledRef = useRef(false);
+  useEffect(() => {
+    if (autoCompiledRef.current || !project || navigator.webdriver) return;
+    autoCompiledRef.current = true;
+    void compile(project);
+  }, [project, compile]);
+
   const texSources = useMemo(() => {
     const map: Record<string, string> = {};
     if (!project) return map;
@@ -928,9 +940,6 @@ function ShellInner() {
           onDismiss={resetBackupReminder}
         />
       )}
-      {isTelemetryEnabled() && !telemetryDismissed && (
-        <TelemetryNotice onDismiss={() => setTelemetryDismissed(true)} />
-      )}
       <div className="flex min-h-0 flex-1">
         <aside
           className={cn(
@@ -1087,7 +1096,7 @@ function ShellInner() {
           )}
         </main>
         <section
-          className="flex w-[45%] shrink-0 flex-col border-l bg-surface"
+          className="relative flex w-[45%] shrink-0 flex-col border-l bg-surface"
           data-testid="preview-pane"
         >
           <div className="flex h-9 shrink-0 items-center gap-1 border-b px-2 text-xs">
@@ -1142,6 +1151,9 @@ function ShellInner() {
               </div>
             )}
           </div>
+          {isTelemetryEnabled() && !telemetryDismissed && (
+            <TelemetryNotice onDismiss={() => setTelemetryDismissed(true)} />
+          )}
         </section>
       </div>
       {metadataOpen && (
