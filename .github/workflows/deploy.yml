@@ -49,8 +49,9 @@ jobs:
         env:
           BASE_PATH: /uecetexlive/
           VITE_POSTHOG_KEY: ${{ secrets.VITE_POSTHOG_KEY }}
-          VITE_POSTHOG_HOST: ${{ vars.VITE_POSTHOG_HOST }}
-          VITE_TELEMETRY_ENABLED: ${{ vars.VITE_TELEMETRY_ENABLED }}
+          VITE_POSTHOG_HOST: ${{ secrets.VITE_POSTHOG_HOST }}
+          VITE_TELEMETRY_ENABLED: ${{ secrets.VITE_TELEMETRY_ENABLED }}
+          VITE_FEEDBACK_FORM_URL: ${{ vars.VITE_FEEDBACK_FORM_URL }}
       # GitHub Pages can't compress the big binaries — publish gzip sidecars
       # that the service worker decompresses client-side (D12).
       - run: ./scripts/precompress-wasm.sh dist/wasm/busytex
@@ -69,4 +70,3 @@ jobs:
         uses: actions/deploy-pages@v4
         with:
           artifact_name: github-pages-${{ github.run_attempt }}
-
