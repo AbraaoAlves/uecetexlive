@@ -77,6 +77,17 @@ function validateFields(fields: ReadonlyMap<string, string>): DomainError | null
   return null;
 }
 
+/** Spreadsheet-style letter suffixes (a, b, ..., z, aa, ab, ...) — never overflows past ASCII a-z. */
+function letterSuffix(index: number): string {
+  let n = index;
+  let suffix = "";
+  do {
+    suffix = String.fromCharCode(97 + (n % 26)) + suffix;
+    n = Math.floor(n / 26) - 1;
+  } while (n >= 0);
+  return suffix;
+}
+
 function appendChunkText(bibText: string, newRaw: string): string {
   if (bibText.trim().length === 0) return newRaw;
   const separator = bibText.endsWith("\n\n")
@@ -105,11 +116,11 @@ export function addEntry(bibText: string, input: NewEntryInput): Result<AddEntry
 
   let key = input.citationKey;
   if (existingKeys.has(key)) {
-    let suffixCode = 0;
+    let suffixIndex = 0;
     let candidate: string;
     do {
-      candidate = `${input.citationKey}${String.fromCharCode(97 + suffixCode)}`;
-      suffixCode++;
+      candidate = `${input.citationKey}${letterSuffix(suffixIndex)}`;
+      suffixIndex++;
     } while (existingKeys.has(candidate));
     key = candidate;
   }
@@ -179,6 +190,7 @@ export function renameKey(
   if (oldKey !== newKey && collectKeys(file).has(newKey)) {
     return err({ kind: "KeyCollision", key: newKey });
   }
+  if (oldKey === newKey) return ok(bibText);
   const current = (file.chunks[idx] as EntryChunk).parsed as BibliographyEntry;
   const renamed: BibliographyEntry = { ...current, citationKey: newKey };
   const newChunks = file.chunks.map(

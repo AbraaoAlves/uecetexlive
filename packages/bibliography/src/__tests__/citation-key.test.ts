@@ -38,6 +38,15 @@ describe("buildCitationKey", () => {
     ).toBe("mineault2025attention");
   });
 
+  it("sanitizes a messy year (e.g. '[2020]' or '2020?') before embedding it", () => {
+    expect(
+      buildCitationKey({ authorSurname: "Silva", year: "[2020]", title: "Teoria" }),
+    ).toBe("silva2020teoria");
+    expect(
+      buildCitationKey({ authorSurname: "Silva", year: "2020?", title: "Teoria" }),
+    ).toBe("silva2020teoria");
+  });
+
   it("degrades gracefully with no author", () => {
     expect(buildCitationKey({ year: "2023", title: "Sem Autor Definido" })).toBe(
       "2023sem",

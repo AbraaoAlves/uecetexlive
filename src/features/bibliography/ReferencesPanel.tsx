@@ -272,7 +272,10 @@ export function ReferencesPanel({
             onClick={() => {
               void navigator.clipboard
                 ?.writeText(`\\${citeCommand}{${addedToastKey}}`)
-                .then(() => setCopied(true));
+                .then(() => setCopied(true))
+                .catch(() => {
+                  // clipboard unavailable (permission denied, insecure context) — toast stays as "copiar"
+                });
             }}
           >
             {copied
@@ -283,16 +286,26 @@ export function ReferencesPanel({
       )}
 
       {searchOpen && onWriteBib ? (
-        <ReferenceSearch
-          existingDois={existingDois}
-          initialQuery={initialSearchQuery ?? undefined}
-          onInitialQueryConsumed={onSearchQueryConsumed}
-          onAdd={handleSearchAdd}
-          onAddManually={(title) => {
-            setSearchOpen(false);
-            openManualAdd(title);
-          }}
-        />
+        <>
+          {addError && (
+            <div
+              className="border-b bg-danger/10 px-3 py-2 text-danger text-xs"
+              data-testid="reference-search-add-error"
+            >
+              {addError}
+            </div>
+          )}
+          <ReferenceSearch
+            existingDois={existingDois}
+            initialQuery={initialSearchQuery ?? undefined}
+            onInitialQueryConsumed={onSearchQueryConsumed}
+            onAdd={handleSearchAdd}
+            onAddManually={(title) => {
+              setSearchOpen(false);
+              openManualAdd(title);
+            }}
+          />
+        </>
       ) : (
         <>
           <div className="flex items-center justify-between gap-2 border-b px-3 py-2 text-xs">

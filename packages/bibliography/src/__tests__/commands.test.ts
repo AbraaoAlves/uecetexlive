@@ -66,6 +66,26 @@ describe("addEntry", () => {
     }
   });
 
+  it("suffixes past z with two-letter combinations instead of injecting invalid characters", () => {
+    // 28 calls: 1 base + 26 single-letter collisions (a..z) + 1 that overflows to "aa".
+    let bibText = "";
+    for (let i = 0; i < 28; i++) {
+      const result = addEntry(bibText, {
+        citationKey: "dup",
+        entryType: "misc",
+        fields: new Map([["title", `Entry ${i}`]]),
+      });
+      expect(result.ok).toBe(true);
+      if (!result.ok) return;
+      bibText = result.value.bibText;
+      // BibTeX citekeys can't contain whitespace, commas, or braces.
+      expect(result.value.citationKey).toMatch(/^[a-z0-9]+$/);
+      if (i === 26) expect(result.value.citationKey).toBe("dupz");
+      if (i === 27) expect(result.value.citationKey).toBe("dupaa");
+    }
+    expect(bibText.match(/@misc\{dup[a-z]*,/g)).toHaveLength(28);
+  });
+
   it("rejects a field value with unbalanced braces", () => {
     const result = addEntry("", {
       citationKey: "k",
@@ -157,5 +177,12 @@ describe("renameKey", () => {
   it("is a no-op collision check when renaming a key to itself", () => {
     const result = renameKey("@misc{a, title={A}}", "a", "a");
     expect(result.ok).toBe(true);
+  });
+
+  it("renaming a key to itself doesn't reformat the entry — diff mínimo", () => {
+    const given = "@misc{a,title={A}}\n";
+    const result = renameKey(given, "a", "a");
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(result.value).toBe(given);
   });
 });

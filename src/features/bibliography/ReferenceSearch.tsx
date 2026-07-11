@@ -37,15 +37,35 @@ export function ReferenceSearch({
 
   const rateLimited = Date.now() < rateLimitedUntil;
 
+  useEffect(() => {
+    if (!rateLimitedUntil) return;
+    const timeout = setTimeout(
+      () => setRateLimitedUntil(0),
+      rateLimitedUntil - Date.now(),
+    );
+    return () => clearTimeout(timeout);
+  }, [rateLimitedUntil]);
+
   const run = async (explicitQuery?: string) => {
     const trimmed = (explicitQuery ?? query).trim();
     if (!trimmed || rateLimited) return;
     setStatus("loading");
-    const searchResult = await searchReferences(trimmed);
-    setResult(searchResult);
-    setStatus("done");
-    if (searchResult.failures.some((f) => f.reason.includes("429"))) {
-      setRateLimitedUntil(Date.now() + RATE_LIMIT_COOLDOWN_MS);
+    try {
+      const searchResult = await searchReferences(trimmed);
+      setResult(searchResult);
+      if (searchResult.failures.some((f) => f.reason.includes("429"))) {
+        setRateLimitedUntil(Date.now() + RATE_LIMIT_COOLDOWN_MS);
+      }
+    } catch {
+      setResult({
+        candidates: [],
+        failures: [
+          { source: "crossref", reason: "erro desconhecido" },
+          { source: "semantic-scholar", reason: "erro desconhecido" },
+        ],
+      });
+    } finally {
+      setStatus("done");
     }
   };
 

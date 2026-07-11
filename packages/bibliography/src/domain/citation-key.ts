@@ -72,6 +72,7 @@ export function buildCitationKey({
         .replace(/[^a-z0-9]/g, "")
     : "";
   const titleWord = title ? firstSignificantWord(title) : "";
-  const key = `${surname}${year ?? ""}${titleWord}`;
+  const sanitizedYear = year ? year.replace(/[^a-z0-9]/gi, "") : "";
+  const key = `${surname}${sanitizedYear}${titleWord}`;
   return key || "referencia";
 }

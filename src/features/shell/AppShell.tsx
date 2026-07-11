@@ -293,16 +293,22 @@ function ShellInner() {
       ...baseResources,
       searchCitations: async (query) => {
         const { candidates } = await searchReferences(query);
-        const used = new Set(baseResources.bibEntries.map((e) => e.key));
-        pendingCandidatesRef.current.clear();
+        // Merge into (never clear) pendingCandidatesRef — two searches can
+        // resolve out of order, and clearing would wipe the candidates
+        // backing keys already rendered from the other search.
+        const used = new Set([
+          ...baseResources.bibEntries.map((e) => e.key),
+          ...pendingCandidatesRef.current.keys(),
+        ]);
         return candidates.map((candidate) => {
-          let key = buildCitationKey({
+          const base = buildCitationKey({
             authorSurname: candidate.authors[0]?.lastName,
             year: candidate.year ?? undefined,
             title: candidate.title,
           });
+          let key = base;
           for (let n = 0; used.has(key); n++)
-            key = `${key}${String.fromCharCode(97 + n)}`;
+            key = `${base}${String.fromCharCode(97 + n)}`;
           used.add(key);
           pendingCandidatesRef.current.set(key, candidate);
           return {
@@ -316,9 +322,15 @@ function ShellInner() {
       confirmCitation: (key) => {
         if (baseResources.bibEntries.some((e) => e.key === key)) return key;
         const candidate = pendingCandidatesRef.current.get(key);
-        if (!candidate || bibText === null || !bibPath) return key;
+        if (!candidate || bibText === null || !bibPath) {
+          console.error(`confirmCitation: sem .bib disponível para adicionar "${key}"`);
+          return key;
+        }
         const result = addEntry(bibText, candidateToNewEntryInput(candidate));
-        if (!result.ok) return key;
+        if (!result.ok) {
+          console.error(`confirmCitation: addEntry falhou para "${key}"`, result.error);
+          return key;
+        }
         updateFileText(bibPath, result.value.bibText);
         return result.value.citationKey;
       },
