@@ -21,6 +21,8 @@ export interface AddReferenceDialogProps {
   onSubmit: (input: NewEntryInput) => void;
   onClose: () => void;
   error: string | null;
+  /** Pre-fills the title, e.g. from a search query with no results (§5.7 B4). */
+  initialTitle?: string;
 }
 
 type Step = "type" | "form";
@@ -29,10 +31,13 @@ export function AddReferenceDialog({
   onSubmit,
   onClose,
   error,
+  initialTitle = "",
 }: AddReferenceDialogProps) {
   const [step, setStep] = useState<Step>("type");
   const [type, setType] = useState<EntryType | null>(null);
-  const [fields, setFields] = useState<Record<string, string>>({});
+  const [fields, setFields] = useState<Record<string, string>>(
+    initialTitle ? { title: initialTitle } : {},
+  );
   const [authors, setAuthors] = useState<AuthorInput[]>([emptyAuthor()]);
   const [citationKey, setCitationKey] = useState("");
   const [keyTouched, setKeyTouched] = useState(false);

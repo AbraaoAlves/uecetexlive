@@ -195,6 +195,24 @@ export const strings = {
       misc: "Site, vídeo ou outro material avulso",
       unpublished: "Manuscrito ou trabalho ainda não publicado",
     },
+    searchPlaceholder: "Busque por título, autor ou DOI — ex.: “Pedagogia do Oprimido”",
+    searchButton: "Buscar",
+    searchLoading: "Buscando…",
+    searchEmpty: "Nada encontrado.",
+    searchEmptyManual: "adicionar manualmente",
+    searchErrorNetwork:
+      "Sem conexão. A busca precisa de internet, mas seu texto continua seguro no seu navegador.",
+    searchErrorRateLimit:
+      "Muitas buscas seguidas — espere alguns segundos e tente de novo.",
+    searchPartialFailure: "Um catálogo não respondeu — mostrando resultados parciais.",
+    searchResultAdd: "Adicionar",
+    searchResultAdded: "Já está nas suas referências ✓",
+    searchBackToList: "← Voltar à lista",
+    privacyNotice:
+      "A busca consulta catálogos acadêmicos públicos na internet (CrossRef, Semantic Scholar). Só o que você digita nesta caixa é enviado — seu trabalho continua 100% no seu navegador.",
+    addedToastPrefix: "Adicionada! Para citar no texto use",
+    addedToastCopy: "copiar",
+    addedToastCopied: "copiado!",
   },
   sobre: {
     title: "Sobre o UeceTexLive",

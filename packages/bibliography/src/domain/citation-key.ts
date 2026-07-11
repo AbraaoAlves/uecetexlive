@@ -32,6 +32,16 @@ const STOPWORDS = new Set([
   "an",
   "of",
   "and",
+  "is",
+  "are",
+  "was",
+  "were",
+  "to",
+  "in",
+  "on",
+  "for",
+  "all",
+  "you",
 ]);
 
 // Combining diacritical marks (U+0300-U+036F) left behind by NFD

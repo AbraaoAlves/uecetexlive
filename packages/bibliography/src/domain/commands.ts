@@ -87,7 +87,13 @@ function appendChunkText(bibText: string, newRaw: string): string {
   return bibText + separator + newRaw;
 }
 
-export function addEntry(bibText: string, input: NewEntryInput): Result<string> {
+export interface AddEntryResult {
+  readonly bibText: string;
+  /** The key actually used — may differ from the proposed one after collision-suffixing. */
+  readonly citationKey: string;
+}
+
+export function addEntry(bibText: string, input: NewEntryInput): Result<AddEntryResult> {
   const fieldError = validateFields(input.fields);
   if (fieldError) return err(fieldError);
   if (!isValidKey(input.citationKey)) {
@@ -113,7 +119,10 @@ export function addEntry(bibText: string, input: NewEntryInput): Result<string> 
     entryType: input.entryType,
     fields: toBibFieldMap(input.fields),
   };
-  return ok(appendChunkText(bibText, serializeEntry(entry)));
+  return ok({
+    bibText: appendChunkText(bibText, serializeEntry(entry)),
+    citationKey: key,
+  });
 }
 
 export function updateEntry(

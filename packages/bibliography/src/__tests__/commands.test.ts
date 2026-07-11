@@ -15,8 +15,9 @@ describe("addEntry", () => {
     });
     expect(result.ok).toBe(true);
     if (!result.ok) return;
-    expect(result.value).toContain("@book{freire1970,");
-    expect(result.value).toContain("author = {Freire, Paulo}");
+    expect(result.value.citationKey).toBe("freire1970");
+    expect(result.value.bibText).toContain("@book{freire1970,");
+    expect(result.value.bibText).toContain("author = {Freire, Paulo}");
   });
 
   it("never touches existing bytes — Given/When/Then", () => {
@@ -28,8 +29,8 @@ describe("addEntry", () => {
     });
     expect(result.ok).toBe(true);
     if (!result.ok) return;
-    expect(result.value.startsWith(given)).toBe(true);
-    expect(result.value).toBe(`${given}\n@misc{b,\n  title = {B}\n}\n`);
+    expect(result.value.bibText.startsWith(given)).toBe(true);
+    expect(result.value.bibText).toBe(`${given}\n@misc{b,\n  title = {B}\n}\n`);
   });
 
   it("resolves a key collision by suffixing a, b, c…", () => {
@@ -41,24 +42,28 @@ describe("addEntry", () => {
     expect(given.ok).toBe(true);
     if (!given.ok) return;
 
-    const second = addEntry(given.value, {
+    const second = addEntry(given.value.bibText, {
       citationKey: "freire1970pedagogia",
       entryType: "book",
       fields: new Map([["title", "Outra obra, mesma key gerada"]]),
     });
     expect(second.ok).toBe(true);
     if (!second.ok) return;
-    expect(second.value).toContain("@book{freire1970pedagogiaa,");
+    expect(second.value.citationKey).toBe("freire1970pedagogiaa");
+    expect(second.value.bibText).toContain("@book{freire1970pedagogiaa,");
     // The first entry's bytes are still there, untouched.
-    expect(second.value.startsWith(given.value)).toBe(true);
+    expect(second.value.bibText.startsWith(given.value.bibText)).toBe(true);
 
-    const third = addEntry(second.value, {
+    const third = addEntry(second.value.bibText, {
       citationKey: "freire1970pedagogia",
       entryType: "book",
       fields: new Map([["title", "Uma terceira, mesma key"]]),
     });
     expect(third.ok).toBe(true);
-    if (third.ok) expect(third.value).toContain("@book{freire1970pedagogiab,");
+    if (third.ok) {
+      expect(third.value.citationKey).toBe("freire1970pedagogiab");
+      expect(third.value.bibText).toContain("@book{freire1970pedagogiab,");
+    }
   });
 
   it("rejects a field value with unbalanced braces", () => {

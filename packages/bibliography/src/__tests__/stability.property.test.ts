@@ -127,7 +127,7 @@ describe("serialize → parse stability", () => {
           });
           expect(result.ok).toBe(true);
           if (!result.ok) return;
-          expect(result.value.startsWith(bibText)).toBe(true);
+          expect(result.value.bibText.startsWith(bibText)).toBe(true);
         },
       ),
       { numRuns: 100 },

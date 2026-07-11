@@ -1,7 +1,13 @@
 // Barrel único (ADR-06 — UI_UX_PLAN §7), como latex-mapping/project-model.
 export { parseBibFile, serializeBibFile, serializeEntry } from "./domain/bib-file";
 export { buildCitationKey, type CitationKeySource } from "./domain/citation-key";
-export { addEntry, removeEntry, renameKey, updateEntry } from "./domain/commands";
+export {
+  type AddEntryResult,
+  addEntry,
+  removeEntry,
+  renameKey,
+  updateEntry,
+} from "./domain/commands";
 export {
   ENTRY_FIELD_SPECS,
   ENTRY_TYPE_LABELS_PT,
@@ -29,3 +35,12 @@ export {
   type ParseFailure,
   type Result,
 } from "./domain/types";
+export { type SearchOptions, searchReferences } from "./search/reference-search";
+export { candidateToNewEntryInput, escapeBibtex } from "./search/to-bibtex";
+export type {
+  CandidateAuthor,
+  ProviderFailure,
+  ProviderId,
+  ReferenceCandidate,
+  SearchResult,
+} from "./search/types";

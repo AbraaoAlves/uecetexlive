@@ -28,6 +28,16 @@ describe("buildCitationKey", () => {
     ).toBe("silva2020grande");
   });
 
+  it("skips common English stopwords too (found via a real CrossRef result)", () => {
+    expect(
+      buildCitationKey({
+        authorSurname: "Mineault",
+        year: "2025",
+        title: "Is Attention All You Need?",
+      }),
+    ).toBe("mineault2025attention");
+  });
+
   it("degrades gracefully with no author", () => {
     expect(buildCitationKey({ year: "2023", title: "Sem Autor Definido" })).toBe(
       "2023sem",
