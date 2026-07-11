@@ -1,6 +1,8 @@
 # Glossário de copy (PT-BR)
 
-Regras da §1.3 do `UI_UX_PLAN.md`, para manter consistência conforme a UI cresce.
+Regras de copy da UI, para manter consistência conforme ela cresce
+(originalmente a §1.3 do `UI_UX_PLAN.md`, já implementado e removido do
+repo — este arquivo é a referência viva).
 Toda string nova da UI deve entrar em `src/lib/strings.ts` (nunca hardcoded em JSX)
 e seguir estas traduções:
 

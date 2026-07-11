@@ -1,5 +1,5 @@
 /**
- * Parser/serializer próprio (ADR-01 — UI_UX_PLAN §5.4): não usa
+ * Parser/serializer próprio (ADR-01, docs/decisions.md): não usa
  * `@retorquere/bibtex-parser` (esse expande macros e não serve pro
  * round-trip literal que o CRUD exige) nem `bibtex-tidy`.
  *

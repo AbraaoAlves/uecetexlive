@@ -1,4 +1,4 @@
-// Barrel único (ADR-06 — UI_UX_PLAN §7), como latex-mapping/project-model.
+// Barrel único (ADR-06, docs/decisions.md), como latex-mapping/project-model.
 export { parseBibFile, serializeBibFile, serializeEntry } from "./domain/bib-file";
 export { buildCitationKey, type CitationKeySource } from "./domain/citation-key";
 export {
