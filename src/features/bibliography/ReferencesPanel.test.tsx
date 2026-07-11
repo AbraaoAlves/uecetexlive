@@ -1,5 +1,5 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { ReferencesPanel } from "./ReferencesPanel";
 
 // No `globals: true` in vite.config.ts's test config, so @testing-library/react's
@@ -55,5 +55,64 @@ describe("ReferencesPanel", () => {
     expect(screen.getByTestId("references-raw").textContent).toContain(
       "@book{freire1970,",
     );
+  });
+
+  it("hides edit/remove actions when onWriteBib is not provided (read-only)", () => {
+    render(<ReferencesPanel bibText={SAMPLE} />);
+    expect(screen.queryByTestId("reference-edit-freire1970")).toBeNull();
+    expect(screen.queryByTestId("reference-remove-freire1970")).toBeNull();
+  });
+
+  it("edits a field through the dialog and writes only that entry's chunk", () => {
+    const onWriteBib = vi.fn();
+    render(<ReferencesPanel bibText={SAMPLE} onWriteBib={onWriteBib} />);
+    fireEvent.click(screen.getByTestId("reference-edit-freire1970"));
+
+    const yearInput = screen.getByTestId("reference-field-year") as HTMLInputElement;
+    expect(yearInput.value).toBe("1970");
+    fireEvent.change(yearInput, { target: { value: "1968" } });
+    fireEvent.click(screen.getByTestId("add-reference-submit"));
+
+    expect(onWriteBib).toHaveBeenCalledTimes(1);
+    const next = onWriteBib.mock.calls[0][0] as string;
+    expect(next).toContain("year = {1968}");
+    expect(next).not.toContain("year = {1970}");
+    // The other entry's bytes are untouched.
+    expect(next).toContain("title = {LaTeX: User's Guide}");
+  });
+
+  it("removes an entry after confirming, with no usage warning when unused", () => {
+    const onWriteBib = vi.fn();
+    render(<ReferencesPanel bibText={SAMPLE} onWriteBib={onWriteBib} />);
+    fireEvent.click(screen.getByTestId("reference-remove-freire1970"));
+
+    expect(screen.queryByTestId("remove-usage-warning")).toBeNull();
+    fireEvent.click(screen.getByTestId("remove-reference-confirm"));
+
+    expect(onWriteBib).toHaveBeenCalledTimes(1);
+    const next = onWriteBib.mock.calls[0][0] as string;
+    expect(next).not.toContain("freire1970");
+    expect(next).toContain("lamport1986");
+  });
+
+  it("warns how many times the key is cited before removing", () => {
+    const onWriteBib = vi.fn();
+    const texSources = {
+      "introducao.tex": "Como diz \\citeonline{freire1970}, ...",
+      "conclusao.tex": "Retomando \\citeonline{freire1970} de novo.",
+    };
+    render(
+      <ReferencesPanel
+        bibText={SAMPLE}
+        onWriteBib={onWriteBib}
+        texSources={texSources}
+      />,
+    );
+    fireEvent.click(screen.getByTestId("reference-remove-freire1970"));
+    expect(screen.getByTestId("remove-usage-warning").textContent).toContain("2 vezes");
+
+    fireEvent.click(screen.getByTestId("remove-reference-cancel"));
+    expect(onWriteBib).not.toHaveBeenCalled();
+    expect(screen.getByTestId("reference-freire1970")).toBeTruthy();
   });
 });

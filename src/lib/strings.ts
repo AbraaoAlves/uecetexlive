@@ -184,6 +184,20 @@ export const strings = {
     requiredHint: "obrigatório",
     otherFieldsSection: "Outros campos",
     saveError: "Não foi possível salvar — confira os campos e tente de novo.",
+    editTitle: "Editar referência",
+    saveEdit: "Salvar",
+    citationKeyReadOnlyHint:
+      "O código da citação não muda aqui — isso afetaria os textos que já citam esta referência.",
+    editButton: "Editar",
+    removeButton: "Remover",
+    editUnsupportedType:
+      "Este tipo de referência só pode ser editado pelo código (toggle “ver código”).",
+    removeConfirmTitle: "Remover esta referência?",
+    removeConfirmUsedOne: "Esta referência é usada 1 vez no seu texto.",
+    removeConfirmUsedMany: "Esta referência é usada {n} vezes no seu texto.",
+    removeConfirmCancel: "Cancelar",
+    removeConfirmButton: "Remover mesmo assim",
+    removeError: "Não foi possível remover — tente de novo.",
     typeDescriptions: {
       article: "Publicado em periódico científico",
       inproceedings: "Publicado nos anais de um evento/congresso",

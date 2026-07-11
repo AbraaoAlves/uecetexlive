@@ -3,44 +3,80 @@
  * por tipo → NewEntryInput. Nunca mostra `{}`, `@` ou "BibTeX" — o único
  * lugar onde o usuário vê a citation key é a seção "Avançado", já
  * preenchida (buildCitationKey) e editável.
+ *
+ * Também serve o form de edição (B2 — §5.7): quando `editing` é passado,
+ * pula o picker de tipo, pré-preenche tudo a partir da entry atual, e a
+ * citation key vira somente-leitura na seção Avançado — renomear key é
+ * fora de escopo aqui (efeito colateral nos .tex, comando de projeto à
+ * parte, ver §5.5).
  */
 import {
+  type BibliographyEntry,
   buildCitationKey,
   ENTRY_FIELD_SPECS,
   ENTRY_TYPE_LABELS_PT,
   ENTRY_TYPES,
+  type EntryPatch,
   type EntryType,
   type NewEntryInput,
 } from "@papyru/bibliography";
 import { useEffect, useMemo, useState } from "react";
 import { strings } from "@/lib/strings";
-import { type AuthorInput, emptyAuthor, serializeAuthors } from "./author-list";
+import {
+  type AuthorInput,
+  emptyAuthor,
+  parseAuthors,
+  serializeAuthors,
+} from "./author-list";
 import { EntryTypeIcon } from "./entry-type-icon";
 
+export interface EditingReference {
+  readonly citationKey: string;
+  readonly entry: BibliographyEntry;
+}
+
 export interface AddReferenceDialogProps {
-  onSubmit: (input: NewEntryInput) => void;
+  /** Required in add mode; ignored (use onSubmitEdit) when `editing` is set. */
+  onSubmit?: (input: NewEntryInput) => void;
   onClose: () => void;
   error: string | null;
   /** Pre-fills the title, e.g. from a search query with no results (§5.7 B4). */
   initialTitle?: string;
+  /** B2: edit an existing entry instead of creating a new one. */
+  editing?: EditingReference;
+  onSubmitEdit?: (citationKey: string, patch: EntryPatch) => void;
 }
 
 type Step = "type" | "form";
+
+function fieldsToRecord(entry: BibliographyEntry): Record<string, string> {
+  const record: Record<string, string> = {};
+  for (const [name, value] of entry.fields) record[name] = value.value;
+  return record;
+}
 
 export function AddReferenceDialog({
   onSubmit,
   onClose,
   error,
   initialTitle = "",
+  editing,
+  onSubmitEdit,
 }: AddReferenceDialogProps) {
-  const [step, setStep] = useState<Step>("type");
-  const [type, setType] = useState<EntryType | null>(null);
+  const editingType =
+    editing && typeof editing.entry.entryType === "string"
+      ? editing.entry.entryType
+      : null;
+  const [step, setStep] = useState<Step>(editing ? "form" : "type");
+  const [type, setType] = useState<EntryType | null>(editingType);
   const [fields, setFields] = useState<Record<string, string>>(
-    initialTitle ? { title: initialTitle } : {},
+    editing ? fieldsToRecord(editing.entry) : initialTitle ? { title: initialTitle } : {},
   );
-  const [authors, setAuthors] = useState<AuthorInput[]>([emptyAuthor()]);
-  const [citationKey, setCitationKey] = useState("");
-  const [keyTouched, setKeyTouched] = useState(false);
+  const [authors, setAuthors] = useState<AuthorInput[]>(
+    editing ? parseAuthors(editing.entry.fields.get("author")?.value) : [emptyAuthor()],
+  );
+  const [citationKey, setCitationKey] = useState(editing?.citationKey ?? "");
+  const [keyTouched, setKeyTouched] = useState(!!editing);
   const [advancedOpen, setAdvancedOpen] = useState(false);
 
   useEffect(() => {
@@ -57,7 +93,8 @@ export function AddReferenceDialog({
   const authorRequired = specs.find((s) => s.name === "author")?.required ?? false;
 
   // Auto-derive the citation key from author/year/title until the user
-  // edits it by hand — same pattern search results will use in B4.
+  // edits it by hand (or we're editing an existing entry — its key stays
+  // put; see module doc) — same pattern search results use in B4.
   useEffect(() => {
     if (keyTouched) return;
     setCitationKey(
@@ -80,8 +117,7 @@ export function AddReferenceDialog({
     setStep("form");
   };
 
-  const submit = () => {
-    if (!type || missingRequired) return;
+  const buildFieldMap = () => {
     const fieldMap = new Map<string, string>();
     for (const spec of nonAuthorSpecs) {
       const value = fields[spec.name]?.trim();
@@ -91,7 +127,17 @@ export function AddReferenceDialog({
       const serialized = serializeAuthors(authors);
       if (serialized) fieldMap.set("author", serialized);
     }
-    onSubmit({
+    return fieldMap;
+  };
+
+  const submit = () => {
+    if (!type || missingRequired) return;
+    const fieldMap = buildFieldMap();
+    if (editing && onSubmitEdit) {
+      onSubmitEdit(editing.citationKey, { entryType: type, fields: fieldMap });
+      return;
+    }
+    onSubmit?.({
       citationKey: citationKey.trim() || "referencia",
       entryType: type,
       fields: fieldMap,
@@ -153,7 +199,7 @@ export function AddReferenceDialog({
             <>
               <div className="flex items-center gap-2 font-display text-lg">
                 <EntryTypeIcon type={type} className="size-4" />
-                {ENTRY_TYPE_LABELS_PT[type]}
+                {editing ? strings.references.editTitle : ENTRY_TYPE_LABELS_PT[type]}
               </div>
 
               {hasAuthorField && (
@@ -210,15 +256,18 @@ export function AddReferenceDialog({
                     id="reference-citation-key"
                     data-testid="reference-citation-key"
                     type="text"
+                    readOnly={!!editing}
                     value={citationKey}
                     onChange={(e) => {
                       setKeyTouched(true);
                       setCitationKey(e.target.value);
                     }}
-                    className="mt-1 w-full rounded-md border bg-background px-2.5 py-1.5 font-mono text-sm outline-none focus:ring-1 focus:ring-ring"
+                    className="mt-1 w-full rounded-md border bg-background px-2.5 py-1.5 font-mono text-sm outline-none focus:ring-1 focus:ring-ring read-only:text-ink-muted"
                   />
                   <p className="mt-1 text-ink-subtle text-xs">
-                    {strings.references.citationKeyHint}
+                    {editing
+                      ? strings.references.citationKeyReadOnlyHint
+                      : strings.references.citationKeyHint}
                   </p>
                 </div>
               </details>
@@ -226,14 +275,18 @@ export function AddReferenceDialog({
               {error && <p className="mt-3 text-danger text-sm">{error}</p>}
 
               <div className="mt-4 flex justify-between gap-2">
-                <button
-                  type="button"
-                  className="rounded px-3 py-1.5 text-ink-muted text-sm hover:bg-surface"
-                  onClick={() => setStep("type")}
-                  data-testid="add-reference-back"
-                >
-                  {strings.references.back}
-                </button>
+                {editing ? (
+                  <span />
+                ) : (
+                  <button
+                    type="button"
+                    className="rounded px-3 py-1.5 text-ink-muted text-sm hover:bg-surface"
+                    onClick={() => setStep("type")}
+                    data-testid="add-reference-back"
+                  >
+                    {strings.references.back}
+                  </button>
+                )}
                 <div className="flex gap-2">
                   <button
                     type="button"
@@ -250,7 +303,7 @@ export function AddReferenceDialog({
                     onClick={submit}
                     data-testid="add-reference-submit"
                   >
-                    {strings.references.save}
+                    {editing ? strings.references.saveEdit : strings.references.save}
                   </button>
                 </div>
               </div>

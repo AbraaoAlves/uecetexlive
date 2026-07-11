@@ -4,6 +4,7 @@ import {
   type Chunk,
   candidateToNewEntryInput,
   ENTRY_TYPE_LABELS_PT,
+  type EntryPatch,
   type EntryTypeTag,
   entryTypeName,
   isKnownEntryType,
@@ -11,12 +12,15 @@ import {
   type NewEntryInput,
   parseBibFile,
   type ReferenceCandidate,
+  removeEntry,
+  updateEntry,
 } from "@papyru/bibliography";
 import { ABNT_CITATION_PROFILE } from "@papyru/latex-mapping";
 import { useEffect, useMemo, useState } from "react";
 import { strings } from "@/lib/strings";
 import { cn } from "@/lib/utils";
-import { AddReferenceDialog } from "./AddReferenceDialog";
+import { AddReferenceDialog, type EditingReference } from "./AddReferenceDialog";
+import { countCitationUsages } from "./citation-usage";
 import { EntryTypeIcon } from "./entry-type-icon";
 import { formatAuthorsList } from "./format-authors";
 import { ReferenceSearch } from "./ReferenceSearch";
@@ -31,6 +35,8 @@ export interface ReferencesPanelProps {
   onSearchQueryConsumed?: () => void;
   /** "Inserir citação no texto" per row (B5b) — omitted when no WYSIWYG surface is mounted to insert into. */
   onInsertCitation?: (key: string) => void;
+  /** Every .tex file's current text, for the "used N times" warning before removing (B2). */
+  texSources?: Record<string, string>;
 }
 
 type SortMode = "file" | "author" | "year";
@@ -61,6 +67,7 @@ export function ReferencesPanel({
   initialSearchQuery,
   onSearchQueryConsumed,
   onInsertCitation,
+  texSources = {},
 }: ReferencesPanelProps) {
   const [sort, setSort] = useState<SortMode>("file");
   const [showRaw, setShowRaw] = useState(false);
@@ -70,6 +77,13 @@ export function ReferencesPanel({
   const [searchOpen, setSearchOpen] = useState(false);
   const [addedToastKey, setAddedToastKey] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [editing, setEditing] = useState<EditingReference | null>(null);
+  const [editError, setEditError] = useState<string | null>(null);
+  const [removeTarget, setRemoveTarget] = useState<{
+    key: string;
+    usageCount: number;
+  } | null>(null);
+  const [removeError, setRemoveError] = useState<string | null>(null);
 
   useEffect(() => {
     if (initialSearchQuery) setSearchOpen(true);
@@ -112,6 +126,39 @@ export function ReferencesPanel({
   const openManualAdd = (initialTitle = "") => {
     setAddInitialTitle(initialTitle);
     setAddOpen(true);
+  };
+
+  const handleEditSubmit = (key: string, patch: EntryPatch) => {
+    if (bibText === null || !onWriteBib) return;
+    const result = updateEntry(bibText, key, patch);
+    if (!result.ok) {
+      setEditError(strings.references.saveError);
+      return;
+    }
+    onWriteBib(result.value);
+    setEditError(null);
+    setEditing(null);
+  };
+
+  const openRemoveConfirm = (key: string) => {
+    const usageCount = countCitationUsages(
+      texSources,
+      key,
+      ABNT_CITATION_PROFILE.citeCommands,
+    );
+    setRemoveTarget({ key, usageCount });
+  };
+
+  const handleRemoveConfirm = () => {
+    if (bibText === null || !onWriteBib || !removeTarget) return;
+    const result = removeEntry(bibText, removeTarget.key);
+    if (!result.ok) {
+      setRemoveError(strings.references.removeError);
+      return;
+    }
+    onWriteBib(result.value);
+    setRemoveError(null);
+    setRemoveTarget(null);
   };
 
   const citeCommand = ABNT_CITATION_PROFILE.citeCommands[0];
@@ -302,16 +349,40 @@ export function ReferencesPanel({
                         </span>{" "}
                         · <span>{row.yearLabel}</span>
                       </span>
-                      {onInsertCitation && (
-                        <button
-                          type="button"
-                          data-testid={`reference-insert-${row.key}`}
-                          className="shrink-0 text-accent text-xs underline hover:no-underline"
-                          onClick={() => onInsertCitation(row.key)}
-                        >
-                          {strings.references.insertCitation}
-                        </button>
-                      )}
+                      <span className="flex shrink-0 items-center gap-2 text-xs">
+                        {onInsertCitation && (
+                          <button
+                            type="button"
+                            data-testid={`reference-insert-${row.key}`}
+                            className="text-accent underline hover:no-underline"
+                            onClick={() => onInsertCitation(row.key)}
+                          >
+                            {strings.references.insertCitation}
+                          </button>
+                        )}
+                        {onWriteBib && isKnownEntryType(row.entry.entryType) && (
+                          <button
+                            type="button"
+                            data-testid={`reference-edit-${row.key}`}
+                            className="text-ink-muted underline hover:no-underline"
+                            onClick={() =>
+                              setEditing({ citationKey: row.key, entry: row.entry })
+                            }
+                          >
+                            {strings.references.editButton}
+                          </button>
+                        )}
+                        {onWriteBib && (
+                          <button
+                            type="button"
+                            data-testid={`reference-remove-${row.key}`}
+                            className="text-danger underline hover:no-underline"
+                            onClick={() => openRemoveConfirm(row.key)}
+                          >
+                            {strings.references.removeButton}
+                          </button>
+                        )}
+                      </span>
                     </div>
                   </li>
                 ))}
@@ -336,6 +407,91 @@ export function ReferencesPanel({
           error={addError}
         />
       )}
+      {editing && (
+        <AddReferenceDialog
+          editing={editing}
+          onSubmitEdit={handleEditSubmit}
+          onClose={() => {
+            setEditing(null);
+            setEditError(null);
+          }}
+          error={editError}
+        />
+      )}
+      {removeTarget && (
+        <RemoveConfirmDialog
+          usageCount={removeTarget.usageCount}
+          error={removeError}
+          onConfirm={handleRemoveConfirm}
+          onCancel={() => {
+            setRemoveTarget(null);
+            setRemoveError(null);
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+function RemoveConfirmDialog({
+  usageCount,
+  error,
+  onConfirm,
+  onCancel,
+}: {
+  usageCount: number;
+  error: string | null;
+  onConfirm: () => void;
+  onCancel: () => void;
+}) {
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-ink/30 p-4"
+      role="dialog"
+      aria-modal="true"
+      data-testid="remove-reference-dialog"
+      onClick={onCancel}
+      onKeyDown={() => {}}
+    >
+      <div
+        className="w-[26rem] rounded-lg border bg-surface-elevated p-5 shadow-xl"
+        onClick={(e) => e.stopPropagation()}
+        onKeyDown={() => {}}
+        role="document"
+      >
+        <div className="font-display text-lg">
+          {strings.references.removeConfirmTitle}
+        </div>
+        {usageCount > 0 && (
+          <p className="mt-2 text-danger text-sm" data-testid="remove-usage-warning">
+            {usageCount === 1
+              ? strings.references.removeConfirmUsedOne
+              : strings.references.removeConfirmUsedMany.replace(
+                  "{n}",
+                  String(usageCount),
+                )}
+          </p>
+        )}
+        {error && <p className="mt-2 text-danger text-sm">{error}</p>}
+        <div className="mt-4 flex justify-end gap-2">
+          <button
+            type="button"
+            className="rounded px-3 py-1.5 text-ink-muted text-sm hover:bg-surface"
+            onClick={onCancel}
+            data-testid="remove-reference-cancel"
+          >
+            {strings.references.removeConfirmCancel}
+          </button>
+          <button
+            type="button"
+            className="rounded bg-danger px-3 py-1.5 text-sm text-white hover:bg-danger/90"
+            onClick={onConfirm}
+            data-testid="remove-reference-confirm"
+          >
+            {strings.references.removeConfirmButton}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

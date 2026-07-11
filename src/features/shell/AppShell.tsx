@@ -854,6 +854,7 @@ function ShellInner() {
                   initialSearchQuery={pendingSearchQuery}
                   onSearchQueryConsumed={() => setPendingSearchQuery(null)}
                   onInsertCitation={insertCitationAtCursor}
+                  texSources={texSources}
                 />
               )}
             </div>

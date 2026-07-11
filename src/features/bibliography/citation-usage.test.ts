@@ -1,0 +1,45 @@
+import { describe, expect, it } from "vitest";
+import { countCitationUsages } from "./citation-usage";
+
+const CITE_COMMANDS = ["citeonline", "Citeonline"];
+
+describe("countCitationUsages", () => {
+  it("counts a plain \\citeonline{key} usage", () => {
+    const sources = { "a.tex": "Texto \\citeonline{freire1970} aqui." };
+    expect(countCitationUsages(sources, "freire1970", CITE_COMMANDS)).toBe(1);
+  });
+
+  it("counts across multiple files", () => {
+    const sources = {
+      "a.tex": "\\citeonline{freire1970}",
+      "b.tex": "\\Citeonline{freire1970} e depois \\citeonline{freire1970} de novo",
+    };
+    expect(countCitationUsages(sources, "freire1970", CITE_COMMANDS)).toBe(3);
+  });
+
+  it("counts a key inside a multi-key citation", () => {
+    const sources = { "a.tex": "\\citeonline{lamport1986,freire1970}" };
+    expect(countCitationUsages(sources, "freire1970", CITE_COMMANDS)).toBe(1);
+  });
+
+  it("handles an optional [opt] argument before the braces", () => {
+    const sources = { "a.tex": "\\citeonline[p. 45]{freire1970}" };
+    expect(countCitationUsages(sources, "freire1970", CITE_COMMANDS)).toBe(1);
+  });
+
+  it("does not match a different command name", () => {
+    const sources = { "a.tex": "\\cite{freire1970}" };
+    expect(countCitationUsages(sources, "freire1970", CITE_COMMANDS)).toBe(0);
+  });
+
+  it("does not false-positive on a key that is a substring of another", () => {
+    const sources = { "a.tex": "\\citeonline{freire1970abc}" };
+    expect(countCitationUsages(sources, "freire1970", CITE_COMMANDS)).toBe(0);
+  });
+
+  it("returns 0 for no usages", () => {
+    expect(
+      countCitationUsages({ "a.tex": "sem citação" }, "freire1970", CITE_COMMANDS),
+    ).toBe(0);
+  });
+});
