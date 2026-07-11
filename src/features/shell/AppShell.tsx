@@ -468,7 +468,7 @@ function ShellInner() {
     return (
       <div className="flex h-full items-center justify-center gap-2 text-ink-muted">
         <Loader2 className="size-5 animate-spin" />
-        {strings.app.name}
+        {strings.app.loading}
       </div>
     );
   }

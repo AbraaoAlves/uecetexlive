@@ -6,6 +6,7 @@ export const strings = {
   app: {
     name: "UeceTexLive",
     tagline: "Sua monografia UECE, compilada no navegador.",
+    loading: "Preparando seu editor…",
   },
   topbar: {
     compile: "Compilar",
