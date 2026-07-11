@@ -79,6 +79,8 @@ export const UiSettingsSchema = z.object({
   dismissedTemplateCommit: z.string().nullable().default(null),
   /** Color theme; "system" follows the OS preference. */
   theme: z.enum(["system", "light", "dark"]).default("system"),
+  /** Which tab the rail shows (ADR-03/5.10 — Referências reuses the existing rail, not a separate panel). */
+  railTab: z.enum(["files", "references"]).default("files"),
 });
 export type UiSettings = z.infer<typeof UiSettingsSchema>;
 

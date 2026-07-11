@@ -16,6 +16,7 @@ import {
   RotateCcw,
 } from "lucide-react";
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ReferencesPanel } from "@/features/bibliography/ReferencesPanel";
 import { useCompile } from "@/features/compiler/useCompile";
 import { useIdleWarmup } from "@/features/compiler/useIdleWarmup";
 import { MetadataWizard } from "@/features/metadata/MetadataWizard";
@@ -130,6 +131,7 @@ function ShellInner() {
   const { ui, setUi, ready: uiReady } = useUiSettings();
   const advanced = ui.advancedMode;
   const railCollapsed = ui.railCollapsed;
+  const railTab = ui.railTab;
   useTheme(ui.theme, uiReady);
   const { latestCommit: templateUpdateCommit } = useTemplateUpdateNotice(
     project?.templateCommit,
@@ -186,6 +188,8 @@ function ShellInner() {
   const bibPath = graph.bibliography
     ? `${graph.bibliography.replace(/\.bib$/, "")}.bib`
     : null;
+  const bibFile = bibPath ? project?.files.find((f) => f.path === bibPath) : undefined;
+  const bibText = bibFile ? bytesToText(bibFile.bytes) : null;
 
   const visibleFiles = useMemo(() => {
     if (!project) return [];
@@ -688,36 +692,81 @@ function ShellInner() {
         <aside
           className={cn(
             "shrink-0 overflow-hidden border-r bg-surface transition-[width] duration-200 motion-reduce:transition-none",
-            railCollapsed ? "w-0 border-r-0" : "w-60",
+            railCollapsed ? "w-0 border-r-0" : railTab === "references" ? "w-96" : "w-60",
           )}
           data-testid="project-rail"
           aria-hidden={railCollapsed}
           inert={railCollapsed || undefined}
         >
-          {/* Fixed inner width: rail content keeps its layout while animating. */}
-          <div className="h-full w-60 overflow-y-auto">
-            <ProjectRail
-              files={railFiles}
-              currentPath={currentPath}
-              missingIncludes={missingIncludes}
-              hiddenCount={hiddenCount}
-              onSelect={handleSelect}
-              onReorderChapters={reorderChapters}
-              onNewChapter={() => setNewChapterOpen(true)}
-              onUploadFiles={(uploads) => void handleRailUpload(uploads)}
-              onShowHidden={() => setAdvanced(true)}
-              collapsedSections={ui.collapsedSections}
-              onToggleSection={(section) =>
-                setUi({
-                  collapsedSections: ui.collapsedSections.includes(section)
-                    ? ui.collapsedSections.filter((s) => s !== section)
-                    : [...ui.collapsedSections, section],
-                })
-              }
-              onOpenMetadata={() => setMetadataOpen(true)}
-              metadataActive={metadataOpen}
-              metadataPending={metadataPending}
-            />
+          {/* Inner width mirrors the <aside> above: rail content keeps its
+              layout while animating, but must widen too (ADR-07) or the
+              Referências form gets clipped at the old 240px. */}
+          <div
+            className={cn(
+              "flex h-full flex-col overflow-hidden",
+              railTab === "references" ? "w-96" : "w-60",
+            )}
+          >
+            <div className="flex shrink-0 border-b text-xs" role="tablist">
+              <button
+                type="button"
+                role="tab"
+                aria-selected={railTab === "files"}
+                data-testid="rail-tab-files"
+                onClick={() => setUi({ railTab: "files" })}
+                className={cn(
+                  "flex-1 px-3 py-2",
+                  railTab === "files"
+                    ? "border-accent border-b-2 font-medium text-foreground"
+                    : "text-ink-muted hover:text-foreground",
+                )}
+              >
+                {strings.rail.filesTab}
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={railTab === "references"}
+                data-testid="rail-tab-references"
+                onClick={() => setUi({ railTab: "references" })}
+                className={cn(
+                  "flex-1 px-3 py-2",
+                  railTab === "references"
+                    ? "border-accent border-b-2 font-medium text-foreground"
+                    : "text-ink-muted hover:text-foreground",
+                )}
+              >
+                {strings.rail.referencesTab}
+              </button>
+            </div>
+            <div className="min-h-0 flex-1 overflow-y-auto">
+              {railTab === "files" ? (
+                <ProjectRail
+                  files={railFiles}
+                  currentPath={currentPath}
+                  missingIncludes={missingIncludes}
+                  hiddenCount={hiddenCount}
+                  onSelect={handleSelect}
+                  onReorderChapters={reorderChapters}
+                  onNewChapter={() => setNewChapterOpen(true)}
+                  onUploadFiles={(uploads) => void handleRailUpload(uploads)}
+                  onShowHidden={() => setAdvanced(true)}
+                  collapsedSections={ui.collapsedSections}
+                  onToggleSection={(section) =>
+                    setUi({
+                      collapsedSections: ui.collapsedSections.includes(section)
+                        ? ui.collapsedSections.filter((s) => s !== section)
+                        : [...ui.collapsedSections, section],
+                    })
+                  }
+                  onOpenMetadata={() => setMetadataOpen(true)}
+                  metadataActive={metadataOpen}
+                  metadataPending={metadataPending}
+                />
+              ) : (
+                <ReferencesPanel bibText={bibText} />
+              )}
+            </div>
           </div>
         </aside>
         <main className="flex min-w-0 flex-1 flex-col" data-testid="editor-pane">

@@ -43,6 +43,8 @@ export const strings = {
       "Modo rascunho: citações, glossário e índice não são resolvidos. Use o modo Completo para o PDF final.",
   },
   rail: {
+    filesTab: "Arquivos",
+    referencesTab: "Referências",
     preTextual: "Pré-textuais",
     chapters: "Capítulos",
     postTextual: "Pós-textuais",
@@ -150,6 +152,21 @@ export const strings = {
       "Entre 06 e 09/07 esta versão coleta eventos anônimos de uso (gerar PDF, exportar) para um TCC — nenhum conteúdo do seu documento é enviado.",
     telemetryNoticeLink: "Saiba mais / dê seu feedback",
     telemetryNoticeDismiss: "Fechar aviso",
+  },
+  references: {
+    empty: "Nenhuma referência ainda.",
+    noBibFile: "Não encontramos um arquivo de referências (.bib) no seu projeto.",
+    sortFile: "ordem do arquivo",
+    sortAuthor: "autor",
+    sortYear: "ano",
+    viewCode: "ver código",
+    viewList: "ver lista",
+    unreadableCard: "Não consegui ler esta referência",
+    unreadableHint:
+      "O texto abaixo foi mantido exatamente como estava — nada foi apagado.",
+    untitled: "(sem título)",
+    unknownAuthor: "(sem autor)",
+    unknownYear: "—",
   },
   sobre: {
     title: "Sobre o UeceTexLive",

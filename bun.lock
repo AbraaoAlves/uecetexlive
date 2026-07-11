@@ -11,6 +11,7 @@
         "@codemirror/search": "^6.7.1",
         "@codemirror/state": "^6.7.0",
         "@codemirror/view": "^6.43.5",
+        "@papyru/bibliography": "workspace:*",
         "@papyru/compiler": "workspace:*",
         "@papyru/editor": "workspace:*",
         "@papyru/latex-mapping": "workspace:*",

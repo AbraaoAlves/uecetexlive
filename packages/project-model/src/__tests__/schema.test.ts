@@ -82,6 +82,7 @@ describe("UiSettingsSchema", () => {
       welcomeSeen: false,
       dismissedTemplateCommit: null,
       theme: "system",
+      railTab: "files",
     });
   });
 
