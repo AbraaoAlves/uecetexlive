@@ -34,10 +34,17 @@ import { buildIncludeGraph, type IncludeGraph } from "@/features/project/include
 import {
   applyMetadata,
   extractMetadata,
+  type MetadataField,
   TEMPLATE_PLACEHOLDER_TITLE,
 } from "@/features/project/metadata";
 import { chapterScaffold, insertChapterInput } from "@/features/project/new-chapter";
 import { rewriteInputOrder } from "@/features/project/reorder";
+import {
+  ABSTRACT_PATH,
+  applyResumoField,
+  extractResumoField,
+  RESUMO_PATH,
+} from "@/features/project/resumo-field";
 import { seedTemplate } from "@/features/project/seed";
 import { ProjectProvider, useProject } from "@/features/project/store";
 import { useTemplateUpdateNotice } from "@/features/project/useTemplateUpdateNotice";
@@ -370,16 +377,98 @@ function ShellInner() {
   // Depends on the entry's *string* (not `project`): texSources rebuilds per
   // keystroke, but equal content yields the same primitive → memo holds.
   const entrySource = project ? (texSources[project.entry] ?? "") : "";
-  const meta = useMemo(() => extractMetadata(entrySource), [entrySource]);
+  const resumoSource = texSources[RESUMO_PATH] ?? "";
+  const abstractSource = texSources[ABSTRACT_PATH] ?? "";
+  const resumoField = useMemo(
+    () => extractResumoField(resumoSource, "palavraschave"),
+    [resumoSource],
+  );
+  const abstractField = useMemo(
+    () => extractResumoField(abstractSource, "keywords"),
+    [abstractSource],
+  );
+  // Resumo/abstract live in their own files (§3.1) — merged here under
+  // synthetic ids (resumobody/abstractbody) so the wizard sees one flat
+  // fields map, same as every documento.tex macro.
+  const meta = useMemo(() => {
+    const merged = new Map<string, MetadataField>(extractMetadata(entrySource));
+    if (resumoField) {
+      merged.set("resumobody", {
+        macro: "resumobody",
+        value: resumoField.body,
+        start: resumoField.bodyStart,
+        end: resumoField.bodyEnd,
+      });
+      merged.set("palavraschave", {
+        macro: "palavraschave",
+        value: resumoField.keywords,
+        start: resumoField.keywordsStart,
+        end: resumoField.keywordsEnd,
+      });
+    }
+    if (abstractField) {
+      merged.set("abstractbody", {
+        macro: "abstractbody",
+        value: abstractField.body,
+        start: abstractField.bodyStart,
+        end: abstractField.bodyEnd,
+      });
+      merged.set("keywords", {
+        macro: "keywords",
+        value: abstractField.keywords,
+        start: abstractField.keywordsStart,
+        end: abstractField.keywordsEnd,
+      });
+    }
+    return merged;
+  }, [entrySource, resumoField, abstractField]);
   const workTitle = meta.get("titulo")?.value.trim() ?? "";
   const metadataPending = workTitle === "" || workTitle === TEMPLATE_PLACEHOLDER_TITLE;
 
   const applyWorkMetadata = useCallback(
     (updates: Map<string, string>) => {
       if (!project) return;
-      updateFileText(project.entry, applyMetadata(entrySource, updates));
+      const docUpdates = new Map<string, string>();
+      const resumoUpdates: { body?: string; keywords?: string } = {};
+      const abstractUpdates: { body?: string; keywords?: string } = {};
+      for (const [key, value] of updates) {
+        if (key === "resumobody") resumoUpdates.body = value;
+        else if (key === "abstractbody") abstractUpdates.body = value;
+        else if (key === "palavraschave") resumoUpdates.keywords = value;
+        else if (key === "keywords") abstractUpdates.keywords = value;
+        else docUpdates.set(key, value);
+      }
+      if (docUpdates.size > 0) {
+        updateFileText(project.entry, applyMetadata(entrySource, docUpdates));
+      }
+      if (
+        resumoField &&
+        (resumoUpdates.body !== undefined || resumoUpdates.keywords !== undefined)
+      ) {
+        updateFileText(
+          RESUMO_PATH,
+          applyResumoField(resumoSource, resumoField, resumoUpdates),
+        );
+      }
+      if (
+        abstractField &&
+        (abstractUpdates.body !== undefined || abstractUpdates.keywords !== undefined)
+      ) {
+        updateFileText(
+          ABSTRACT_PATH,
+          applyResumoField(abstractSource, abstractField, abstractUpdates),
+        );
+      }
     },
-    [project, entrySource, updateFileText],
+    [
+      project,
+      entrySource,
+      resumoField,
+      resumoSource,
+      abstractField,
+      abstractSource,
+      updateFileText,
+    ],
   );
 
   const wysiwygCapable =

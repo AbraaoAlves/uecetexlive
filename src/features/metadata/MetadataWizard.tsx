@@ -226,7 +226,18 @@ function WizardField({
           <label htmlFor={inputId} className="mb-1 block text-ink-muted text-xs">
             {def.label}
           </label>
-          {def.kind === "select" && def.options ? (
+          {def.kind === "textarea" ? (
+            <textarea
+              key={`${def.macro}:${current}`}
+              id={inputId}
+              rows={8}
+              data-testid={`metadata-field-${def.macro}`}
+              disabled={missing}
+              defaultValue={current}
+              onBlur={(e) => onCommit(def, e.target.value)}
+              className="w-full resize-y rounded-md border bg-surface-elevated px-2.5 py-1.5 text-sm disabled:opacity-50"
+            />
+          ) : def.kind === "select" && def.options ? (
             <select
               id={inputId}
               data-testid={`metadata-field-${def.macro}`}

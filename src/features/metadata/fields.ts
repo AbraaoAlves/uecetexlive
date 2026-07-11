@@ -16,7 +16,7 @@ export interface FieldDef {
   macro: string;
   label: string;
   hint?: string;
-  kind: "text" | "select" | "radio" | "year";
+  kind: "text" | "select" | "radio" | "year" | "textarea";
   options?: readonly FieldOption[];
   /** Enum values written verbatim (no LaTeX escaping). */
   verbatim?: boolean;
@@ -43,17 +43,32 @@ const isStricto = (t: WorkType | null) => t === "dissertacao" || t === "tese";
 const isUab = (_type: WorkType | null, fields: ReadonlyMap<string, MetadataField>) =>
   fields.get("ehuab")?.value.trim() === "sim";
 
-function bancaSlot(slot: string, ordinal: number, firstHint?: string): FieldDef[] {
+function bancaSlot(
+  slot: string,
+  ordinal: number,
+  opts?: {
+    firstHint?: string;
+    /** TCC só imprime 3 membros, dissertação 4, tese 5 (ver uecetex2.sty). */
+    showWhen?: FieldDef["showWhen"];
+  },
+): FieldDef[] {
+  const showWhen = opts?.showWhen;
   return [
     {
       macro: `membrodabanca${slot}`,
       label: `Membro ${ordinal} — nome`,
-      hint: firstHint,
+      hint: opts?.firstHint,
       kind: "text",
       section: `Membro ${ordinal}`,
+      showWhen,
     },
-    { macro: `membrodabanca${slot}ies`, label: "Instituição", kind: "text" },
-    { macro: `membrodabanca${slot}centro`, label: "Centro / faculdade", kind: "text" },
+    { macro: `membrodabanca${slot}ies`, label: "Instituição", kind: "text", showWhen },
+    {
+      macro: `membrodabanca${slot}centro`,
+      label: "Centro / faculdade",
+      kind: "text",
+      showWhen,
+    },
   ];
 }
 
@@ -275,11 +290,49 @@ export const WIZARD_STEPS: readonly StepDef[] = [
         hint: "Ex.: “01 de Julho de 2026” — deixe vazio até a defesa",
         kind: "text",
       },
-      ...bancaSlot("dois", 2, "Deixe vazio para não aparecer na folha de aprovação"),
+      ...bancaSlot("dois", 2, {
+        firstHint: "Deixe vazio para não aparecer na folha de aprovação",
+      }),
       ...bancaSlot("tres", 3),
       ...bancaSlot("quatro", 4),
-      ...bancaSlot("cinco", 5),
-      ...bancaSlot("seis", 6),
+      // TCC (graduação/especialização) imprime só até o membro 4.
+      ...bancaSlot("cinco", 5, { showWhen: isStricto }),
+      // Só a tese imprime o 6º membro da banca.
+      ...bancaSlot("seis", 6, { showWhen: isDoutorado }),
+    ],
+  },
+  {
+    id: "resumo",
+    title: "Resumo e Abstract",
+    description:
+      "Escreva por último — é a última coisa que você redige, mas a primeira que a banca lê. Um parágrafo único, de 150 a 500 palavras, na voz ativa e na 3ª pessoa (NBR 6028).",
+    fields: [
+      {
+        macro: "resumobody",
+        label: "Resumo (português)",
+        hint: "Finalize com as palavras-chave no campo abaixo — não repita aqui.",
+        kind: "textarea",
+        section: "Resumo",
+      },
+      {
+        macro: "palavraschave",
+        label: "Palavras-chave",
+        hint: "De 3 a 5 termos, separados por ponto e vírgula, finalizados por ponto.",
+        kind: "text",
+      },
+      {
+        macro: "abstractbody",
+        label: "Abstract (inglês)",
+        hint: "Tradução fiel do resumo — mesma estrutura, mesma ênfase, mesmos dados.",
+        kind: "textarea",
+        section: "Abstract",
+      },
+      {
+        macro: "keywords",
+        label: "Keywords",
+        hint: "As mesmas palavras-chave traduzidas, separadas por ponto e vírgula.",
+        kind: "text",
+      },
     ],
   },
 ];

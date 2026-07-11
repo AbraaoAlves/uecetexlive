@@ -114,7 +114,7 @@ export const strings = {
     railEntry: "Dados do Trabalho",
     stepsLabel: "Etapas",
     pendingHint: "Preencha o título e os dados do seu trabalho",
-    missingMacro: "Não encontrado no documento.tex — edite pelo modo Avançado",
+    missingMacro: "Não encontrado no arquivo — edite pelo modo Avançado",
     themeContext: "Seu tema:",
     prev: "Anterior",
     next: "Avançar",

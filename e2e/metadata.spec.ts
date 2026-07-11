@@ -98,6 +98,84 @@ test("UAB toggle reveals local do polo and clears it when turned off", async ({
   await expect(page.getByTestId("source-editor-value")).toHaveValue(/\\localdopolo\{\}/);
 });
 
+test("banca slots respect the work-type cap (TCC: 3, dissertação: 4, tese: 5)", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await expect(page.getByTestId("welcome-dialog")).toBeVisible({ timeout: 15_000 });
+  await page.getByTestId("welcome-fill").click();
+  await expect(page.getByTestId("metadata-wizard")).toBeVisible();
+
+  await page.getByTestId("wizard-step-2").click();
+  await page.getByTestId("metadata-option-tccgraduacao").check();
+  await page.getByTestId("wizard-step-5").click();
+  await expect(page.getByTestId("metadata-field-membrodabancaquatro")).toBeVisible();
+  await expect(page.getByTestId("metadata-field-membrodabancacinco")).not.toBeVisible();
+  await expect(page.getByTestId("metadata-field-membrodabancaseis")).not.toBeVisible();
+
+  await page.getByTestId("wizard-step-2").click();
+  await page.getByTestId("metadata-option-dissertacao").check();
+  await page.getByTestId("wizard-step-5").click();
+  await expect(page.getByTestId("metadata-field-membrodabancacinco")).toBeVisible();
+  await expect(page.getByTestId("metadata-field-membrodabancaseis")).not.toBeVisible();
+
+  await page.getByTestId("wizard-step-2").click();
+  await page.getByTestId("metadata-option-tese").check();
+  await page.getByTestId("wizard-step-5").click();
+  await expect(page.getByTestId("metadata-field-membrodabancaseis")).toBeVisible();
+});
+
+test("resumo/abstract step writes surgically into their own files, not documento.tex", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await expect(page.getByTestId("welcome-dialog")).toBeVisible({ timeout: 15_000 });
+  await page.getByTestId("welcome-fill").click();
+  await expect(page.getByTestId("metadata-wizard")).toBeVisible();
+
+  await page.getByTestId("wizard-step-6").click();
+  const resumo = page.getByTestId("metadata-field-resumobody");
+  await resumo.fill("Este trabalho investiga o uso de jogos digitais no ensino.");
+  await resumo.blur();
+  const palavrasChave = page.getByTestId("metadata-field-palavraschave");
+  await palavrasChave.fill("jogos digitais; ensino; programação.");
+  await palavrasChave.blur();
+
+  const abstract = page.getByTestId("metadata-field-abstractbody");
+  await abstract.fill("This work investigates the use of digital games in teaching.");
+  await abstract.blur();
+  const keywords = page.getByTestId("metadata-field-keywords");
+  await keywords.fill("digital games; teaching; programming.");
+  await keywords.blur();
+
+  await page.getByTestId("wizard-close").click();
+
+  await page.getByTestId("advanced-toggle").check();
+  await page.getByTestId("rail-file-elementos-pre-textuais/resumo.tex").click();
+  // resumo.tex is prose (WYSIWYG-eligible) — opens in the visual editor by default.
+  await page.getByTestId("view-toggle").click();
+  await expect(page.getByTestId("source-editor-value")).toHaveValue(
+    /Este trabalho investiga o uso de jogos digitais no ensino\./,
+  );
+  await expect(page.getByTestId("source-editor-value")).toHaveValue(
+    /\\palavraschave\{jogos digitais; ensino; programação\.\}/,
+  );
+
+  await page.getByTestId("rail-file-elementos-pre-textuais/abstract.tex").click();
+  await expect(page.getByTestId("source-editor-value")).toHaveValue(
+    /This work investigates the use of digital games in teaching\./,
+  );
+  await expect(page.getByTestId("source-editor-value")).toHaveValue(
+    /\\keywords\{digital games; teaching; programming\.\}/,
+  );
+
+  // documento.tex itself is untouched by the resumo/abstract write.
+  await page.getByTestId("rail-file-documento.tex").click();
+  await expect(page.getByTestId("source-editor-value")).not.toHaveValue(
+    /jogos digitais no ensino/,
+  );
+});
+
 test("welcome 'Depois' leaves a pending badge; rail entry reopens the wizard", async ({
   page,
 }) => {
