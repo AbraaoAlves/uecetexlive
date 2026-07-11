@@ -131,6 +131,11 @@ export const strings = {
     pdfTab: "PDF",
     invert: "Modo escuro do PDF (inverter cores)",
   },
+  diagnostics: {
+    error: "erro",
+    warning: "aviso",
+    rawExcerpt: "ver texto original",
+  },
   rescue: {
     corruptState:
       "Encontramos um estado salvo incompatível. Seu estado anterior foi exportado como zip e o modelo foi restaurado.",

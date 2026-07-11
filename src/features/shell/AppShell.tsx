@@ -46,6 +46,7 @@ import { isTelemetryEnabled, track } from "@/lib/telemetry";
 import { useDebouncedValue } from "@/lib/use-debounced-value";
 import { cn, slugify } from "@/lib/utils";
 import { CompileButton } from "./CompileButton";
+import { DiagnosticsList } from "./DiagnosticsList";
 import { EngineToggle } from "./EngineToggle";
 import { IdleWarmupIndicator } from "./IdleWarmupIndicator";
 import { ImportDialog, type ImportDialogState } from "./ImportDialog";
@@ -180,6 +181,11 @@ function ShellInner() {
     () => (entryPath ? buildIncludeGraph(derivedTexSources, entryPath) : EMPTY_GRAPH),
     [derivedTexSources, entryPath],
   );
+  // Same normalization as @papyru/editor's useEditorResources: \bibliography{X}
+  // may omit the .bib extension.
+  const bibPath = graph.bibliography
+    ? `${graph.bibliography.replace(/\.bib$/, "")}.bib`
+    : null;
 
   const visibleFiles = useMemo(() => {
     if (!project) return [];
@@ -814,14 +820,22 @@ function ShellInner() {
                 compiling={compileState.status === "compiling"}
               />
             ) : (
-              <LogPane
-                log={compileState.result?.log ?? compileState.error ?? ""}
-                diagnostics={compileState.result?.diagnostics ?? []}
-                draftMode={
-                  compileState.engine === "swiftlatex-draft" &&
-                  compileState.result !== null
-                }
-              />
+              <div className="flex h-full flex-col">
+                <DiagnosticsList
+                  diagnostics={compileState.result?.diagnostics ?? []}
+                  ctx={{ bibPath, openFile }}
+                />
+                <div className="min-h-0 flex-1">
+                  <LogPane
+                    log={compileState.result?.log ?? compileState.error ?? ""}
+                    diagnostics={[]}
+                    draftMode={
+                      compileState.engine === "swiftlatex-draft" &&
+                      compileState.result !== null
+                    }
+                  />
+                </div>
+              </div>
             )}
           </div>
         </section>
