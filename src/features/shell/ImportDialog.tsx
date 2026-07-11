@@ -49,9 +49,8 @@ export function ImportDialog({ state, onConfirm, onClose }: ImportDialogProps) {
               <FileUp className="size-4" /> .bbl importado
             </div>
             <p className="mt-2 text-ink-muted text-sm">
-              {(state.sizeBytes / 1024).toFixed(1)} KB. A próxima compilação Completa
-              usará esta bibliografia pré-compilada e pulará o BibTeX (útil para projetos
-              biber).
+              {(state.sizeBytes / 1024).toFixed(1)} KB. O próximo PDF completo usará esta
+              bibliografia pré-compilada e pulará o BibTeX (útil para projetos biber).
             </p>
           </>
         )}

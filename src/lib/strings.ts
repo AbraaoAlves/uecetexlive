@@ -5,12 +5,12 @@
 export const strings = {
   app: {
     name: "UeceTexLive",
-    tagline: "Sua monografia UECE, compilada no navegador.",
+    tagline: "Sua monografia UECE, do texto ao PDF, no navegador.",
     loading: "Preparando seu editor…",
   },
   topbar: {
-    compile: "Compilar",
-    compiling: "Compilando…",
+    compile: "Gerar PDF",
+    compiling: "Gerando PDF…",
     warming: "Preparando motor…",
     export: "Exportar",
     exportPdf: "Baixar PDF",
@@ -23,23 +23,24 @@ export const strings = {
     saving: "Salvando…",
     saved: "Salvo",
     toggleRail: "Painel lateral (Ctrl/Cmd+B): mostrar ou ocultar a árvore de arquivos.",
-    compileHint: "Compilar (Ctrl/Cmd+Enter): atualiza o PDF com as últimas edições.",
+    compileHint: "Gerar PDF (Ctrl/Cmd+Enter): atualiza o PDF com as últimas edições.",
     menuHint:
       "Menu: importar ZIP, exportar PDF ou projeto, importar .bbl, restaurar modelo.",
     viewToggleHint: "Alternar entre fonte LaTeX e editor visual (Ctrl/Cmd+E).",
     idleWarmup: "Preparando motor completo:",
     idleWarmupHint:
-      "Baixando o motor da compilação Completa em segundo plano (~150 MB, uma única vez) — você já pode escrever e usar o Rascunho normalmente.",
+      "Baixando o motor do modo Completo em segundo plano (~150 MB, uma única vez) — você já pode escrever e usar o Rascunho normalmente.",
   },
   engine: {
+    toggleLabel: "Modo de geração do PDF",
     draft: "Rascunho",
     draftHint: "Rascunho rápido — não resolve citações, glossário nem índice.",
     full: "Completa",
-    fullHint: "Compilação completa — resolve citações, glossário e índice.",
+    fullHint: "PDF completo — resolve citações, glossário e índice.",
     fullWarning:
-      "A compilação completa baixa ~150 MB na primeira vez (uma única vez — fica salvo no navegador) e resolve bibliografia, glossário e índice. O rascunho é instantâneo, mas mostra [?] nas citações.",
+      "Gerar o PDF completo baixa ~150 MB na primeira vez (uma única vez — fica salvo no navegador) e resolve bibliografia, glossário e índice. O rascunho é instantâneo, mas mostra [?] nas citações.",
     draftBanner:
-      "Modo rascunho: citações, glossário e índice não são resolvidos. Use a compilação Completa para o PDF final.",
+      "Modo rascunho: citações, glossário e índice não são resolvidos. Use o modo Completo para o PDF final.",
   },
   rail: {
     preTextual: "Pré-textuais",
@@ -124,9 +125,9 @@ export const strings = {
     welcomeLater: "Depois",
   },
   preview: {
-    empty: "Compile para ver o PDF aqui.",
-    stale: "Compilando…",
-    logTab: "Log",
+    empty: "Gere o PDF para ver aqui.",
+    stale: "Gerando PDF…",
+    logTab: "Detalhes",
     pdfTab: "PDF",
     invert: "Modo escuro do PDF (inverter cores)",
   },
@@ -139,7 +140,7 @@ export const strings = {
       "O modelo uecetex2 foi atualizado. Seu conteúdo não foi afetado.",
     templateUpdateDismiss: "Dispensar",
     telemetryNoticeMessage:
-      "Entre 06 e 09/07 esta versão coleta eventos anônimos de uso (compilar, exportar) para um TCC — nenhum conteúdo do seu documento é enviado.",
+      "Entre 06 e 09/07 esta versão coleta eventos anônimos de uso (gerar PDF, exportar) para um TCC — nenhum conteúdo do seu documento é enviado.",
     telemetryNoticeLink: "Saiba mais / dê seu feedback",
     telemetryNoticeDismiss: "Fechar aviso",
   },

@@ -22,7 +22,7 @@ export function EngineToggle({ engine, fullReady, onChange }: EngineToggleProps)
     <div
       className="flex items-center rounded-md border bg-surface p-0.5 text-xs"
       role="radiogroup"
-      aria-label="Motor de compilação"
+      aria-label={strings.engine.toggleLabel}
       data-testid="engine-toggle"
     >
       <Tooltip content={strings.engine.draftHint}>

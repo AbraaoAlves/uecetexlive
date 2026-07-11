@@ -45,7 +45,7 @@ export default defineConfig({
       manifest: {
         name: "UeceTexLive",
         short_name: "UeceTexLive",
-        description: "Edite e compile sua monografia UECE (abnTeX2) no navegador.",
+        description: "Edite sua monografia UECE (abnTeX2) e gere o PDF no navegador.",
         lang: "pt-BR",
         theme_color: "#4b7a55",
         background_color: "#f7f7f2",
