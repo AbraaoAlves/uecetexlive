@@ -5,8 +5,13 @@
  * moment to prompt for. The only observable signal is `controllerchange`.
  *
  * That event also fires on the very first-ever visit (uncontrolled →
- * controlled), which is not an update — only arm the listener once this
- * page has already loaded under an existing controller.
+ * controlled), which is not an update. The listener must still be armed
+ * unconditionally at mount — a page can go from uncontrolled to controlled
+ * moments after mount (first-ever activation is async), and a real update
+ * can land later in that same session; skipping attachment whenever
+ * `controller` happens to be null at mount would miss that. Instead, the
+ * first transition the listener itself observes is always ignored — only
+ * subsequent ones count as a real update.
  */
 import { useEffect, useState } from "react";
 
@@ -15,11 +20,17 @@ export function useEngineUpdateNotice(): { updateAvailable: boolean } {
 
   useEffect(() => {
     if (!("serviceWorker" in navigator)) return;
-    if (navigator.serviceWorker.controller === null) return;
-    const onControllerChange = () => setUpdateAvailable(true);
-    navigator.serviceWorker.addEventListener("controllerchange", onControllerChange);
-    return () =>
-      navigator.serviceWorker.removeEventListener("controllerchange", onControllerChange);
+    const sw = navigator.serviceWorker;
+    let sawFirstTransition = sw.controller !== null;
+    const onControllerChange = () => {
+      if (!sawFirstTransition) {
+        sawFirstTransition = true;
+        return;
+      }
+      setUpdateAvailable(true);
+    };
+    sw.addEventListener("controllerchange", onControllerChange);
+    return () => sw.removeEventListener("controllerchange", onControllerChange);
   }, []);
 
   return { updateAvailable };

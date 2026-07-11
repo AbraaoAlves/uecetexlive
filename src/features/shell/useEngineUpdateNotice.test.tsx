@@ -75,4 +75,20 @@ describe("useEngineUpdateNotice", () => {
       expect(screen.getByTestId("probe").textContent).toBe("yes");
     });
   });
+
+  it("catches a real update landing later in the SAME session as the first-ever activation", () => {
+    // controller starts null (fresh visit) — the listener must still be
+    // armed at mount, not skipped, or this second event is never heard.
+    const sw = new FakeServiceWorkerContainer(null);
+    withServiceWorker(sw, () => {
+      act(() => {
+        sw.dispatchEvent(new Event("controllerchange")); // first-ever activation — ignored
+      });
+      expect(screen.getByTestId("probe").textContent).toBe("no");
+      act(() => {
+        sw.dispatchEvent(new Event("controllerchange")); // a real update
+      });
+      expect(screen.getByTestId("probe").textContent).toBe("yes");
+    });
+  });
 });

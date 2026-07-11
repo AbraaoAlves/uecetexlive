@@ -80,6 +80,7 @@ export function ComplianceChecklist({
       className="fixed inset-0 z-50 flex items-center justify-center bg-ink/30 p-4"
       role="dialog"
       aria-modal="true"
+      aria-labelledby="compliance-checklist-title"
       data-testid="compliance-checklist"
       onClick={onClose}
       onKeyDown={(e) => e.key === "Escape" && onClose()}
@@ -91,7 +92,9 @@ export function ComplianceChecklist({
         role="document"
       >
         <div className="flex shrink-0 items-center gap-3 border-b px-4 py-2.5">
-          <span className="font-display text-base">{strings.compliance.title}</span>
+          <span id="compliance-checklist-title" className="font-display text-base">
+            {strings.compliance.title}
+          </span>
           <button
             type="button"
             data-testid="compliance-close"

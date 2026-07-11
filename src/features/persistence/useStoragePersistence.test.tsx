@@ -20,6 +20,7 @@ describe("useStoragePersistence", () => {
       expect(persist).toHaveBeenCalledTimes(1);
     } finally {
       if (original) Object.defineProperty(navigator, "storage", original);
+      else Reflect.deleteProperty(navigator, "storage");
     }
   });
 
@@ -30,6 +31,7 @@ describe("useStoragePersistence", () => {
       expect(() => render(<Probe />)).not.toThrow();
     } finally {
       if (original) Object.defineProperty(navigator, "storage", original);
+      else Reflect.deleteProperty(navigator, "storage");
     }
   });
 
@@ -46,6 +48,7 @@ describe("useStoragePersistence", () => {
       await Promise.resolve();
     } finally {
       if (original) Object.defineProperty(navigator, "storage", original);
+      else Reflect.deleteProperty(navigator, "storage");
     }
   });
 });

@@ -46,7 +46,12 @@ export function MetadataWizard({ fields, onApply, onClose }: MetadataWizardProps
   const isLast = stepIndex === WIZARD_STEPS.length - 1;
 
   const commit = (def: FieldDef, raw: string) => {
-    const value = def.verbatim ? raw : escapeMetadataValue(raw.trim());
+    // Textarea bodies (resumo/abstract) are "everything before a known
+    // macro" (resumo-field.ts), not a single-line value — trimming would
+    // eat the paragraph's own trailing spacing on every untouched blur.
+    const value = def.verbatim
+      ? raw
+      : escapeMetadataValue(def.kind === "textarea" ? raw : raw.trim());
     const current = fields.get(def.macro)?.value;
     if (current === undefined || current === value) return;
     const updates = new Map([[def.macro, value]]);
