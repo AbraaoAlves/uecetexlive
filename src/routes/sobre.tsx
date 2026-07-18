@@ -12,6 +12,16 @@ export function SobreRoute() {
       </Link>
       <h1 className="mt-4 font-display text-4xl">{strings.sobre.title}</h1>
       <p className="mt-4 text-ink-muted leading-relaxed">{strings.sobre.privacy}</p>
+      <p className="mt-2 text-ink-muted leading-relaxed">
+        {strings.sobre.wikiIntro}{" "}
+        <a
+          href="https://github.com/AbraaoAlves/uecetexlive/wiki"
+          className="text-accent underline"
+        >
+          {strings.sobre.wikiLink}
+        </a>
+        .
+      </p>
 
       <section className="mt-8">
         <h2 className="font-display text-2xl">Como funciona</h2>

@@ -245,6 +245,8 @@ export const strings = {
   sobre: {
     title: "Sobre o UeceTexLive",
     privacy: "Tudo acontece no seu navegador: seu texto nunca sai do seu computador.",
+    wikiIntro: "Tutoriais passo a passo, solução de problemas e mais estão na",
+    wikiLink: "Wiki do projeto",
     backupTitle: "Backup",
     backupBody:
       "Seu trabalho vive neste navegador, neste computador. Não há servidor, não há conta — o que é ótimo pra privacidade, mas quer dizer que limpar os dados do site (ou trocar de computador) apaga tudo. Exporte cópias regularmente pelo menu “Exportar projeto (.zip)” — o UeceTexLive também lembra você disso de vez em quando.",
