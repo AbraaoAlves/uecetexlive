@@ -1,0 +1,56 @@
+# Primeiro PDF em 10 minutos
+
+> **Para quem é:** quem nunca usou o UeceTexLive (ou nunca usou LaTeX).
+> **Você vai concluir:** editar um trecho do trabalho, gerar um PDF e
+> exportar uma cópia de segurança.
+
+**Antes de começar:** nada — basta abrir o app em um navegador atualizado
+(Chrome/Chromium recomendado; outros navegadores não são testados, ver
+[Limitações conhecidas](Limitacoes-conhecidas)).
+
+## Passos
+
+1. Abra o UeceTexLive. Na primeira visita aparece uma caixa de boas-vindas.
+   Clique em **Preencher dados** para abrir o assistente de metadados (ou
+   **Depois** para preencher mais tarde — o passo 2 muda um pouco nesse
+   caso).
+2. No assistente, digite o **título do trabalho** e escolha o tipo (ex.:
+   TCC de graduação). Ao terminar, feche o assistente — os dados já foram
+   salvos automaticamente.
+3. No painel de arquivos à esquerda, escolha um capítulo e edite um trecho
+   do texto no editor visual.
+4. Clique em **Gerar PDF** (atalho `Ctrl+Enter` no Windows/Linux ou
+   `Cmd+Enter` no Mac). Por padrão o modo é **Rascunho** — rápido, mas não
+   resolve citações (ver [Rascunho versus Completa](Rascunho-vs-Completa)).
+5. Confira o resultado no painel de pré-visualização, aba **PDF**. Se algo
+   der errado, a aba **Detalhes** mostra o que aconteceu.
+6. Abra o menu (**Menu**) e clique em **Exportar projeto (.zip)** para baixar
+   uma cópia de segurança do seu trabalho.
+
+## Resultado esperado
+
+Um PDF visível no painel de pré-visualização com o texto que você editou, e
+um arquivo `.zip` baixado com todo o projeto.
+
+## Se algo der errado
+
+- **A caixa de boas-vindas não aparece de novo depois que fechei.** Esperado
+  — ela só aparece uma vez por navegador/dispositivo.
+- **O PDF não atualiza depois de editar.** Clique em **Gerar PDF** de novo —
+  o app não compila automaticamente a cada tecla.
+- **Citações aparecem como `[?]`.** Normal no modo **Rascunho**; troque para
+  **Completa** para resolver bibliografia, glossário e índice (ver
+  [Rascunho versus Completa](Rascunho-vs-Completa)).
+- Outros sintomas: [Onde pedir ajuda](Onde-pedir-ajuda).
+
+## Próximo passo
+
+[Antes de começar: privacidade, espaço e backups](Antes-de-comecar) — leia
+antes de escrever o trabalho de verdade.
+
+---
+
+*Verificado com UeceTexLive (branch `main`, sem release publicada) e modelo
+uecetex2 `4c4ab76` em 2026-07-18. Fontes: `e2e/metadata.spec.ts`,
+`e2e/draft-mode.spec.ts`, `e2e/import-export.spec.ts`, `src/lib/strings.ts`.*
+*Encontrou um erro nesta página? [Abra uma issue](https://github.com/AbraaoAlves/uecetexlive/issues/new?template=documentacao.yml).*
