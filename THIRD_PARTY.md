@@ -6,7 +6,7 @@ surfaces the user-facing summary.
 
 | Component | License | Obligation & how we meet it |
 | --- | --- | --- |
-| **uecetex2** template (`public/templates/uecetex2/`) | LPPL 1.3 (upstream `LICENSE`, vendored verbatim) | File kept intact; credited in `/sobre` and here. Pinned at commit `39e8c8a0312788d72311e3b0157ff0564fb74eaf`. |
+| **uecetex2** template (`public/templates/uecetex2/`) | LPPL 1.3 (upstream `LICENSE`, vendored verbatim) | File kept intact; credited in `/sobre` and here. Pinned at commit `4c4ab76ded7bcbf666250f1006558b95e2dea683` of the fork `abraaoalves/uecetex2` (derived from upstream `thiagodnf/uecetex2`); source of truth is `public/templates/uecetex2/manifest.json`. |
 | **abnTeX2** (`abntex2.cls`, `abntex2cite.sty`, `abntex2-alf.bst`) | LPPL 1.3 | Served unmodified from the CTAN injection pack and the TL2020 slice; attribution here. |
 | **busytex** code/glue (`busytex.js`, `busytex_pipeline.js`, `busytex_worker.js`) | MIT | Notice retained; source: <https://github.com/busytex/busytex>. |
 | **busytex `.wasm` + `.data` bundles** | Aggregate of TeX Live component licenses (GPL / LPPL / permissive) | Served **unmodified**; source repo linked above and in `/sobre`. |
@@ -22,3 +22,7 @@ surfaces the user-facing summary.
 | **React**, **react-dom**, **@tanstack/react-router** | MIT | Notices. |
 
 UeceTexLive's own source is MIT (`LICENSE`).
+
+<!-- TODO(humano): documentar por que o vendor usa o fork abraaoalves/uecetex2
+     em vez do upstream thiagodnf/uecetex2 diretamente — o fork tem
+     modificações próprias? Se sim, quais e por quê? -->
