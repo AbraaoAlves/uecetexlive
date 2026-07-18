@@ -21,7 +21,10 @@ surfaces the user-facing summary.
 | **zod**, **idb**, **@retorquere/bibtex-parser**, **clsx**, **tailwind-merge**, **lucide-react**, **motion**, **@radix-ui/\*** | MIT | Notices. |
 | **React**, **react-dom**, **@tanstack/react-router** | MIT | Notices. |
 
-UeceTexLive's own source is MIT (`LICENSE`).
+UeceTexLive's own source is MIT (`LICENSE`, plain MIT text only — no
+third-party notices there, to keep GitHub's license detector matching MIT
+cleanly). The AGPL-3.0 SwiftLaTeX engine and the aggregate-licensed
+busytex/TeX Live bundles above are the notable third-party exceptions.
 
 <!-- TODO(humano): documentar por que o vendor usa o fork abraaoalves/uecetex2
      em vez do upstream thiagodnf/uecetex2 diretamente — o fork tem
