@@ -1,0 +1,11 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Dúvida de uso
+    url: https://github.com/AbraaoAlves/uecetexlive/discussions/categories/ajuda
+    about: Para perguntas, use as Discussions — a comunidade toda vê a resposta.
+  - name: Regra específica da UECE ou do modelo uecetex2
+    url: https://github.com/thiagodnf/uecetex2/issues
+    about: Questões do modelo pertencem ao projeto uecetex2.
+  - name: Classe ou estilos do abnTeX2
+    url: https://github.com/abntex/abntex2/issues
+    about: Questões da classe abnTeX2 pertencem ao projeto abnTeX2.

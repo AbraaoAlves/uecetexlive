@@ -1,0 +1,33 @@
+name: Relatar um problema
+description: Algo no UeceTexLive não funcionou como deveria
+labels: [bug, "needs reproduction"]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: O que aconteceu?
+      description: Descreva o problema e o que você esperava.
+    validations: { required: true }
+  - type: textarea
+    id: steps
+    attributes:
+      label: Passos para reproduzir
+      placeholder: "1. Abra o app\n2. Clique em Gerar PDF\n3. …"
+    validations: { required: true }
+  - type: input
+    id: browser
+    attributes:
+      label: Navegador e versão
+      placeholder: "ex.: Chrome 126, Firefox 128"
+    validations: { required: true }
+  - type: dropdown
+    id: engine
+    attributes:
+      label: Modo de compilação
+      options: [Rascunho, Completa, "Não sei / não se aplica"]
+    validations: { required: true }
+  - type: textarea
+    id: details
+    attributes:
+      label: Conteúdo do painel Detalhes (se houver)
+      render: text

@@ -1,0 +1,22 @@
+name: Relatar problema de documentação
+description: Erro, lacuna ou informação desatualizada no README, na Wiki ou em docs/
+title: "docs: "
+labels: [documentation]
+body:
+  - type: input
+    id: page
+    attributes:
+      label: URL ou caminho da página
+      placeholder: "ex.: README.md, docs/wiki/Primeiro-PDF-em-10-minutos.md"
+    validations: { required: true }
+  - type: textarea
+    id: what
+    attributes:
+      label: O que está errado ou faltando?
+      description: Descreva o erro, a informação desatualizada ou a lacuna encontrada.
+    validations: { required: true }
+  - type: textarea
+    id: expected
+    attributes:
+      label: O que deveria estar escrito (se souber)?
+    validations: { required: false }
