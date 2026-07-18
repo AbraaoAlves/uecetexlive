@@ -28,14 +28,22 @@ export function SobreRoute() {
       <section className="mt-8">
         <h2 className="font-display text-2xl">Modelo</h2>
         <p className="mt-2 text-ink-muted leading-relaxed">
-          Baseado no{" "}
+          Baseado no uecetex2 (abnTeX2 para a UECE). O UeceTexLive usa um snapshot fixo do
+          fork{" "}
+          <a
+            href="https://github.com/abraaoalves/uecetex2"
+            className="text-accent underline"
+          >
+            abraaoalves/uecetex2
+          </a>{" "}
+          (commit <code>4c4ab76</code>), derivado do upstream{" "}
           <a
             href="https://github.com/thiagodnf/uecetex2"
             className="text-accent underline"
           >
-            uecetex2
-          </a>{" "}
-          (abnTeX2 para a UECE). Os{" "}
+            thiagodnf/uecetex2
+          </a>
+          . Os{" "}
           <a href={NORM_DOCS} className="text-accent underline">
             guias de normalização da UECE
           </a>{" "}
@@ -56,7 +64,7 @@ export function SobreRoute() {
           distribuído com correções documentadas), Tiptap, KaTeX, pdf.js e outros — mantêm
           suas próprias licenças. A lista completa está em{" "}
           <a
-            href="https://github.com/thiagodnf/uecetex2"
+            href="https://github.com/AbraaoAlves/uecetexlive/blob/main/THIRD_PARTY.md"
             className="text-accent underline"
           >
             THIRD_PARTY.md
