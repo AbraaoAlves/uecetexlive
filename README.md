@@ -5,17 +5,14 @@
 
 Iniciativa extraoficial, sem vínculo institucional com a UECE.
 
-**[Abrir o UeceTexLive](URL_DO_APP)** ·
+**[Abrir o UeceTexLive](https://abraaoalves.me/uecetexlive/)** ·
 [Começar pela Wiki](docs/wiki/Home.md) ·
 [Pedir ajuda](SUPPORT.md) ·
 [Contribuir](CONTRIBUTING.md)
 
-> A URL canônica ainda não foi confirmada (tarefa F0.3 do plano de
-> documentação). Candidatos: `https://abraaoalves.me/uecetexlive/` (homepage
-> cadastrada no GitHub) ou `https://abraaoalves.github.io/uecetexlive/`
-> (citada nos comentários do workflow de deploy). A Wiki pública também
-> depende de uma ação humana (F0.2/F1.11); até lá, a fonte em
-> [`docs/wiki/`](docs/wiki/) já pode ser lida diretamente no repositório.
+> A Wiki pública ainda depende de uma ação humana (F0.2/F1.11); até lá, a
+> fonte em [`docs/wiki/`](docs/wiki/) já pode ser lida diretamente no
+> repositório.
 
 ## Para quem é
 
