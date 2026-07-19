@@ -157,10 +157,6 @@ export const strings = {
     backupReminderDismiss: "Depois",
     bblImportedNote:
       "O próximo PDF completo usará esta bibliografia pré-compilada e pulará o BibTeX (útil para projetos biber).",
-    telemetryNoticeMessage:
-      "Entre 11 e 13/07 esta versão coleta eventos anônimos de uso (gerar PDF, exportar) para um TCC — nenhum conteúdo do seu documento é enviado.",
-    telemetryNoticeLink: "Saiba mais / dê seu feedback",
-    telemetryNoticeDismiss: "Fechar aviso",
   },
   references: {
     empty: "Nenhuma referência ainda.",

@@ -20,13 +20,11 @@ páginas, não depois de perdê-las.
 3. **Adote o hábito de exportar.** Pelo menu (**Menu**), clique em
    **Exportar projeto (.zip)** regularmente. O UeceTexLive também mostra um
    lembrete de backup de vez em quando — não ignore.
-4. **Saiba sobre a telemetria.** Entre 11 e 13 de julho de 2026 esta
-   aplicação coletou, para um Trabalho de Conclusão de Curso, eventos
-   anônimos de uso (ex.: "gerar PDF", "exportar") — nunca o conteúdo do seu
-   documento. O código de coleta continua no repositório, controlado por uma
-   variável de build que só o mantenedor pode ativar/desativar; não é
-   possível confirmar, só pelo código-fonte, se a coleta está ativa nesta
-   implantação agora.
+
+Nota histórica: entre 11 e 13 de julho de 2026 esta aplicação coletou, para
+um Trabalho de Conclusão de Curso, eventos anônimos de uso (ex.:
+"gerar PDF", "exportar") — nunca o conteúdo do documento. A janela terminou
+e o código de coleta foi removido do projeto em 19/07/2026.
 
 ## Resultado esperado
 
@@ -50,7 +48,6 @@ tamanho do download inicial do modo Completa, e tem o hábito de exportar
 ---
 
 *Verificado com UeceTexLive (branch `main`, sem release publicada) em
-2026-07-18. Fontes: `src/lib/strings.ts` (`strings.sobre.backupBody`,
-`strings.shell.telemetryNoticeMessage`), `src/lib/telemetry.ts`,
+2026-07-19. Fontes: `src/lib/strings.ts` (`strings.sobre.backupBody`),
 `DEVIATIONS.md` D12.*
 *Encontrou um erro nesta página? [Abra uma issue](https://github.com/AbraaoAlves/uecetexlive/issues/new?template=documentacao.yml).*

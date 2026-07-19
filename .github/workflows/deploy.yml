@@ -40,18 +40,9 @@ jobs:
       - run: ./scripts/vendor-busytex.sh
       - run: ./scripts/sync-texlive-cache.sh
       # App at the project-page root (abraaoalves.github.io/uecetexlive)…
-      # PostHog vars gate a short usage-telemetry window for the TCC (see
-      # MY_TCC/entregaveis/fase-5-validacao/plano-integracao-posthog.md);
-      # flipping the VITE_TELEMETRY_ENABLED repo variable to "false" and
-      # re-running this workflow (workflow_dispatch) turns it off again,
-      # no new tag needed.
       - run: bun run build
         env:
           BASE_PATH: /uecetexlive/
-          VITE_POSTHOG_KEY: ${{ secrets.VITE_POSTHOG_KEY }}
-          VITE_POSTHOG_HOST: ${{ secrets.VITE_POSTHOG_HOST }}
-          VITE_TELEMETRY_ENABLED: ${{ secrets.VITE_TELEMETRY_ENABLED }}
-          VITE_FEEDBACK_FORM_URL: ${{ vars.VITE_FEEDBACK_FORM_URL }}
       # GitHub Pages can't compress the big binaries — publish gzip sidecars
       # that the service worker decompresses client-side (D12).
       - run: ./scripts/precompress-wasm.sh dist/wasm/busytex

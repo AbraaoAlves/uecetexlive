@@ -65,7 +65,6 @@ import {
   textToBytes,
 } from "@/features/project/vfs";
 import { strings } from "@/lib/strings";
-import { isTelemetryEnabled, track } from "@/lib/telemetry";
 import { useDebouncedValue } from "@/lib/use-debounced-value";
 import { cn, slugify } from "@/lib/utils";
 import { BackupReminderBanner } from "./BackupReminderBanner";
@@ -77,7 +76,6 @@ import { IdleWarmupIndicator } from "./IdleWarmupIndicator";
 import { ImportDialog, type ImportDialogState } from "./ImportDialog";
 import { NewChapterDialog } from "./NewChapterDialog";
 import { ProjectRail, type RailFile } from "./ProjectRail";
-import { TelemetryNotice } from "./TelemetryNotice";
 import { TemplateUpdateBanner } from "./TemplateUpdateBanner";
 import { ThemeToggle } from "./ThemeToggle";
 import { Tooltip } from "./Tooltip";
@@ -182,7 +180,6 @@ function ShellInner() {
     (ImportDialogState & { payload?: unknown }) | null
   >(null);
   const [precompiledBbl, setPrecompiledBbl] = useState<Uint8Array | undefined>();
-  const [telemetryDismissed, setTelemetryDismissed] = useState(false);
   const zipInputRef = useRef<HTMLInputElement>(null);
   const bblInputRef = useRef<HTMLInputElement>(null);
   const { state: compileState, compile, setEngine } = useCompile();
@@ -199,24 +196,19 @@ function ShellInner() {
     [setUi],
   );
 
-  useEffect(() => {
-    track("app_loaded");
-  }, []);
-
   // 1.2 AC: a visitor sees a PDF without having to find "Gerar PDF" first
   // ("nunca encara tela vazia") — compile once as soon as the project is
-  // ready, tagged trigger:"auto" so the TCC funnel can filter it out of the
-  // real-click metrics. Skipped under automation (would race e2e specs that
-  // drive their own compile), offline (would boot the app straight into an
-  // error state) and Data Saver (an unrequested engine download on a metered
-  // link) — the same reasons useIdleWarmup skips its prefetch.
+  // ready. Skipped under automation (would race e2e specs that drive their
+  // own compile), offline (would boot the app straight into an error state)
+  // and Data Saver (an unrequested engine download on a metered link) — the
+  // same reasons useIdleWarmup skips its prefetch.
   const autoCompiledRef = useRef(false);
   useEffect(() => {
     if (autoCompiledRef.current || !project) return;
     const connection = (navigator as { connection?: { saveData?: boolean } }).connection;
     if (navigator.webdriver || !navigator.onLine || connection?.saveData) return;
     autoCompiledRef.current = true;
-    void compile(project, { trigger: "auto" });
+    void compile(project);
   }, [project, compile]);
 
   // Último PDF compilado (IndexedDB) — preview instantâneo no boot enquanto o
@@ -642,7 +634,6 @@ function ShellInner() {
 
   const exportBackupZip = () => {
     if (!project) return;
-    track("export_zip_clicked");
     download(`${project.name}.zip`, exportProjectZip(project), "application/zip");
     resetBackupReminder();
   };
@@ -843,7 +834,6 @@ function ShellInner() {
             onClick={() => {
               const pdf = compileState.result?.pdf;
               if (pdf) {
-                track("export_pdf_clicked");
                 download("documento.pdf", pdf, "application/pdf");
               }
             }}
@@ -1181,9 +1171,6 @@ function ShellInner() {
               </div>
             )}
           </div>
-          {isTelemetryEnabled() && !telemetryDismissed && (
-            <TelemetryNotice onDismiss={() => setTelemetryDismissed(true)} />
-          )}
         </section>
       </div>
       {metadataOpen && (

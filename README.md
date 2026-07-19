@@ -53,15 +53,9 @@ apaga o projeto.
 **Nota sobre telemetria:** entre 11 e 13 de julho de 2026 esta aplicação
 coletou, para um Trabalho de Conclusão de Curso, eventos anônimos de uso
 (por exemplo "gerar PDF", "exportar") — nunca o conteúdo do documento,
-autocapture ou gravação de sessão (ver `src/lib/telemetry.ts` e o aviso em
-`TelemetryNotice.tsx`). O código de coleta continua no repositório, ligado
-por uma variável de build (`VITE_TELEMETRY_ENABLED`) definida como secret no
-workflow de deploy; a data-limite mostrada ao usuário é apenas texto de
-interface, não um limite imposto pelo código. Não é possível confirmar, só
-lendo o código-fonte, se a coleta está ativa nesta implantação agora — isso
-depende do valor atual do secret. *(Decisão pendente do mantenedor: manter o
-código desligado por padrão ou removê-lo — ver Registro de execução do plano
-de documentação.)*
+autocapture ou gravação de sessão. A janela de coleta terminou e o código
+de telemetria foi **removido** do projeto em 19/07/2026; não há mais
+nenhuma coleta de uso.
 
 ## Dois motores de compilação, um botão
 
