@@ -6,13 +6,9 @@
 Iniciativa extraoficial, sem vínculo institucional com a UECE.
 
 **[Abrir o UeceTexLive](https://abraaoalves.me/uecetexlive/)** ·
-[Começar pela Wiki](docs/wiki/Home.md) ·
+[Começar pela Wiki](https://github.com/AbraaoAlves/uecetexlive/wiki) ·
 [Pedir ajuda](SUPPORT.md) ·
 [Contribuir](CONTRIBUTING.md)
-
-> A Wiki pública ainda depende de uma ação humana (F0.2/F1.11); até lá, a
-> fonte em [`docs/wiki/`](docs/wiki/) já pode ser lida diretamente no
-> repositório.
 
 ## Para quem é
 
@@ -90,7 +86,7 @@ Lista completa e evidências: [`Limitacoes-conhecidas.md`](docs/wiki/Limitacoes-
 
 ## Comunidade
 
-[Wiki](docs/wiki/Home.md) (manual de uso) ·
+[Wiki](https://github.com/AbraaoAlves/uecetexlive/wiki) (manual de uso) ·
 [`CONTRIBUTING.md`](CONTRIBUTING.md) ·
 [`SUPPORT.md`](SUPPORT.md) ·
 [`SECURITY.md`](SECURITY.md) ·

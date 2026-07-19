@@ -19,11 +19,11 @@ normal para dúvidas de uso.
 
 ## Antes de perguntar
 
-1. Confira a [Wiki](docs/wiki/Home.md) — a seção "Ajuda" da barra lateral
-   reúne solução de problemas, perguntas frequentes e limitações conhecidas
-   (algumas páginas ainda em elaboração; ver
-   [`Limitacoes-conhecidas.md`](docs/wiki/Limitacoes-conhecidas.md) para o
-   que já está documentado).
+1. Confira a [Wiki](https://github.com/AbraaoAlves/uecetexlive/wiki) — a
+   seção "Ajuda" da barra lateral reúne solução de problemas, perguntas
+   frequentes e limitações conhecidas (algumas páginas ainda em elaboração;
+   ver [Limitações conhecidas](https://github.com/AbraaoAlves/uecetexlive/wiki/Limitacoes-conhecidas)
+   para o que já está documentado).
 2. Indique o **modo de compilação** (Rascunho ou Completa) e, se houver, o
    conteúdo do painel **Detalhes**.
 3. Diga se o problema é do **UeceTexLive** (o app), do **modelo uecetex2**
