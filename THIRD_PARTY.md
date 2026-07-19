@@ -26,6 +26,14 @@ third-party notices there, to keep GitHub's license detector matching MIT
 cleanly). The AGPL-3.0 SwiftLaTeX engine and the aggregate-licensed
 busytex/TeX Live bundles above are the notable third-party exceptions.
 
-<!-- TODO(humano): documentar por que o vendor usa o fork abraaoalves/uecetex2
-     em vez do upstream thiagodnf/uecetex2 diretamente — o fork tem
-     modificações próprias? Se sim, quais e por quê? -->
+**Por que um fork, e não o upstream direto:** o commit vendorado
+(`4c4ab76d…`) está 2 commits à frente do `master` de `thiagodnf/uecetex2`:
+`c644a43` alinha o conteúdo dos templates ao Guia UECE 2026 (referenciando
+suas regras e estrutura em metodologia, resultados e seções relacionadas) e
+é objeto do PR aberto
+[thiagodnf/uecetex2#59](https://github.com/thiagodnf/uecetex2/pull/59),
+ainda não mesclado a montante em 2026-07-19; `4c4ab76` em si é um ajuste
+cosmético (espaçamento/escala do brasão em `imprimirbrasoes`), também não
+proposto a montante. Ambos são de autoria do mesmo mantenedor do
+UeceTexLive. O vendor usa o fork para obter essas atualizações de imediato,
+sem esperar a revisão upstream.
