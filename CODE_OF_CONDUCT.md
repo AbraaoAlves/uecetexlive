@@ -70,7 +70,7 @@ A liderança da comunidade seguirá estas Diretrizes de Impacto na Comunidade pa
 
 ## Atribuição
 
-Este Código de Conduta é adaptado do [Contributor Covenant][homepage], versão 2.1, disponível em [https://www.contributor-covenant.org/version/2/1/code_of_conduct.html][v2.1].
+Este Código de Conduta é adaptado do [Contributor Covenant][homepage], versão 2.1, disponível em [https://www.contributor-covenant.org/version/2/1/code_of_conduct.html][v2.1] — a mesma base usada por outros projetos do ecossistema ABNT/LaTeX brasileiro, como o [Limarka][limarka] (que adota a versão 1.4, mais antiga).
 
 As Diretrizes de Impacto na Comunidade foram inspiradas pela
 [Aplicação do código de conduta Mozilla][Mozilla CoC].
@@ -82,3 +82,4 @@ Para obter respostas a perguntas comuns sobre este código de conduta, veja a p�
 [Mozilla CoC]: https://github.com/mozilla/diversity
 [FAQ]: https://www.contributor-covenant.org/faq
 [translations]: https://www.contributor-covenant.org/translations
+[limarka]: https://github.com/abntex/limarka/blob/master/CODE_OF_CONDUCT.md
