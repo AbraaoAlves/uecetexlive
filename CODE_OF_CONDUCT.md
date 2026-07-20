@@ -36,7 +36,7 @@ Este Código de Conduta se aplica dentro de todos os espaços da comunidade e ta
 
 ## Aplicação
 
-Ocorrências de comportamentos abusivos, de assédio ou que sejam inaceitáveis por qualquer outro motivo poderão ser reportadas para a liderança da comunidade, responsável pela aplicação, via contato <!-- TODO(humano): F1.6 — informar e-mail ou outro canal de contato para aplicação do Código de Conduta -->`[INSERIR MÉTODO DE CONTATO]`. Todas as reclamações serão revisadas e investigadas imediatamente e de maneira justa.
+Ocorrências de comportamentos abusivos, de assédio ou que sejam inaceitáveis por qualquer outro motivo poderão ser reportadas para a liderança da comunidade, responsável pela aplicação, via contato [linkedin.com/in/abraaoalves](https://www.linkedin.com/in/abraaoalves). Todas as reclamações serão revisadas e investigadas imediatamente e de maneira justa.
 
 A liderança da comunidade tem a obrigação de respeitar a privacidade e a segurança de quem reportar qualquer incidente.
 
@@ -70,7 +70,7 @@ A liderança da comunidade seguirá estas Diretrizes de Impacto na Comunidade pa
 
 ## Atribuição
 
-Este Código de Conduta é adaptado do [Contributor Covenant][homepage], versão 2.1, disponível em [https://www.contributor-covenant.org/version/2/1/code_of_conduct.html][v2.1] — a mesma base usada por outros projetos do ecossistema ABNT/LaTeX brasileiro, como o [Limarka][limarka] (que adota a versão 1.4, mais antiga).
+Este Código de Conduta é adaptado do [Contributor Covenant][homepage], versão 2.1, disponível em [https://www.contributor-covenant.org/version/2/1/code_of_conduct.html][v2.1].
 
 As Diretrizes de Impacto na Comunidade foram inspiradas pela
 [Aplicação do código de conduta Mozilla][Mozilla CoC].
@@ -82,4 +82,3 @@ Para obter respostas a perguntas comuns sobre este código de conduta, veja a p�
 [Mozilla CoC]: https://github.com/mozilla/diversity
 [FAQ]: https://www.contributor-covenant.org/faq
 [translations]: https://www.contributor-covenant.org/translations
-[limarka]: https://github.com/abntex/limarka/blob/master/CODE_OF_CONDUCT.md
