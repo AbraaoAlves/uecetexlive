@@ -121,10 +121,43 @@ Ambiente completo, convenções, testes e processo de PR:
 | Shell / preview | `src/features/{shell,preview}/` | UI de três painéis, PDF (pdf.js) + painel Detalhes |
 | Pesquisa sobre Biber | [`docs/research/biber-wasm.md`](docs/research/biber-wasm.md) | avaliação dos tiers 2–3 |
 
-A especificação histórica completa é [`INITIAL_PLAN.md`](INITIAL_PLAN.md); os
-desvios dela (a realidade conquistada na prática) estão em
-[`DEVIATIONS.md`](DEVIATIONS.md). As decisões de arquitetura registradas
-estão em [`docs/decisions.md`](docs/decisions.md).
+As decisões de arquitetura e de produto, com o contexto que levou a cada
+uma, estão em [`docs/decisions.md`](docs/decisions.md) — é lá que resolvem
+os `ADR-0x` citados em comentários no código. Os pontos em que a realidade
+do navegador obrigou a mudar de rota (versões de toolchain, pacotes que não
+existem em WASM, limites do service worker) estão em
+[`DEVIATIONS.md`](DEVIATIONS.md).
+
+### Regras de copy (PT-BR)
+
+A interface fala a língua de quem escreve a monografia, não a do LaTeX. Toda
+string nova da UI entra em `src/lib/strings.ts` (nunca hardcoded no JSX) e
+segue estas traduções:
+
+| Termo técnico | Nunca escrever | Sempre escrever |
+| --- | --- | --- |
+| compile / compilar | "Compilar", "Compilando…" | "Gerar PDF", "Gerando PDF…" |
+| template | "Template" | "Modelo" |
+| compile log | "Log" | "Detalhes" |
+| WASM / WebAssembly | exposto na UI de trabalho | omitido |
+| engine | "Engine" | "Motor" |
+| toolchain | — | nunca aparece |
+
+Duas exceções deliberadas, onde o termo técnico é o correto:
+
+- `src/routes/sobre.tsx` ("Como funciona" / "Licenças") — página opt-in sobre
+  internals e licenças de terceiros. Ali `WebAssembly`, `busytex`, `pdfTeX`,
+  `BibTeX` e `SwiftLaTeX` são exigência de transparência e de licença, não
+  jargão a esconder.
+- `ImportDialog.tsx` (import de `.bbl`/ZIP) — fluxo avançado, para quem já
+  reconhece os termos.
+
+Lacuna conhecida: `packages/compiler` é compartilhado com outro consumidor e
+ainda emite rótulos de progresso (`"Compilando (1/6): primeira passagem…"`,
+em `orchestrator.ts`) e erros em inglês cru (`"worker not started"`,
+`"Engine error: …"`) que chegam ao painel Detalhes. Corrigir isso pertence à
+mesma frente da tradução de erros do LaTeX
+(`src/features/compiler/error-translations.ts`).
 
 ## Licenças
 

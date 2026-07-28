@@ -100,7 +100,7 @@ PACKAGES=(
   l3backend      # l3backend-pdfmode.def — loaded at \begin{document}
   l3kernel       # additional L3 modules referenced from .fmt's preloaded layer
   oberdiek       # legacy bundle (provides many of the above as fallback)
-  # --- uecetex2 / abnTeX2 set (INITIAL_PLAN §3.4; iterate from 404 log) ---
+  # --- uecetex2 / abnTeX2 set (iterate from 404 log) ---
   abntex2
   memoir
   babel

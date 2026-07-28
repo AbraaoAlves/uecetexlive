@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
 # Publica @papyru/{latex-mapping,project-model,compiler,editor,bibliography}
-# no npm, na ordem de dependência (package_extraction.md, Fase 4 — runbook
-# do primeiro publish). editor depende dos outros via workspace:*; os
-# demais (incl. bibliography, UI_UX_PLAN §5.5) não dependem entre si.
+# no npm, na ordem de dependência. editor depende dos outros via
+# workspace:*; os demais (incl. bibliography) não dependem entre si.
 #
 # O que este script de propósito NÃO faz: não edita "version" nem "exports"
 # em packages/*/package.json. Bump de versão e a troca de exports de src/
@@ -34,7 +33,7 @@ for arg in "$@"; do
   esac
 done
 
-# Ordem de dependência — package_extraction.md §"Os 4 pacotes" + bibliography (UI_UX_PLAN §5.5).
+# Ordem de dependência: os quatro pacotes base + bibliography.
 PACKAGES=(latex-mapping project-model compiler editor bibliography)
 
 read_json_field() {
@@ -67,7 +66,7 @@ for pkg in "${PACKAGES[@]}"; do
     echo "  x $dir/package.json:" >&2
     echo "$problems" | sed 's/^/      - /' >&2
     echo >&2
-    echo "Corrija manualmente (version + exports) antes de rodar este script — ver o runbook em package_extraction.md, Fase 4, item 1." >&2
+    echo "Corrija manualmente (version + exports) antes de rodar este script." >&2
     exit 1
   fi
   version=$(read_json_field "$dir/package.json" version | tr -d '"')
@@ -111,7 +110,7 @@ for pkg in "${PACKAGES[@]}"; do
 done
 
 echo
-echo "==> Concluído. Próximo passo manual (dogfooding real — package_extraction.md, Fase 4, item 4):"
+echo "==> Concluído. Próximo passo manual (dogfooding real):"
 echo "    trocar 'workspace:*' por '^<versão>' nas dependências @papyru/* em"
 echo "    package.json (raiz) e packages/editor/package.json, rodar 'bun install'"
 echo "    e 'bun run check' + e2e para confirmar que o app roda 100% sobre o que"

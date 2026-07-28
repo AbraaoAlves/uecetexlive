@@ -1,5 +1,5 @@
 /**
- * UI copy, pt-BR, centralized (§1.3 / §6.3 of INITIAL_PLAN).
+ * UI copy, pt-BR, centralized (copy rules in README, "Regras de copy").
  * No i18n framework by design — extraction later is mechanical.
  */
 export const strings = {

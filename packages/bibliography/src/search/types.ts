@@ -8,8 +8,8 @@ export interface CandidateAuthor {
 }
 
 /**
- * Normalized shape both providers map into (§5.8 UI_UX_PLAN, port of
- * search-bib.js). `doi` drives dedup across providers.
+ * Normalized shape both providers map into (port of search-bib.js).
+ * `doi` drives dedup across providers.
  */
 export interface ReferenceCandidate {
   readonly source: ProviderId;

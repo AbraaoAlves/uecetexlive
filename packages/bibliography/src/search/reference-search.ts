@@ -1,5 +1,5 @@
 /**
- * Orquestração da busca (§5.8 UI_UX_PLAN, port de search-bib.js): dois
+ * Orquestração da busca (port de search-bib.js): dois
  * providers via Promise.allSettled (um caindo não derruba a busca),
  * timeout de 8s por AbortController, dedupe por DOI entre providers,
  * CrossRef primeiro no ranking (comportamento do gist original).
@@ -11,7 +11,7 @@ import type { ProviderFailure, ReferenceCandidate, SearchResult } from "./types"
 const TIMEOUT_MS = 8000;
 
 export interface SearchOptions {
-  /** CrossRef "polite pool" contact — env-driven in production (§5.8 backlog item 6). */
+  /** CrossRef "polite pool" contact — env-driven in production. */
   mailto?: string;
   timeoutMs?: number;
 }

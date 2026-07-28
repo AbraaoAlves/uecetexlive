@@ -1,9 +1,8 @@
 /**
- * "Meu trabalho está certo?" (3.2 — §6 UI_UX_PLAN). Pure computation over
- * the project's already-extracted state — no I/O, no React. Each check
- * mirrors one bullet from the spec; the panel maps `id`+`status`+`count`
- * onto PT copy (strings.compliance), same aggregate-message pattern B6
- * uses for incomplete references.
+ * "Meu trabalho está certo?" — pure computation over the project's
+ * already-extracted state, no I/O, no React. The panel maps
+ * `id`+`status`+`count` onto PT copy (strings.compliance), the same
+ * aggregate-message pattern the incomplete-references lint uses.
  */
 import {
   isKnownEntryType,

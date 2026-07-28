@@ -1,9 +1,8 @@
 /**
- * Comandos de escrita do .bib (§5.5 UI_UX_PLAN) — funções puras,
- * bibText-in/bibText-out, nunca exception. `renameKey` aqui só troca a
- * key dentro do .bib; propagar pros `.tex` do projeto é um comando de
- * projeto à parte (fora deste pacote, respeitando a fronteira do
- * contexto — ver §5.5).
+ * Comandos de escrita do .bib — funções puras, bibText-in/bibText-out,
+ * nunca exception. `renameKey` aqui só troca a key dentro do .bib;
+ * propagar pros `.tex` do projeto é um comando de projeto à parte, fora
+ * deste pacote, respeitando a fronteira do contexto.
  */
 import { parseBibFile, serializeBibFile, serializeEntry } from "./bib-file";
 import type {

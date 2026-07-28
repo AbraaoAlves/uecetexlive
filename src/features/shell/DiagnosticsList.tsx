@@ -12,7 +12,7 @@ export interface DiagnosticsListProps {
 }
 
 /**
- * Tradução PT-BR dos erros/avisos de compilação (§1.5 UI_UX_PLAN), com o
+ * Tradução PT-BR dos erros/avisos de compilação, com o
  * texto original do pdfTeX sempre disponível (não escondido) num <details>.
  */
 export function DiagnosticsList({ diagnostics, ctx }: DiagnosticsListProps) {

@@ -1,8 +1,8 @@
 /**
- * Copy do editor, injetável (Fase 2 do package_extraction.md): os
- * componentes leem via useEditorStrings() em vez de importar o singleton de
- * copy do app. O default é a copy PT-BR original — um consumidor (Papyru)
- * sobrescreve por grupo via EditorStringsProvider.
+ * Copy do editor, injetável: os componentes leem via useEditorStrings() em
+ * vez de importar o singleton de copy do app. O default é a copy PT-BR
+ * original — um consumidor externo sobrescreve por grupo via
+ * EditorStringsProvider.
  */
 import { createContext, type ReactNode, useContext, useMemo } from "react";
 

@@ -1,5 +1,5 @@
 /**
- * Máquina de estados de compilação, pura (§ do plano de extração): engine
+ * Máquina de estados de compilação, pura: engine
  * dual sobre getCompiler(engineId) + compile(). Sem persistência, sem saber
  * o que é um Project — o app decide o que fazer com o resultado (ex.:
  * cachear o último PDF).

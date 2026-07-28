@@ -13,9 +13,8 @@ pertencem a outros projetos, cada tipo de dúvida tem um canal principal:
 | LaTeX em geral (fora do escopo do UeceTexLive) | [TeX StackExchange](https://tex.stackexchange.com/) (inglês); para dúvidas gerais de programação em português, [Stack Overflow em Português](https://pt.stackoverflow.com/) |
 | Vulnerabilidade ou perda de dados | fluxo privado descrito em [`SECURITY.md`](SECURITY.md) |
 
-¹ As Discussions ainda não estão habilitadas neste repositório (ação humana
-pendente, tarefa F0.2a do plano de documentação). Até lá, use uma issue
-normal para dúvidas de uso.
+¹ As Discussions ainda não estão habilitadas neste repositório. Até lá, use
+uma issue normal para dúvidas de uso.
 
 ## Antes de perguntar
 

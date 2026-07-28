@@ -1,7 +1,7 @@
 /**
- * Busca + adição em 1 clique (B4 — §5.7/§5.8/§5.11 UI_UX_PLAN). Submissão
- * explícita (Enter/botão), nunca busca-enquanto-digita — os catálogos
- * públicos não toleram volume de teclado (§5.11).
+ * Busca + adição em 1 clique. Submissão explícita (Enter/botão), nunca
+ * busca-enquanto-digita — os catálogos públicos não toleram volume de
+ * teclado.
  */
 import type { ReferenceCandidate, SearchResult } from "@papyru/bibliography";
 import { searchReferences } from "@papyru/bibliography";

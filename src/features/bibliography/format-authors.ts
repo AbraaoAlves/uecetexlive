@@ -1,6 +1,6 @@
 /**
  * Projeta o campo BibTeX `author` ("Sobrenome, Nome and Sobrenome2, Nome2")
- * para a lista (§5.9 UI_UX_PLAN: "Sobrenome, N."). Puramente de exibição —
+ * para a lista ("Sobrenome, N."). Puramente de exibição —
  * o domínio (`@papyru/bibliography`) nunca reformata o campo em si.
  */
 const MAX_AUTHORS_SHOWN = 3;

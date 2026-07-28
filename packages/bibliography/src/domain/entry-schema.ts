@@ -1,6 +1,7 @@
 /**
- * Campos por tipo de entry, rótulos PT e obrigatoriedade (§5.3/§5.9
- * UI_UX_PLAN) — consumido pelo form (B3/B2) e pelo lint (B6).
+ * Campos por tipo de entry, rótulos PT e obrigatoriedade — consumido pelo
+ * form de nova referência e pelo lint de campos ABNT (ver ADR-04 em
+ * docs/decisions.md).
  */
 import type { BibFieldValue, EntryType } from "./types";
 

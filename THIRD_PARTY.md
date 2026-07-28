@@ -1,8 +1,8 @@
 # Third-party licenses & attribution
 
 UeceTexLive bundles and links a number of open-source components. This file
-is the authoritative notice list (§13 of INITIAL_PLAN); the `/sobre` route
-surfaces the user-facing summary.
+is the authoritative notice list; the `/sobre` route surfaces the
+user-facing summary.
 
 | Component | License | Obligation & how we meet it |
 | --- | --- | --- |

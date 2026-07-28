@@ -9,7 +9,7 @@ it("copy padrão é a PT-BR original", () => {
   expect(result.current.preview.empty).toBe("Compile para ver o PDF aqui.");
 });
 
-it("consumidor sobrescreve chaves via EditorStringsProvider (gate da Fase 2)", () => {
+it("consumidor sobrescreve chaves via EditorStringsProvider", () => {
   const wrapper = ({ children }: { children: ReactNode }) => (
     <EditorStringsProvider strings={{ toolbar: { bold: "Bold!" } }}>
       {children}

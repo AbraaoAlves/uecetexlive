@@ -10,8 +10,8 @@ import {
 } from "../vfs";
 
 /**
- * Gate da Fase 1 (package_extraction.md): para cada path do projeto seed,
- * as funções dirigidas por UECETEX2_STRUCTURE retornam exatamente o que a
+ * Regressão da extração do pacote: para cada path do projeto seed, as
+ * funções dirigidas por UECETEX2_STRUCTURE retornam exatamente o que a
  * implementação hardcoded retornava. O "legado" abaixo é a cópia literal
  * das regras removidas de src/features/project/vfs.ts.
  */

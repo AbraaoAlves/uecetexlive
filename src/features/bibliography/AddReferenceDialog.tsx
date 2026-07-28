@@ -1,10 +1,10 @@
 /**
- * "+ Nova referência" (B3 — §5.7/§5.9 UI_UX_PLAN): picker de tipo → form
- * por tipo → NewEntryInput. Nunca mostra `{}`, `@` ou "BibTeX" — o único
- * lugar onde o usuário vê a citation key é a seção "Avançado", já
- * preenchida (buildCitationKey) e editável.
+ * "+ Nova referência": picker de tipo → form por tipo → NewEntryInput.
+ * Nunca mostra `{}`, `@` ou "BibTeX" — o único lugar onde o usuário vê a
+ * citation key é a seção "Avançado", já preenchida (buildCitationKey) e
+ * editável.
  *
- * Também serve o form de edição (B2 — §5.7): quando `editing` é passado,
+ * Também serve o form de edição: quando `editing` é passado,
  * pula o picker de tipo, pré-preenche tudo a partir da entry atual, e a
  * citation key vira somente-leitura na seção Avançado — renomear key é
  * fora de escopo aqui (efeito colateral nos .tex, comando de projeto à

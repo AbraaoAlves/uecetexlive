@@ -1,4 +1,4 @@
-# Biber in the browser — standing R&D ticket (INITIAL_PLAN §3.6, tiers 2–3)
+# Biber in the browser — standing R&D ticket
 
 > Status: **researched, not built**. uecetex2 uses classic BibTeX
 > (`abntex2-alf.bst` via `abntex2cite`), fully served by bibtex8-in-WASM

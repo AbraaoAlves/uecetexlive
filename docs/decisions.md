@@ -1,10 +1,9 @@
 # Decisões de arquitetura e produto (ADRs)
 
-Extraído da Seção 7 do `UI_UX_PLAN.md` — plano implementado e removido do
-repo; a versão integral, com todo o contexto, está no histórico
-(`git log --all -- UI_UX_PLAN.md`). Os números `ADR-0x` citados em
-comentários no código resolvem aqui. Todas as decisões passaram por rodada
-de alinhamento com o product owner na revisão 2 do plano.
+Registro das decisões de arquitetura e produto do UeceTexLive, com o
+contexto que levou a cada uma. Os números `ADR-0x` citados em comentários no
+código resolvem aqui. Todas passaram por rodada de alinhamento com o
+responsável pelo produto antes de virarem código.
 
 ## ADR-01 — Parser BibTeX próprio (chunk model)
 
@@ -79,8 +78,8 @@ valeria reavaliar.
 
 ### SKIP 3.3 — Import de .docx / texto colado
 
-**Decisão do product owner: não implementar.** Os caminhos estudados ficaram
-no plano original: (A) colar texto + heurística de títulos → mapa de
+**Decisão do responsável pelo produto: não implementar.** Dois caminhos
+foram estudados: (A) colar texto + heurística de títulos → mapa de
 capítulos; (B) `.docx` via `mammoth.js` client-side (preserva a promessa de
 privacidade) → HTML → mesma conversão. Nenhum prometia conversão fiel de
 tabelas/imagens na v1.

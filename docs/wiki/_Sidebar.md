@@ -13,5 +13,4 @@
 
 ---
 
-*Página em construção — mais seções chegam conforme as Fases 2–4 do plano de
-documentação avançam.*
+*Página em construção — mais seções chegam conforme a documentação avança.*

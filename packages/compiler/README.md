@@ -54,8 +54,8 @@ runtime têm licenças próprias:
 - **busytex (`busytex-full`)**: o glue JS do repositório busytex é MIT, mas
   os binários (`busytex.wasm`, pacotes `.data`) embutem TeX Live — valem as
   licenças TeX Live (GPL/LPPL etc.), como o próprio upstream declara. Não
-  existe caminho para um motor pdftex permissivo; ver a decisão de produto
-  em `package_extraction.md`.
+  existe caminho para um motor pdftex permissivo — por isso o pacote expõe
+  os dois motores e gere a exposição AGPL em vez de tentar evitá-la.
 
 O CI deste repositório roda `scripts/check-agpl-compliance.sh`: o gate **não
 bloqueia AGPL** — ele falha quando o AGPL entra **sem** o acompanhamento

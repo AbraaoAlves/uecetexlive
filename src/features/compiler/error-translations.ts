@@ -1,6 +1,6 @@
 /**
  * Traduz mensagens cruas do pdfTeX/LaTeX (packages/compiler's log-parser)
- * para PT-BR com uma ação sugerida quando existe uma — §1.5 UI_UX_PLAN.
+ * para PT-BR com uma ação sugerida quando existe uma.
  *
  * O matcher de citação não-encontrada casa com o aviso genérico do pdfTeX
  * ("Citation `X' ... undefined"), que já independe de qual comando de

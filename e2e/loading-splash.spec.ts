@@ -5,7 +5,7 @@ test("first paint never blanks: static splash ships in the raw HTML, then the sh
   request,
 }) => {
   // The splash must be part of the document itself — not injected by JS —
-  // so it paints before the app bundle finishes downloading (§1.1 UI_UX_PLAN).
+  // so it paints before the app bundle finishes downloading.
   const raw = await (await request.get("/")).text();
   expect(raw).toContain('id="uecetex-splash"');
   expect(raw).toContain("Preparando seu editor");

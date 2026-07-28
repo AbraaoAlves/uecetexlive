@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Publica docs/wiki/ na GitHub Wiki (uecetexlive.wiki.git).
-# Pré-requisito: a primeira página da Wiki já foi criada pela web (F0.2).
+# Pré-requisito: a primeira página da Wiki já foi criada pela web.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 SRC="docs/wiki"

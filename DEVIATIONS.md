@@ -1,8 +1,10 @@
-# DEVIATIONS — observed reality vs INITIAL_PLAN
+# DEVIATIONS — where the browser forced a different route
 
-Per §0.8: when the plan conflicts with reality, reality wins, noted here.
+Every point where the intended design met a hard constraint of the browser,
+of WASM, or of the TeX Live packaging, and the design gave way. Reality
+wins; what it cost is recorded here.
 
-## D1 — Toolchain versions newer than plan (§8)
+## D1 — Toolchain versions newer than intended
 
 Installed latest stable at build time (2026-07-02): Vite **8.1** (plan: 7.x),
 TypeScript **6.0**, Storybook **10.4**, Vitest **4**, Biome **2.5**, Tiptap
@@ -10,10 +12,10 @@ TypeScript **6.0**, Storybook **10.4**, Vitest **4**, Biome **2.5**, Tiptap
 exist in both). No API conflicts so far. TS 6 deprecates `baseUrl` —
 `paths` is used relative to the tsconfig instead.
 
-## D2 — Risk K1 realized: abnTeX2 is NOT in any busytex bundle (§3.3, A.3)
+## D2 — abnTeX2 is NOT in any busytex bundle
 
-The plan instructed grepping `ubuntu-texlive-latex-extra.js.providespackage.txt`
-for `abntex2`, failing loud if absent. It is absent — verified against the
+We expected to find `abntex2` in `ubuntu-texlive-latex-extra.js.providespackage.txt`.
+It is absent — verified against the
 `.good.txt` content listings of **all five** bundles. Ubuntu ships abnTeX2 in
 `texlive-publishers`, which busytex does not build. `tracklang.sty` (hard dep
 of `glossaries.sty`) is missing too.
@@ -155,10 +157,10 @@ both the sidecar and raw layouts, without booting the engine.
 
 ## D13 — Extração de pacotes: decisões de estilo/copy do `@papyru/editor` (2026-07-05)
 
-Execução do `package_extraction.md` (Fases 0–3). Duas decisões da Fase 2
-registradas aqui porque a implementação difere em grau do texto do plano:
+Duas decisões da extração registradas aqui porque a implementação difere em
+grau do que se pretendia:
 
-- **Estilo.** O plano pedia "não emite Tailwind utilitário opinativo".
+- **Estilo.** A intenção era "não emite Tailwind utilitário opinativo".
   Reescrever ~1.7k linhas de componentes para CSS neutro sem verificação
   visual era troca ruim. Implementado o meio-termo: os componentes mantêm
   utilitários Tailwind escritos sobre o **vocabulário de tokens semânticos**
@@ -174,7 +176,7 @@ registradas aqui porque a implementação difere em grau do texto do plano:
   de picker, estados vazios, rótulos do bubble menu) permanecem inline —
   mesmo comportamento de antes; extração completa fica para quando um
   consumidor precisar de i18n de verdade.
-- **Auditoria `include-graph`/`reorder`/`new-chapter` (Fase 2 item 5):**
+- **Auditoria `include-graph`/`reorder`/`new-chapter`:**
   `new-chapter.ts` hardcoda `elementos-textuais/` (acoplado ao template) —
   **fica no app**. `include-graph.ts`/`reorder.ts` são genéricos, mas só têm
   consumidores no app — **ficam no app** até haver demanda externa; o editor

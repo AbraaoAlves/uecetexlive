@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Gate de compliance AGPL (package_extraction.md §4, Fase 3 item 4).
+# Gate de compliance AGPL.
 #
 # Objetivo: NÃO impedir o engine SwiftLaTeX (AGPL-3.0) de existir — impedir
 # que ele exista *silenciosamente*. Falha quando o engine aparece sem o

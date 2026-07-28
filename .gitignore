@@ -26,3 +26,7 @@ blob-report/
 *.log
 .gstack/
 .env
+
+# ferramental e notas locais, nunca versionados
+.asd/
+.claude/

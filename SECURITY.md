@@ -12,9 +12,9 @@ Isso cria uma conversa privada com os mantenedores, sem expor o problema
 publicamente antes de uma correção.
 
 > Este canal depende de "Private vulnerability reporting" estar habilitado
-> nas configurações do repositório (Settings → Security) — ação humana
-> pendente no plano de documentação (tarefa F0.2c). Se o formulário de
-> relatório privado não estiver disponível, entre em contato pelos canais
+> nas configurações do repositório (Settings → Security) — ainda pendente.
+> Se o formulário de relatório privado não estiver disponível, entre em
+> contato pelos canais
 > listados em [`SUPPORT.md`](SUPPORT.md) marcando claramente que se trata de
 > uma vulnerabilidade, para tratamento discreto.
 

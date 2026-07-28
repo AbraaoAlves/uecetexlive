@@ -1,5 +1,5 @@
 /**
- * Chunk model (§5.4 UI_UX_PLAN): unrecognized regions of a .bib file are
+ * Chunk model (ADR-01, docs/decisions.md): unrecognized regions of a .bib file are
  * preserved verbatim as opaque chunks, never re-derived from a model —
  * same strategy as packages/latex-mapping, adapted to BibTeX's flatter
  * (non-nested) structure: a sequence of entries/directives/free text,

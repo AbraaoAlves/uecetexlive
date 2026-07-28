@@ -45,5 +45,5 @@ Sua dúvida chega ao canal certo na primeira tentativa.
 ---
 
 *Verificado com UeceTexLive (branch `main`, sem release publicada) em
-2026-07-18. Fonte: `SUPPORT.md` (Seção 9 do plano de documentação).*
+2026-07-18. Fonte: `SUPPORT.md`.*
 *Encontrou um erro nesta página? [Abra uma issue](https://github.com/AbraaoAlves/uecetexlive/issues/new?template=documentacao.yml).*

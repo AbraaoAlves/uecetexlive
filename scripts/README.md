@@ -40,8 +40,8 @@ Not part of the chain above:
   you run it and commit the regenerated fixtures when the template changes
   structurally enough to need a new reference.
 - **`publish-packages.sh`** — publishes `@papyru/{latex-mapping,project-model,
-  compiler,editor}` to npm in dependency order (`package_extraction.md`,
-  Fase 4). Validates each package is out of workspace-dev mode (version
+  compiler,editor}` to npm in dependency order. Validates each package is
+  out of workspace-dev mode (version
   bumped, `exports` pointing at `dist/`) before building, running `check`,
   and `check-agpl-compliance.sh`. Does not edit `version`/`exports` itself —
   that bump is a manual release decision. **Manual/local-only**, run by a
@@ -50,9 +50,9 @@ Not part of the chain above:
   repo (`rsync --delete`, so anything not in `docs/wiki/` is removed from the
   Wiki). Requires the Wiki's first page to already exist (created once via
   the GitHub web UI — the `.wiki.git` remote doesn't exist before that) and
-  a git remote with push access (SSH). **Manual/local-only** for now
-  (documentation plan Fase 1); a `wiki.yml` workflow automates this after
-  two clean manual publishes (Fase 3).
+  a git remote with push access (SSH). **Manual/local-only** for now; a
+  `wiki.yml` workflow should automate this once a couple of manual publishes
+  have gone through cleanly.
 
 ## Who calls what
 
