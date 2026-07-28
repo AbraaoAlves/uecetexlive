@@ -9,8 +9,8 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * UeceTexLive design tokens — ported from the Papyru prototype (§6.1 of
- * INITIAL_PLAN). Calm paper-tone palette; all colors oklch; components use
+ * UeceTexLive design tokens — ported from the Papyru prototype.
+ * Calm paper-tone palette; all colors oklch; components use
  * only semantic tokens.
  */
 
