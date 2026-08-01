@@ -26,8 +26,20 @@ rm -rf "$DEST/src"
 mkdir -p "$DEST/src"
 
 # Os módulos puros, e só eles: cli.ts e emit-fs.ts usam node:* de propósito.
+#
+# Cada arquivo recebe um cabeçalho com `@ts-nocheck`. Não é desleixo: o código
+# é conferido no repositório de origem, que compila com `strict` e roda a
+# suíte inteira antes de cada commit. Aqui ele é dependência de terceiros —
+# reverificá-lo sob as opções DESTE repositório só produziria ruído que
+# ninguém pode corrigir sem editar código vendorado.
 for f in ir.ts semantic.ts extract.ts classify.ts emit.ts cite.ts bibkey.ts text-util.ts index.ts; do
-  cp "$REPO/src/$f" "$DEST/src/$f"
+  {
+    echo "// Arquivo vendorado de uecetex-inverse ($COMMIT) por"
+    echo "// scripts/vendor-inverse-core.sh. NÃO EDITE AQUI: a mudança se perde na"
+    echo "// próxima vendorização. Corrija na origem, que é onde ele é verificado."
+    echo "// @ts-nocheck"
+    cat "$REPO/src/$f"
+  } > "$DEST/src/$f"
 done
 cp "$REPO/LICENSE" "$DEST/LICENSE" 2>/dev/null || true
 

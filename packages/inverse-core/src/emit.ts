@@ -1,3 +1,7 @@
+// Arquivo vendorado de uecetex-inverse (46ef9a68dadf401d91c944542b3ddc3069438e3f) por
+// scripts/vendor-inverse-core.sh. NÃO EDITE AQUI: a mudança se perde na
+// próxima vendorização. Corrija na origem, que é onde ele é verificado.
+// @ts-nocheck
 /**
  * Stage 3 — semantic tree -> ueceTeX2-shaped LaTeX project.
  *

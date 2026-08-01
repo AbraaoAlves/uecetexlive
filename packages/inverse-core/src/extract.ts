@@ -1,3 +1,7 @@
+// Arquivo vendorado de uecetex-inverse (46ef9a68dadf401d91c944542b3ddc3069438e3f) por
+// scripts/vendor-inverse-core.sh. NÃO EDITE AQUI: a mudança se perde na
+// próxima vendorização. Corrija na origem, que é onde ele é verificado.
+// @ts-nocheck
 /**
  * Stage 1 — PDF -> IR extractor (deterministic).
  *
@@ -19,6 +23,16 @@ import { bytesToHex } from "@noble/hashes/utils.js";
  * determinística e roda nos dois lugares — é o que permite o mesmo `extract`
  * no CLI e no navegador.
  */
+/**
+ * Enésimo operando a partir do fim da pilha (índice negativo). Os `case` deste
+ * parser só chamam depois de conferir `nums.length`, mas o índice cru é
+ * `number | undefined` sob `noUncheckedIndexedAccess` — o consumidor no app
+ * compila com essa opção ligada.
+ */
+function at(nums: number[], fromEnd: number): number {
+  return nums[nums.length + fromEnd] ?? 0;
+}
+
 function sha256(data: Uint8Array): string {
   return bytesToHex(sha256Bytes(data));
 }
@@ -369,18 +383,18 @@ function extractVectors(page: mupdf.PDFPage, pageHeight: number): VectorSegment[
       case "q": stack.push({ ctm, lw }); break;
       case "Q": ({ ctm, lw } = stack.pop() ?? { ctm: IDENTITY, lw: 1 }); break;
       case "cm": if (nums.length >= 6) ctm = matMul(nums.slice(-6) as Matrix, ctm); break;
-      case "w": if (nums.length >= 1) lw = nums[nums.length - 1]; break;
-      case "m": if (!inText && nums.length >= 2) cur = apply(ctm, nums[nums.length - 2], nums[nums.length - 1]); break;
+      case "w": if (nums.length >= 1) lw = at(nums, -1); break;
+      case "m": if (!inText && nums.length >= 2) cur = apply(ctm, at(nums, -2), at(nums, -1)); break;
       case "l":
         if (!inText && cur && nums.length >= 2) {
-          const p2 = apply(ctm, nums[nums.length - 2], nums[nums.length - 1]);
+          const p2 = apply(ctm, at(nums, -2), at(nums, -1));
           path.push({ x0: cur[0], y0: cur[1], x1: p2[0], y1: p2[1], from: cur });
           cur = p2;
         }
         break;
       case "re":
         if (!inText && nums.length >= 4) {
-          const [x, y, w, h] = nums.slice(-4);
+          const [x, y, w, h] = [at(nums, -4), at(nums, -3), at(nums, -2), at(nums, -1)];
           const [ax, ay] = apply(ctm, x, y);
           const [bx, by] = apply(ctm, x + w, y + h);
           path.push({ x0: ax, y0: ay, x1: bx, y1: by, from: null });

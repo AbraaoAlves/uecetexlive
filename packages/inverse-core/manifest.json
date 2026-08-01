@@ -1,52 +1,52 @@
 {
   "name": "uecetex-inverse-core",
   "source": "https://github.com/AbraaoAlves/uecetex-inverse",
-  "commit": "63eee9dbbfe66cd6869bee4cd3c8aeb32b80b760",
+  "commit": "46ef9a68dadf401d91c944542b3ddc3069438e3f",
   "files": [
     {
       "path": "bibkey.ts",
-      "size": 1127,
-      "sha256": "d3a7e6694dcf348ddb32b35f6921980075e12cc176cc2980a11b791d67fd6eec"
+      "size": 1382,
+      "sha256": "51904790b04b68b4f36214a4cd3ad22b2b340e0a64d6bfa464a11da82180a1fd"
     },
     {
       "path": "cite.ts",
-      "size": 6788,
-      "sha256": "e5477746a0b9666c0e5a3e868b2bb3fd7857c13b077375cb236c5b4487cf581f"
+      "size": 7043,
+      "sha256": "9aaf422e1cd54683ac053275192f522c1d6b94e9cc8da5ced8d9a71ad610b575"
     },
     {
       "path": "classify.ts",
-      "size": 36998,
-      "sha256": "f1a610f14c7ed8ac5e20e127bbda81b0e97166c98cd8ba3a1a92d8fd0afbc02c"
+      "size": 37253,
+      "sha256": "769b3cee9341a73630ac2bd92b9ae7601f3b00de50b7ab44f8931d15b76c7671"
     },
     {
       "path": "emit.ts",
-      "size": 25231,
-      "sha256": "a0a3473514b464383c8857d1d83fb55b9700c5dfa78e1aa1e7fc8a1172da5521"
+      "size": 25486,
+      "sha256": "ccbb4d290be843d26af40cde4fa692513d46f0af3d3c344557c5bb3dd1d1ce1f"
     },
     {
       "path": "extract.ts",
-      "size": 17532,
-      "sha256": "31ef4833ef10abe2c37f099ab674d8b5a77651ec9e8734782b5c453e780c4c96"
+      "size": 18166,
+      "sha256": "c7ac5a1c605aebe86b713a3a66ce93bc280a492f57bbe4ff1b2cb23896e92cd3"
     },
     {
       "path": "index.ts",
-      "size": 1531,
-      "sha256": "1627e3d929c7272a3c24d1879c5dd515d4ac332202f62ef8308a023a1ef4a2b9"
+      "size": 1786,
+      "sha256": "998f0eeac93ba8dff6f6f60752357285769c1008622f67a06bbe13c5dca65ec2"
     },
     {
       "path": "ir.ts",
-      "size": 3380,
-      "sha256": "8160624b6cccdbce443e53feff632d635075ba30dfe9ddf7df20adbf8f894076"
+      "size": 3635,
+      "sha256": "54f0ea20338b0eb2fc8619122e4e5b3446fe6e495f43a19725f8bad8c6e88353"
     },
     {
       "path": "semantic.ts",
-      "size": 4781,
-      "sha256": "cafade6a40f7b6328ff677a12b25e2d084e61febd6fb8a00e39f5d86be99de26"
+      "size": 5036,
+      "sha256": "aafccd39c1c729c7e09585837b11848f94cc475768c07c24ca3b17950f154545"
     },
     {
       "path": "text-util.ts",
-      "size": 2708,
-      "sha256": "c47a46287294c05a1d193ca94194c057048a10852dc4bed1c829945aac8a9cef"
+      "size": 2963,
+      "sha256": "57501566d74865b77fb9e8d73dbb7b4e4706c0f8403c2e792edf2ca8589b24f0"
     }
   ]
 }
