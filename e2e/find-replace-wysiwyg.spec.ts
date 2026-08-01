@@ -15,7 +15,7 @@ test("WYSIWYG find & replace: counter, highlights, replace all", async ({ page }
   await page.getByTestId("toolbar-find").click();
   await expect(page.getByTestId("find-panel")).toBeVisible();
 
-  await page.getByTestId("find-input").fill("Lorem");
+  await page.getByTestId("find-input").fill("problema");
   await expect(page.getByTestId("find-count")).toContainText(/1 de \d+/);
   // Matches are decorated in the document.
   await expect(page.locator(".uecetex-search-match").first()).toBeVisible();

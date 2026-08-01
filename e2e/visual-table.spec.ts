@@ -14,11 +14,11 @@ test("visual table: editing a cell rewrites only that cell", async ({ page }) =>
     .click();
   await expect(page.getByTestId("wysiwyg-editor")).toBeVisible();
 
-  // First UECEtab in the chapter is a {cll} table headed "Ranking & …".
+  // First UECEtab in the chapter is a {cll} table headed "Critério & …".
   const grid = page.getByTestId("table-grid").first();
   await expect(grid).toBeVisible();
   const cell = grid.getByTestId("table-cell-0-0");
-  await expect(cell).toHaveValue("Ranking");
+  await expect(cell).toHaveValue("Critério");
 
   await cell.fill("Classe");
   await cell.press("Tab");
@@ -27,8 +27,8 @@ test("visual table: editing a cell rewrites only that cell", async ({ page }) =>
   // Source: the header cell changed; rules and wrappers survive.
   await page.getByTestId("view-toggle").click();
   const value = page.getByTestId("source-editor-value");
-  await expect(value).toHaveValue(/Classe & Exon Coverage & Splice Site Support/);
+  await expect(value).toHaveValue(/Classe & Abordagem 1 & Abordagem 2/);
   await expect(value).toHaveValue(/\\toprule/);
   await expect(value).toHaveValue(/\\UECEtab\{\}\{/);
-  await expect(value).not.toHaveValue(/Ranking & Exon Coverage/);
+  await expect(value).not.toHaveValue(/Critério & Abordagem 1/);
 });
