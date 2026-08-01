@@ -11,12 +11,14 @@
 ## Passos
 
 1. Abra o UeceTexLive. Na primeira visita aparece uma caixa de boas-vindas.
-   Clique em **Preencher dados** para abrir o assistente de metadados (ou
-   **Depois** para preencher mais tarde — o passo 2 muda um pouco nesse
-   caso).
-2. No assistente, digite o **título do trabalho** e escolha o tipo (ex.:
-   TCC de graduação). Ao terminar, feche o assistente — os dados já foram
-   salvos automaticamente.
+   Clique em **Preencher dados** para abrir o **Guia do trabalho** em tela
+   cheia (ou **Depois** para começar direto no editor — dá para reabrir o
+   guia pelo **Menu**, em “Guia do trabalho…”).
+2. O guia percorre título, tipo, autor, orientação, data, banca, resumo e
+   abstract; depois oferece os **elementos opcionais** (o que entra ou não
+   no PDF), a **ficha catalográfica** e uma **revisão final**, que lista o
+   que ainda falta e tem um botão para gerar o PDF. Os dados são salvos
+   sozinhos, campo a campo.
 3. No painel de arquivos à esquerda, escolha um capítulo e edite um trecho
    do texto no editor visual.
 4. Clique em **Gerar PDF** (atalho `Ctrl+Enter` no Windows/Linux ou
@@ -26,9 +28,9 @@
    der errado, a aba **Detalhes** mostra o que aconteceu.
 6. Páginas opcionais (Agradecimentos, Dedicatória, Epígrafe, Errata,
    Glossário, listas de siglas e de símbolos) têm uma caixinha ao lado do
-   nome, no painel de arquivos. Desmarque para tirar a página do PDF e
-   marque para incluir de novo — o arquivo continua no projeto, com o texto
-   intacto.
+   nome, no painel de arquivos — as mesmas do passo “Elementos opcionais”
+   do guia. Desmarque para tirar a página do PDF e marque para incluir de
+   novo — o arquivo continua no projeto, com o texto intacto.
 7. Abra o menu (**Menu**) e clique em **Exportar projeto (.zip)** para baixar
    uma cópia de segurança do seu trabalho.
 
@@ -60,5 +62,6 @@ antes de escrever o trabalho de verdade.
 *Verificado com UeceTexLive (branch `main`, sem release publicada) e modelo
 uecetex2 `4c4ab76` em 2026-08-01. Fontes: `e2e/metadata.spec.ts`,
 `e2e/draft-mode.spec.ts`, `e2e/import-export.spec.ts`,
-`e2e/imprimir-toggles.spec.ts`, `src/lib/strings.ts`.*
+`e2e/imprimir-toggles.spec.ts`, `e2e/wizard-fullscreen.spec.ts`,
+`src/lib/strings.ts`.*
 *Encontrou um erro nesta página? [Abra uma issue](https://github.com/AbraaoAlves/uecetexlive/issues/new?template=documentacao.yml).*
