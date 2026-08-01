@@ -9,6 +9,9 @@
  * Regra que não muda: nunca criar uma linha que não existe. Uma macro
  * ausente do documento não vira controle na interface — mesma disciplina do
  * campo desabilitado do wizard.
+ *
+ * O mesmo mecanismo serve ao `\selectlanguage{english}` (trabalho escrito em
+ * inglês): é a mesma linha comentada dentro de `\begin{document}`.
  */
 
 export interface ImprimirToggle {
@@ -21,6 +24,9 @@ export interface ImprimirToggle {
   /** Offset do primeiro byte da linha, para o splice cirúrgico. */
   lineStart: number;
 }
+
+/** Trabalho escrito em inglês — mesma linha comentada, sem arquivo próprio. */
+export const LANGUAGE_MACRO = "selectlanguage";
 
 /** Macros com um arquivo próprio no painel — cada uma vira um checkbox. */
 export const TOGGLE_FILES: ReadonlyMap<string, string> = new Map([
@@ -60,7 +66,8 @@ export const TOGGLE_LISTS: readonly string[] = [
  * seu argumento e nada mais. Comentário à direita não casa — o toggle não
  * apagaria a observação do autor ao religar a linha.
  */
-const TOGGLE_LINE = /^([ \t]*)(%[ \t]*)?(\\(imprimir[a-z]+)(?:\{([^}]*)\})?)[ \t]*\r?$/;
+const TOGGLE_LINE =
+  /^([ \t]*)(%[ \t]*)?(\\(imprimir[a-z]+|selectlanguage)(?:\{([^}]*)\})?)[ \t]*\r?$/;
 
 interface Scan {
   toggle: ImprimirToggle;

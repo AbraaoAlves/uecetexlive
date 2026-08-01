@@ -3,6 +3,7 @@ import documentoTex from "../../../../public/templates/uecetex2/files/documento.
 import {
   applyImprimirToggle,
   extractImprimirToggles,
+  LANGUAGE_MACRO,
   TOGGLE_FILES,
   TOGGLE_LISTS,
   togglesByFile,
@@ -224,5 +225,31 @@ describe("togglesByFile", () => {
       extractImprimirToggles(doc("\t\\imprimirlistadetabelas")),
     );
     expect(byFile.size).toBe(0);
+  });
+});
+
+describe("selectlanguage — mesma mecânica, sem arquivo", () => {
+  const source = doc(
+    "\t% Se o seu trabalho é em ingles, descomente a linha a seguir\n\t%\\selectlanguage{english}",
+  );
+
+  it("lê o estado da linha do idioma", () => {
+    const toggle = extractImprimirToggles(source).get(LANGUAGE_MACRO);
+    expect(toggle?.enabled).toBe(false);
+    expect(toggle?.argument).toBe("english");
+  });
+
+  it("liga e desliga como as demais", () => {
+    const on = applyImprimirToggle(source, LANGUAGE_MACRO, true);
+    expect(on).toContain("\t\\selectlanguage{english}");
+    expect(applyImprimirToggle(on, LANGUAGE_MACRO, false)).toBe(source);
+  });
+
+  it("fica de fora do índice por arquivo — não tem arquivo próprio", () => {
+    expect(togglesByFile(extractImprimirToggles(source)).size).toBe(0);
+  });
+
+  it("o modelo vendorado traz a linha comentada", () => {
+    expect(extractImprimirToggles(documentoTex).get(LANGUAGE_MACRO)?.enabled).toBe(false);
   });
 });
