@@ -53,7 +53,11 @@ import {
   TEMPLATE_PLACEHOLDER_TITLE,
   workTypeOf,
 } from "@/features/project/metadata";
-import { chapterScaffold, insertChapterInput } from "@/features/project/new-chapter";
+import {
+  type NewSectionPlan,
+  planNewSection,
+  type SectionTarget,
+} from "@/features/project/new-chapter";
 import { rewriteInputOrder } from "@/features/project/reorder";
 import {
   ABSTRACT_PATH,
@@ -731,23 +735,29 @@ function ShellInner() {
     }
   };
 
-  const createChapter = (title: string) => {
+  const createChapter = (title: string, target: SectionTarget = "chapter") => {
     if (!project) return;
-    const slug = slugify(title) || "novo-capitulo";
-    let path = `elementos-textuais/${slug}.tex`;
-    for (let n = 2; project.files.some((f) => f.path === path); n++) {
-      path = `elementos-textuais/${slug}-${n}.tex`;
-    }
-    const target = path.replace(/\.tex$/, "");
+    let plan: NewSectionPlan;
     try {
-      updateFileText(project.entry, insertChapterInput(entrySource, target));
+      plan = planNewSection(
+        entrySource,
+        title,
+        target,
+        new Set(project.files.map((f) => f.path)),
+      );
     } catch (err) {
       window.alert((err as Error).message);
       return;
     }
+    // Apêndice e anexo só saem no PDF com a seção ligada — criar um arquivo
+    // que não aparece seria pior do que não criar.
+    const source = plan.enableMacro
+      ? applyImprimirToggle(plan.source, plan.enableMacro, true)
+      : plan.source;
+    updateFileText(project.entry, source);
     setNewChapterOpen(false);
     setMetadataOpen(false);
-    createFile(path, textToBytes(chapterScaffold(title, slug)));
+    createFile(plan.path, textToBytes(plan.content));
   };
 
   const reorderChapters = (from: string, to: string) => {
