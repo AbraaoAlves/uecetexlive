@@ -15,6 +15,7 @@
       "!coverage",
       "!e2e/fixtures",
       "!packages/latex-mapping/src/fixtures",
+      "!packages/inverse-core/src",
       "!**/*.css"
     ]
   },

@@ -1,0 +1,52 @@
+{
+  "name": "uecetex-inverse-core",
+  "source": "https://github.com/AbraaoAlves/uecetex-inverse",
+  "commit": "63eee9dbbfe66cd6869bee4cd3c8aeb32b80b760",
+  "files": [
+    {
+      "path": "bibkey.ts",
+      "size": 1127,
+      "sha256": "d3a7e6694dcf348ddb32b35f6921980075e12cc176cc2980a11b791d67fd6eec"
+    },
+    {
+      "path": "cite.ts",
+      "size": 6788,
+      "sha256": "e5477746a0b9666c0e5a3e868b2bb3fd7857c13b077375cb236c5b4487cf581f"
+    },
+    {
+      "path": "classify.ts",
+      "size": 36998,
+      "sha256": "f1a610f14c7ed8ac5e20e127bbda81b0e97166c98cd8ba3a1a92d8fd0afbc02c"
+    },
+    {
+      "path": "emit.ts",
+      "size": 25231,
+      "sha256": "a0a3473514b464383c8857d1d83fb55b9700c5dfa78e1aa1e7fc8a1172da5521"
+    },
+    {
+      "path": "extract.ts",
+      "size": 17532,
+      "sha256": "31ef4833ef10abe2c37f099ab674d8b5a77651ec9e8734782b5c453e780c4c96"
+    },
+    {
+      "path": "index.ts",
+      "size": 1531,
+      "sha256": "1627e3d929c7272a3c24d1879c5dd515d4ac332202f62ef8308a023a1ef4a2b9"
+    },
+    {
+      "path": "ir.ts",
+      "size": 3380,
+      "sha256": "8160624b6cccdbce443e53feff632d635075ba30dfe9ddf7df20adbf8f894076"
+    },
+    {
+      "path": "semantic.ts",
+      "size": 4781,
+      "sha256": "cafade6a40f7b6328ff677a12b25e2d084e61febd6fb8a00e39f5d86be99de26"
+    },
+    {
+      "path": "text-util.ts",
+      "size": 2708,
+      "sha256": "c47a46287294c05a1d193ca94194c057048a10852dc4bed1c829945aac8a9cef"
+    }
+  ]
+}

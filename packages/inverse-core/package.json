@@ -1,0 +1,25 @@
+{
+  "name": "@papyru/inverse-core",
+  "version": "0.0.0",
+  "license": "AGPL-3.0-or-later",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@noble/hashes": "^2.2.0",
+    "mupdf": "^1.28.0"
+  },
+  "devDependencies": {
+    "typescript": "^6.0.3"
+  },
+  "files": [
+    "src",
+    "manifest.json",
+    "LICENSE"
+  ]
+}

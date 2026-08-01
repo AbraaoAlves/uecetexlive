@@ -27,6 +27,7 @@
     "@papyru/bibliography": "workspace:*",
     "@papyru/compiler": "workspace:*",
     "@papyru/editor": "workspace:*",
+    "@papyru/inverse-core": "workspace:*",
     "@papyru/latex-mapping": "workspace:*",
     "@papyru/project-model": "workspace:*",
     "@radix-ui/react-dialog": "^1.1.18",

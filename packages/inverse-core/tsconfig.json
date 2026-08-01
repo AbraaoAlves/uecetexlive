@@ -1,0 +1,13 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "paths": {},
+    // Código vendorado: é mantido com as opções do repositório de origem
+    // (strict, sem noUncheckedIndexedAccess). Editar aqui não adianta — a
+    // mudança some na próxima vendorização. Se o núcleo passar a satisfazer
+    // a opção lá, remova esta linha.
+    "noUncheckedIndexedAccess": false,
+    "types": []
+  },
+  "include": ["src"]
+}
