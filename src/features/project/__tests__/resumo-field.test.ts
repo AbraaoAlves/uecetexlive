@@ -133,6 +133,30 @@ describe("normalizeResumoSource", () => {
     expect(normalizeResumoSource(source, "palavraschave")).toBeNull();
   });
 
+  it("mantém o comentário à direita fora da macro", () => {
+    const source = "Corpo. Palavras-chave: a; b. % anotação do autor\n";
+    expect(normalizeResumoSource(source, "palavraschave")).toBe(
+      "Corpo.\n\n\\palavraschave{a; b.}\n% anotação do autor\n",
+    );
+  });
+
+  it("ignora o rótulo que está dentro de um comentário", () => {
+    const source = "% Exemplo: Palavras-chave: modelo\nCorpo sem rótulo de verdade.\n";
+    expect(normalizeResumoSource(source, "palavraschave")).toBeNull();
+  });
+
+  it("usa o rótulo real mesmo com um exemplo comentado depois", () => {
+    const source =
+      "Corpo. Palavras-chave: a; b.\n% Separe as palavras-chave: por ponto e vírgula\n";
+    const normalized = normalizeResumoSource(source, "palavraschave") ?? "";
+    expect(normalized).toContain("\\palavraschave{a; b.}");
+    expect(normalized).toContain("% Separe as palavras-chave: por ponto e vírgula");
+  });
+
+  it("devolve null quando o rótulo não é seguido de nada", () => {
+    expect(normalizeResumoSource("Corpo. Palavras-chave:\n", "palavraschave")).toBeNull();
+  });
+
   it("é idempotente", () => {
     const once = normalizeResumoSource("Corpo. Palavras-chave: a; b.\n", "palavraschave");
     expect(once).not.toBeNull();

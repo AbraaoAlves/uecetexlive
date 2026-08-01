@@ -169,20 +169,35 @@ describe("repairFolhaAprovacao", () => {
     expect(repairFolhaAprovacao(source)).toBeNull();
   });
 
-  it("trata tipo desconhecido como TCC — é o ramo padrão do modelo", () => {
+  it("trata tipo desconhecido ou ausente como dissertação, igual ao modelo", () => {
+    const fields = {
+      ...FULL_ORIENTADOR,
+      membrodabancadois: "Profa. Dra. Beltrana",
+      membrodabancadoiscentro: "",
+    };
+    expect(repairFolhaAprovacao(doc(fields, "outracoisa"))).toBeNull();
+    const semTipo = doc(fields).replace("\\trabalhoacademico{tccgraduacao}\n", "");
+    expect(repairFolhaAprovacao(semTipo)).toBeNull();
+  });
+
+  it("corrige também a especialização, que usa a mesma folha", () => {
     const source = doc(
       {
         ...FULL_ORIENTADOR,
         membrodabancadois: "Profa. Dra. Beltrana",
         membrodabancadoiscentro: "",
       },
-      "outracoisa",
+      "tccespecializacao",
     );
     expect(repairFolhaAprovacao(source)).not.toBeNull();
   });
 
   it("ignora um documento sem os campos da banca", () => {
-    expect(repairFolhaAprovacao("\\documentclass{article}\n")).toBeNull();
+    expect(
+      repairFolhaAprovacao(
+        "\\trabalhoacademico{tccgraduacao}\n\\documentclass{article}\n",
+      ),
+    ).toBeNull();
   });
 
   it("mantém o documento.tex vendorado intacto", () => {

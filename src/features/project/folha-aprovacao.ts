@@ -81,11 +81,12 @@ export function withHiddenSlotFillers(
  */
 export function repairFolhaAprovacao(source: string): string | null {
   const fields = extractMetadata(source);
-  // \imprimirfolhadeaprovacao cai no ramo de TCC sempre que o tipo não é
-  // dissertação nem tese — inclusive quando \trabalhoacademico está ausente
-  // ou tem valor desconhecido.
+  // Só a folha de TCC junta três partes por assinatura. Tipo ausente ou
+  // desconhecido cai em dissertação: o modelo inicializa `ehdissertacao` como
+  // verdadeiro e o ramo final de `\trabalhoacademico` também (uecetex2.sty,
+  // linhas 351 e 372).
   const workType = workTypeOf(fields);
-  if (workType === "dissertacao" || workType === "tese") return null;
+  if (workType !== "tccgraduacao" && workType !== "tccespecializacao") return null;
 
   const updates = new Map<string, string>();
   for (const slot of SIGNATURE_SLOTS) {

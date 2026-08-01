@@ -12,6 +12,13 @@ import { bytesToText, type Project, textToBytes } from "@papyru/project-model";
 import { repairFolhaAprovacao } from "./folha-aprovacao";
 import { ABSTRACT_PATH, normalizeResumoSource, RESUMO_PATH } from "./resumo-field";
 
+/** Os bytes sobrevivem à ida e volta por texto? (arquivo em UTF-8 válido) */
+function isRoundTrippable(bytes: Uint8Array): boolean {
+  const again = textToBytes(bytesToText(bytes));
+  if (again.length !== bytes.length) return false;
+  return again.every((byte, i) => byte === bytes[i]);
+}
+
 /** Reescreve o texto de um arquivo; devolve o projeto original se nada mudou. */
 function rewriteFile(
   project: Project,
@@ -22,6 +29,10 @@ function rewriteFile(
   if (index === -1) return project;
   const file = project.files[index];
   if (!file) return project;
+  // Arquivo em Latin-1 (ou qualquer coisa que não seja UTF-8) perderia bytes
+  // na decodificação. Melhor não normalizar do que estragar um projeto que
+  // compila hoje.
+  if (!isRoundTrippable(file.bytes)) return project;
   const next = transform(bytesToText(file.bytes));
   if (next === null) return project;
   const files = [...project.files];

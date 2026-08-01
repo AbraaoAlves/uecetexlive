@@ -74,6 +74,22 @@ export function extractResumoField(
 /** Rótulo textual das palavras-chave, nas duas línguas que o modelo usa. */
 const KEYWORD_LABEL = /(^|[\s])(Palavras-chave|Keywords)[ \t]*:[ \t]*/gi;
 
+/** Offset do primeiro `%` não escapado, ou o fim do texto. */
+function findComment(text: string): number {
+  for (let i = 0; i < text.length; i++) {
+    if (text[i] === "\\") i++;
+    else if (text[i] === "%") return i;
+  }
+  return text.length;
+}
+
+/** O offset cai depois de um `%` não escapado na mesma linha? */
+function isInsideComment(source: string, offset: number): boolean {
+  const lineStart = source.lastIndexOf("\n", offset - 1) + 1;
+  const commentAt = findComment(source.slice(lineStart, offset));
+  return lineStart + commentAt < offset;
+}
+
 /** Chaves LaTeX pareadas, ignorando as escapadas (`\{`, `\}`). */
 function hasBalancedBraces(text: string): boolean {
   let depth = 0;
@@ -112,16 +128,23 @@ export function normalizeResumoSource(
     match !== null;
     match = KEYWORD_LABEL.exec(source)
   ) {
-    last = match;
+    // Um rótulo dentro de comentário é exemplo, não conteúdo.
+    if (!isInsideComment(source, match.index)) last = match;
   }
   if (!last) return null;
 
   const body = source.slice(0, last.index).trimEnd();
-  const keywords = source.slice(last.index + last[0].length).trim();
+  const tail = source.slice(last.index + last[0].length);
+  // O que vier depois de um comentário fica fora da macro: engolir o `%` faria
+  // o `}` cair na linha comentada e o TeX perderia o fim do grupo.
+  const commentAt = findComment(tail);
+  const keywords = tail.slice(0, commentAt).trim();
+  const trailing = tail.slice(commentAt).trimEnd();
   // Chaves desbalanceadas viram um grupo LaTeX quebrado — melhor deixar o
   // arquivo como está e o wizard avisar do que estragar o documento.
-  if (!hasBalancedBraces(keywords)) return null;
-  return `${body}\n\n\\${keywordMacro}{${keywords}}\n`;
+  if (keywords === "" || !hasBalancedBraces(keywords)) return null;
+  const suffix = trailing === "" ? "" : `${trailing}\n`;
+  return `${body}\n\n\\${keywordMacro}{${keywords}}\n${suffix}`;
 }
 
 export function applyResumoField(

@@ -76,6 +76,26 @@ describe("normalizeImportedProject", () => {
     expect(bytesToText(intro?.bytes ?? new Uint8Array())).toBe("\\chapter{Introdução}\n");
   });
 
+  it("não toca em arquivo que não está em UTF-8 — os bytes seriam perdidos", () => {
+    // "Palavras-chave: correção." com o "ç" em Latin-1 (0xE7).
+    const latin1 = Uint8Array.from([
+      ...new TextEncoder().encode("Corpo. Palavras-chave: corre"),
+      0xe7,
+      ...new TextEncoder().encode("ao.\n"),
+    ]);
+    const original = project({ "documento.tex": "\\trabalhoacademico{dissertacao}\n" });
+    original.files.push({
+      path: "elementos-pre-textuais/resumo.tex",
+      bytes: latin1,
+      kind: "tex",
+      editable: false,
+    });
+    const normalized = normalizeImportedProject(original);
+    expect(
+      normalized.files.find((f) => f.path === "elementos-pre-textuais/resumo.tex")?.bytes,
+    ).toBe(latin1);
+  });
+
   it("tolera um projeto cujo arquivo de entrada não existe", () => {
     const original = project({ "outro.tex": "\\documentclass{article}\n" });
     expect(normalizeImportedProject(original)).toBe(original);
