@@ -73,7 +73,14 @@ const REQUIRED_BY_TYPE: Record<WorkType, readonly string[]> = {
   tese: ["programadoutorado", "nomedodoutorado"],
 };
 
-function isUnfilled(macro: string, fields: ReadonlyMap<string, MetadataField>): boolean {
+/**
+ * Vazio, ou ainda com o exemplo que o modelo semeia. Exportado porque o guia
+ * do trabalho precisa da MESMA régua: "Nome Sobrenome" não é um autor.
+ */
+export function isUnfilled(
+  macro: string,
+  fields: ReadonlyMap<string, MetadataField>,
+): boolean {
   const value = fields.get(macro)?.value.trim();
   if (value === undefined || value === "") return true;
   return value === PLACEHOLDER_VALUES[macro];

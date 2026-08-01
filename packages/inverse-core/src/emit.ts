@@ -1,4 +1,4 @@
-// Arquivo vendorado de uecetex-inverse (46ef9a68dadf401d91c944542b3ddc3069438e3f) por
+// Arquivo vendorado de uecetex-inverse (ab0eb48d3029b8ddce28dfd8f645afd06e9cb500) por
 // scripts/vendor-inverse-core.sh. NÃO EDITE AQUI: a mudança se perde na
 // próxima vendorização. Corrija na origem, que é onde ele é verificado.
 // @ts-nocheck
@@ -394,10 +394,18 @@ export function emitFiles(sem: SemanticDoc, opts: EmitFilesOptions): EmitFilesRe
   let listItems = 0;
   let codeBlocks = 0;
   const chapters: { slugName: string; parts: string[]; pages: Set<number> }[] = [];
+  // Dois capítulos com o mesmo título — ou títulos que reduzem ao mesmo nome —
+  // sobrescreveriam um ao outro e o documento incluiria o sobrevivente duas
+  // vezes, perdendo um capítulo inteiro em silêncio.
+  const usedSlugs = new Set<string>();
   for (const n of sem.body) {
     if (n.kind === "heading" && n.level === "chapter") {
       if (!n.numbered) break; // REFERÊNCIAS ends the textual flow
-      chapters.push({ slugName: slug(n.title), parts: [], pages: new Set() });
+      const base = slug(n.title) || "capitulo";
+      let slugName = base;
+      for (let i = 2; usedSlugs.has(slugName); i++) slugName = `${base}-${i}`;
+      usedSlugs.add(slugName);
+      chapters.push({ slugName, parts: [], pages: new Set() });
     }
     const cur = chapters[chapters.length - 1];
     if (!cur) continue;
@@ -533,6 +541,43 @@ function replaceOrDrop(doc: string, block: RegExp, lines: string[]): string {
  * folha de aprovação. Sem isso o PDF gerado sai com a capa do template
  * (dissertação em Fortaleza, 2017, orientador "Nome do seu Orientador").
  */
+/** Todos os tipos que o modelo aceita, com o que a folha de rosto diz de cada um. */
+const WORK_TYPE_PATTERNS: [RegExp, string][] = [
+  [/^Tese\b|Tese apresentada|grau de Doutor/i, "tese"],
+  [/^Disserta[çc][ãa]o\b|Disserta[çc][ãa]o apresentada|grau de Mestre/i, "dissertacao"],
+  [/Curso de Especializa[çc][ãa]o|Especializa[çc][ãa]o em/i, "tccespecializacao"],
+  [/^Trabalho de Conclus[ãa]o de Curso/i, "tccgraduacao"],
+];
+
+/** Tipo declarado na folha de rosto, ou `null` quando não dá para dizer. */
+export function workTypeFromPreamble(preamble: string): string | null {
+  for (const [pattern, type] of WORK_TYPE_PATTERNS) {
+    if (pattern.test(preamble)) return type;
+  }
+  return null;
+}
+
+/**
+ * Deixa ativa só a linha do tipo escolhido — as quatro convivem no modelo,
+ * três comentadas. Sem isso, um PDF de tese saía configurado como
+ * dissertação (a linha ativa do template), com a capa e a folha de aprovação
+ * erradas.
+ */
+export function selectWorkType(doc: string, workType: string): string {
+  let out = doc.replace(
+    new RegExp(`^%*\\s*\\\\trabalhoacademico\\{${workType}\\}`, "m"),
+    `\\trabalhoacademico{${workType}}`,
+  );
+  for (const other of ["tccgraduacao", "tccespecializacao", "dissertacao", "tese"]) {
+    if (other === workType) continue;
+    out = out.replace(
+      new RegExp(`^\\\\trabalhoacademico\\{${other}\\}`, "m"),
+      `%\\trabalhoacademico{${other}}`,
+    );
+  }
+  return out;
+}
+
 function patchFrontMatter(doc: string, sem: SemanticDoc): string {
   const fm = sem.frontMatter;
   // Ancorado em início de linha: o template traz exemplos COMENTADOS
@@ -551,11 +596,12 @@ function patchFrontMatter(doc: string, sem: SemanticDoc): string {
   // Natureza do trabalho: o texto da folha de rosto diz o tipo, o curso, a
   // habilitação e se há vínculo UAB. Tudo isso é configuração do template.
   const pre = fm.preamble ?? "";
-  if (/^Trabalho de Conclusão de Curso/.test(pre)) {
-    set("trabalhoacademico", "tccgraduacao");
-    doc = doc.replace(/^%*\s*\\trabalhoacademico\{tccgraduacao\}/m, "\\trabalhoacademico{tccgraduacao}");
-    doc = doc.replace(/^\\trabalhoacademico\{(dissertacao|tese|tccespecializacao)\}/m, "%\\trabalhoacademico{$1}");
-  }
+  const workType = workTypeFromPreamble(pre);
+  // Só `selectWorkType`: um `set` aqui reescreveria a linha ATIVA (a do
+  // modelo, dissertação) e deixaria duas linhas ativas do mesmo comando.
+  if (workType) doc = selectWorkType(doc, workType);
+  // Qualificação: o preâmbulo diz "Exame de Qualificação" / "de qualificação".
+  if (/\bqualifica[çc][ãa]o\b/i.test(pre)) set("ehqualificacao", "sim");
   const course = /Curso de Graduação em (.+?) do (?:Centro|Instituto|Faculdade)/.exec(pre)?.[1];
   if (course) set("graduacaoem", escapeLatex(course));
   const degree = /obtenção do grau de (\w+)/.exec(pre)?.[1];

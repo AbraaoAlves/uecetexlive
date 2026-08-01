@@ -72,22 +72,26 @@ test("guia reabre pelo menu com o que já foi preenchido", async ({ page }) => {
   await page.getByTestId("menu-open-guide").click();
   await expect(page.getByTestId("wizard-fs")).toBeVisible();
 
-  // O modelo semeado ainda traz o título de exemplo: a revisão aponta isso e
-  // o clique leva ao passo do campo.
+  // O modelo semeado traz exemplos nos campos obrigatórios: a revisão aponta
+  // todos eles, e o clique leva ao passo do campo.
   await page.getByTestId("wizard-fs-step-revisao").click();
-  await expect(page.getByTestId("wizard-fs-pending")).toBeVisible();
+  const pending = page.getByTestId("wizard-fs-pending");
+  await expect(pending).toBeVisible();
+  const before = await pending.locator("li").count();
   await page.getByTestId("wizard-fs-pending-titulo").click();
   await expect(page.getByTestId("metadata-field-titulo")).toBeVisible();
 
-  // Escape sai sem perder nada — os campos gravam no blur.
-  await fill(page, "titulo", "Meu Trabalho de Verdade");
+  // Escape sai sem perder o que estava sendo digitado — os campos gravam no
+  // blur, e o guia força esse blur antes de fechar.
+  await page.getByTestId("metadata-field-titulo").fill("Meu Trabalho de Verdade");
   await page.keyboard.press("Escape");
   await expect(page.getByTestId("wizard-fs")).not.toBeVisible();
   await expect(page.getByTestId("work-title")).toHaveText("Meu Trabalho de Verdade");
 
-  // E reabrindo, a pendência do título sumiu.
+  // E reabrindo, a pendência do título sumiu da lista.
   await page.getByTestId("menu-button").click();
   await page.getByTestId("menu-open-guide").click();
   await page.getByTestId("wizard-fs-step-revisao").click();
-  await expect(page.getByTestId("wizard-fs-ready")).toBeVisible();
+  await expect(page.getByTestId("wizard-fs-pending-titulo")).toHaveCount(0);
+  await expect(pending.locator("li")).toHaveCount(before - 1);
 });

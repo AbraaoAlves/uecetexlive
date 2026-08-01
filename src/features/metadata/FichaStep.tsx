@@ -12,7 +12,7 @@ import { strings } from "@/lib/strings";
  */
 export const TEMPLATE_FICHA_BYTES = 175_366;
 
-const MAX_BYTES = 5 * 1024 * 1024;
+export const MAX_BYTES = 5 * 1024 * 1024;
 const PDF_MAGIC = "%PDF-";
 
 export interface FichaStepProps {
@@ -54,6 +54,12 @@ export function FichaStep({ onUpload, sizeBytes }: FichaStepProps) {
           const file = e.target.files?.[0];
           e.target.value = "";
           if (!file) return;
+          // Tamanho antes de ler: arquivo enorme escolhido por engano não
+          // precisa virar memória para ser recusado.
+          if (file.size > MAX_BYTES) {
+            setError(strings.ficha.errorSize);
+            return;
+          }
           const bytes = new Uint8Array(await file.arrayBuffer());
           const problem = rejectFicha(file.name, bytes);
           setError(problem);

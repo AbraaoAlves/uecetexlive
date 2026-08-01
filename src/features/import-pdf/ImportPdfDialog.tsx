@@ -25,6 +25,8 @@ export interface ImportPdfDialogProps {
   onClose: () => void;
   /** Segue com o PDF fora do perfil do modelo. */
   onForce?: () => void;
+  /** Reabre o seletor de arquivo, para o botão de erro cumprir o rótulo. */
+  onRetry?: () => void;
 }
 
 const STAGE_LABEL: Record<ImportStage, string> = {
@@ -40,6 +42,7 @@ export function ImportPdfDialog({
   onConfirm,
   onClose,
   onForce,
+  onRetry,
 }: ImportPdfDialogProps) {
   // Foco entra no diálogo ao abrir: sem isso o Escape não chega e o leitor de
   // tela continua lendo a página atrás.
@@ -146,7 +149,7 @@ export function ImportPdfDialog({
             data-testid="import-pdf-cancel"
             disabled={state.kind === "running"}
             className="rounded px-3 py-1.5 text-ink-muted text-sm hover:bg-surface disabled:opacity-40"
-            onClick={onClose}
+            onClick={state.kind === "error" && onRetry ? onRetry : onClose}
           >
             {state.kind === "error" ? strings.importPdf.retry : strings.importPdf.cancel}
           </button>

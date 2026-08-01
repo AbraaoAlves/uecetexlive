@@ -133,8 +133,12 @@ registerRoute(
 );
 
 registerRoute(
-  // Path-segment match covers both "/" and subpath deploys.
-  ({ url }) => /\/(wasm|templates)\//.test(url.pathname),
+  // Path-segment match covers both "/" and subpath deploys. `assets/*.wasm` é
+  // o leitor de PDF, que o bundler versiona no diretório de assets: sem esta
+  // rota, quem ficou offline depois do primeiro acesso não conseguiria
+  // importar um PDF (o .wasm não entra no precache de propósito — são 10 MB).
+  ({ url }) =>
+    /\/(wasm|templates)\//.test(url.pathname) || url.pathname.endsWith(".wasm"),
   new CacheFirst({
     cacheName: CACHE_NAME,
     plugins: [

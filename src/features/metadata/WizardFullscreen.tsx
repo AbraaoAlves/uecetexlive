@@ -11,6 +11,7 @@
  */
 import { Check, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { isUnfilled } from "@/features/compliance/compliance-checklist";
 import {
   escapeMetadataValue,
   type MetadataField,
@@ -86,8 +87,12 @@ function pendingOf(
     for (const def of step.fields) {
       if (!def.required) continue;
       if (def.showWhen && !def.showWhen(workType, fields)) continue;
+      // Mesma régua do checklist de conformidade: campo ainda com o exemplo
+      // do modelo não está preenchido.
       const value = fields.get(def.macro)?.value.trim() ?? "";
-      if (value === "" || def.validate?.(value)) out.push({ step: index, def });
+      if (isUnfilled(def.macro, fields) || def.validate?.(value)) {
+        out.push({ step: index, def });
+      }
     }
   });
   return out;
@@ -111,7 +116,11 @@ export function WizardFullscreen({
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      if (e.key !== "Escape") return;
+      // Os campos gravam no blur: fechar com um deles focado perderia o que
+      // acabou de ser digitado.
+      (document.activeElement as HTMLElement | null)?.blur();
+      onClose();
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);

@@ -809,6 +809,16 @@ function ShellInner() {
     await runPdfPipeline(bytes, false);
   };
 
+  /**
+   * Todo projeto usa o mesmo id, então trocar o conteúdo por outro caminho
+   * (modelo, ZIP) deixaria o relatório do PDF anterior valendo — e a lista de
+   * pendências acusaria um trabalho que não existe mais.
+   */
+  const clearImportReport = useCallback(async () => {
+    setImportPendencies(undefined);
+    await saveImportReport("uecetex2", undefined).catch(() => {});
+  }, []);
+
   /** Cria o projeto pelo MESMO caminho do import de zip (normalizações inclusas). */
   const confirmPdfImport = async () => {
     const outcome = pdfImportResult.current;
@@ -838,6 +848,7 @@ function ShellInner() {
     if (!importState) return;
     if (importState.kind === "zip-ok") {
       replaceProject(importState.payload as never);
+      void clearImportReport();
       openFile("documento.tex");
     } else if (importState.kind === "bbl-ok") {
       setPrecompiledBbl(importState.payload as Uint8Array);
@@ -848,6 +859,7 @@ function ShellInner() {
   const resetTemplate = async () => {
     if (!window.confirm("Restaurar o modelo original? Suas alterações serão perdidas."))
       return;
+    await clearImportReport();
     await deleteProject("uecetex2");
     const fresh = await seedTemplate();
     replaceProject(fresh);
@@ -1414,6 +1426,11 @@ function ShellInner() {
           onForce={() => {
             const bytes = pdfBytesRef.current;
             if (bytes) void runPdfPipeline(bytes, true);
+          }}
+          onRetry={() => {
+            setPdfImport(null);
+            pdfImportResult.current = null;
+            pdfInputRef.current?.click();
           }}
           onClose={() => {
             setPdfImport(null);
