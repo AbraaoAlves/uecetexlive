@@ -63,3 +63,16 @@ export function makeEmittedProjectZip(): Uint8Array {
 
   return zipSync(files);
 }
+
+/** ZIP do modelo com uma página opcional já desligada no documento. */
+export function makeToggledOffZip(macro: string): Uint8Array {
+  const files = templateFiles();
+  const entry = decode(files["documento.tex"]);
+  const patched = entry.replace(
+    new RegExp(`^([ \\t]*)(\\\\${macro}(?:\\{[^}]*\\})?)[ \\t]*$`, "m"),
+    "$1%$2",
+  );
+  if (patched === entry) throw new Error(`modelo não tem a linha \\${macro}`);
+  files["documento.tex"] = encode(patched);
+  return zipSync(files);
+}

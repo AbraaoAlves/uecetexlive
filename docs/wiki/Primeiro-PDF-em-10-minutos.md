@@ -24,7 +24,12 @@
    resolve citações (ver [Rascunho versus Completa](Rascunho-vs-Completa)).
 5. Confira o resultado no painel de pré-visualização, aba **PDF**. Se algo
    der errado, a aba **Detalhes** mostra o que aconteceu.
-6. Abra o menu (**Menu**) e clique em **Exportar projeto (.zip)** para baixar
+6. Páginas opcionais (Agradecimentos, Dedicatória, Epígrafe, Errata,
+   Glossário, listas de siglas e de símbolos) têm uma caixinha ao lado do
+   nome, no painel de arquivos. Desmarque para tirar a página do PDF e
+   marque para incluir de novo — o arquivo continua no projeto, com o texto
+   intacto.
+7. Abra o menu (**Menu**) e clique em **Exportar projeto (.zip)** para baixar
    uma cópia de segurança do seu trabalho.
 
 ## Resultado esperado
@@ -38,6 +43,8 @@ um arquivo `.zip` baixado com todo o projeto.
   — ela só aparece uma vez por navegador/dispositivo.
 - **O PDF não atualiza depois de editar.** Clique em **Gerar PDF** de novo —
   o app não compila automaticamente a cada tecla.
+- **Desmarquei a caixinha e a página continua no PDF.** Clique em **Gerar
+  PDF** de novo — a mudança só aparece na próxima geração.
 - **Citações aparecem como `[?]`.** Normal no modo **Rascunho**; troque para
   **Completa** para resolver bibliografia, glossário e índice (ver
   [Rascunho versus Completa](Rascunho-vs-Completa)).
@@ -51,6 +58,7 @@ antes de escrever o trabalho de verdade.
 ---
 
 *Verificado com UeceTexLive (branch `main`, sem release publicada) e modelo
-uecetex2 `4c4ab76` em 2026-07-18. Fontes: `e2e/metadata.spec.ts`,
-`e2e/draft-mode.spec.ts`, `e2e/import-export.spec.ts`, `src/lib/strings.ts`.*
+uecetex2 `4c4ab76` em 2026-08-01. Fontes: `e2e/metadata.spec.ts`,
+`e2e/draft-mode.spec.ts`, `e2e/import-export.spec.ts`,
+`e2e/imprimir-toggles.spec.ts`, `src/lib/strings.ts`.*
 *Encontrou um erro nesta página? [Abra uma issue](https://github.com/AbraaoAlves/uecetexlive/issues/new?template=documentacao.yml).*
