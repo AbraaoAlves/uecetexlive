@@ -8,6 +8,7 @@
 
 import type { EmitReport } from "@papyru/inverse-core";
 import { AlertTriangle, Loader2 } from "lucide-react";
+import { useEffect, useRef } from "react";
 import { strings } from "@/lib/strings";
 import type { ImportStage } from "./protocol";
 import { reportCounts, reportPendencies } from "./report-summary";
@@ -32,29 +33,43 @@ const STAGE_LABEL: Record<ImportStage, string> = {
   montando: strings.importPdf.stageMontando,
 };
 
+const TITLE_ID = "import-pdf-title";
+
 export function ImportPdfDialog({
   state,
   onConfirm,
   onClose,
   onForce,
 }: ImportPdfDialogProps) {
+  // Foco entra no diálogo ao abrir: sem isso o Escape não chega e o leitor de
+  // tela continua lendo a página atrás.
+  const panelRef = useRef<HTMLDivElement>(null);
+  useEffect(() => panelRef.current?.focus(), []);
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-ink/30 p-4"
       role="dialog"
       aria-modal="true"
+      aria-labelledby={TITLE_ID}
       data-testid="import-pdf-dialog"
       onClick={state.kind === "running" ? undefined : onClose}
       onKeyDown={(e) => e.key === "Escape" && state.kind !== "running" && onClose()}
     >
       <div
-        className="flex max-h-[80vh] w-full max-w-lg flex-col overflow-hidden rounded-lg border bg-surface-elevated p-5 shadow-xl"
+        ref={panelRef}
+        // Fora da ordem de tabulação, mas focável por código: é assim que o
+        // foco entra no diálogo e o Escape passa a chegar.
+        tabIndex={-1}
+        className="flex max-h-[80vh] w-full max-w-lg flex-col overflow-hidden rounded-lg border bg-surface-elevated p-5 shadow-xl outline-none"
         onClick={(e) => e.stopPropagation()}
         onKeyDown={() => {}}
         role="document"
       >
         <div className="flex items-center gap-2">
-          <span className="font-display text-lg">{strings.importPdf.title}</span>
+          <span id={TITLE_ID} className="font-display text-lg">
+            {strings.importPdf.title}
+          </span>
           <span className="rounded bg-warning/20 px-1.5 py-0.5 text-[10px] text-warning uppercase tracking-wider">
             {strings.importPdf.experimental}
           </span>

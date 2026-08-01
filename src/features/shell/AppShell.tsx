@@ -38,7 +38,7 @@ import {
   ImportPdfDialog,
   type ImportPdfState,
 } from "@/features/import-pdf/ImportPdfDialog";
-import { rejectPdf } from "@/features/import-pdf/pdf-file";
+import { MAX_PDF_BYTES, rejectPdf } from "@/features/import-pdf/pdf-file";
 import {
   type ImportPdfOutcome,
   LowConfidenceError,
@@ -793,6 +793,12 @@ function ShellInner() {
   };
 
   const handlePdfFile = async (file: File) => {
+    // O tamanho é conferido ANTES de ler: um arquivo enorme escolhido por
+    // engano não precisa virar memória para ser recusado.
+    if (file.size > MAX_PDF_BYTES) {
+      setPdfImport({ kind: "error", message: strings.importPdf.errorSize });
+      return;
+    }
     const bytes = new Uint8Array(await file.arrayBuffer());
     const problem = rejectPdf(file.name, bytes);
     if (problem) {
@@ -814,7 +820,11 @@ function ShellInner() {
     openFile("documento.tex");
     setPdfImport(null);
     pdfImportResult.current = null;
-    await saveImportReport(imported.id, outcome.report).catch(() => {});
+    await saveImportReport(imported.id, outcome.report).catch((err) => {
+      // O projeto já está criado; perder o relatório não desfaz isso, mas
+      // engolir o erro esconderia por que a lista de pendências não apareceu.
+      console.error("não foi possível guardar o relatório da importação", err);
+    });
     setImportPendencies(outcome.report.pendencias.length);
     setGuideOpen(true);
   };

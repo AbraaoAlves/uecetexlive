@@ -71,6 +71,11 @@ const afterSlot = (
 ): FieldDef["showWhen"] => {
   const previousFilled = filled(`membrodabanca${previous}`);
   const ownFilled = filled(`membrodabanca${own}`);
+  // "Nunca esconder dado existente" vale para a cadeia progressiva, NÃO para o
+  // limite do tipo de trabalho: a folha de aprovação de TCC imprime até o 4º
+  // membro (lib/uecetex2.sty), então mostrar o 5º sugeriria que ele aparece no
+  // PDF. O valor continua no documento — só não é oferecido para um tipo que
+  // não o usa.
   return (type, fields) =>
     (!extra || extra(type)) && (previousFilled(fields) || ownFilled(fields));
 };
