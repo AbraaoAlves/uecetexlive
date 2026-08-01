@@ -36,7 +36,7 @@ test("wizard carrega resumo e palavras-chave de um projeto importado", async ({
 
   await page.getByTestId("rail-metadata").click();
   await expect(page.getByTestId("metadata-wizard")).toBeVisible();
-  await page.getByTestId("wizard-step-6").click();
+  await page.getByTestId("wizard-step-7").click();
 
   const resumo = page.getByTestId("metadata-field-resumobody");
   await expect(resumo).toBeEnabled();
@@ -46,6 +46,7 @@ test("wizard carrega resumo e palavras-chave de um projeto importado", async ({
   await expect(page.getByTestId("metadata-field-palavraschave")).toHaveValue(
     RESUMO_KEYWORDS,
   );
+  await page.getByTestId("wizard-step-8").click();
   await expect(page.getByTestId("metadata-field-keywords")).toHaveValue(
     ABSTRACT_KEYWORDS,
   );

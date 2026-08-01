@@ -108,20 +108,20 @@ test("banca slots respect the work-type cap (TCC: 3, dissertação: 4, tese: 5)"
 
   await page.getByTestId("wizard-step-2").click();
   await page.getByTestId("metadata-option-tccgraduacao").check();
-  await page.getByTestId("wizard-step-5").click();
+  await page.getByTestId("wizard-step-6").click();
   await expect(page.getByTestId("metadata-field-membrodabancaquatro")).toBeVisible();
   await expect(page.getByTestId("metadata-field-membrodabancacinco")).not.toBeVisible();
   await expect(page.getByTestId("metadata-field-membrodabancaseis")).not.toBeVisible();
 
   await page.getByTestId("wizard-step-2").click();
   await page.getByTestId("metadata-option-dissertacao").check();
-  await page.getByTestId("wizard-step-5").click();
+  await page.getByTestId("wizard-step-6").click();
   await expect(page.getByTestId("metadata-field-membrodabancacinco")).toBeVisible();
   await expect(page.getByTestId("metadata-field-membrodabancaseis")).not.toBeVisible();
 
   await page.getByTestId("wizard-step-2").click();
   await page.getByTestId("metadata-option-tese").check();
-  await page.getByTestId("wizard-step-5").click();
+  await page.getByTestId("wizard-step-6").click();
   await expect(page.getByTestId("metadata-field-membrodabancaseis")).toBeVisible();
 });
 
@@ -133,7 +133,7 @@ test("resumo/abstract step writes surgically into their own files, not documento
   await page.getByTestId("welcome-fill").click();
   await expect(page.getByTestId("metadata-wizard")).toBeVisible();
 
-  await page.getByTestId("wizard-step-6").click();
+  await page.getByTestId("wizard-step-7").click();
   const resumo = page.getByTestId("metadata-field-resumobody");
   await resumo.fill("Este trabalho investiga o uso de jogos digitais no ensino.");
   await resumo.blur();
@@ -141,6 +141,7 @@ test("resumo/abstract step writes surgically into their own files, not documento
   await palavrasChave.fill("jogos digitais; ensino; programação.");
   await palavrasChave.blur();
 
+  await page.getByTestId("wizard-step-8").click();
   const abstract = page.getByTestId("metadata-field-abstractbody");
   await abstract.fill("This work investigates the use of digital games in teaching.");
   await abstract.blur();

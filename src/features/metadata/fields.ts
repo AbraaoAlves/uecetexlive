@@ -31,6 +31,8 @@ export interface FieldDef {
 export interface StepDef {
   id: string;
   title: string;
+  /** Rótulo curto do chip da barra de etapas. */
+  short: string;
   description?: string;
   fields: FieldDef[];
 }
@@ -42,6 +44,26 @@ const isDoutorado = (t: WorkType | null) => t === "tese";
 const isStricto = (t: WorkType | null) => t === "dissertacao" || t === "tese";
 const isUab = (_type: WorkType | null, fields: ReadonlyMap<string, MetadataField>) =>
   fields.get("ehuab")?.value.trim() === "sim";
+
+/** O campo tem algum valor digitado? */
+const filled = (macro: string) => (fields: ReadonlyMap<string, MetadataField>) =>
+  (fields.get(macro)?.value.trim() ?? "") !== "";
+
+/**
+ * Revelação progressiva da banca: o slot seguinte só aparece depois que o
+ * anterior tem nome — ou quando ele próprio já tem valor, para nunca esconder
+ * dado que existe.
+ */
+const afterSlot = (
+  previous: string,
+  own: string,
+  extra?: (type: WorkType | null) => boolean,
+): FieldDef["showWhen"] => {
+  const previousFilled = filled(`membrodabanca${previous}`);
+  const ownFilled = filled(`membrodabanca${own}`);
+  return (type, fields) =>
+    (!extra || extra(type)) && (previousFilled(fields) || ownFilled(fields));
+};
 
 function bancaSlot(
   slot: string,
@@ -76,6 +98,7 @@ export const WIZARD_STEPS: readonly StepDef[] = [
   {
     id: "titulo",
     title: "Título e tema",
+    short: "Título",
     description:
       "Comece pelo tema. Um bom título resume o assunto, o método e o contexto do trabalho — você poderá ajustá-lo a qualquer momento.",
     fields: [
@@ -90,6 +113,7 @@ export const WIZARD_STEPS: readonly StepDef[] = [
   {
     id: "tipo",
     title: "Tipo de trabalho",
+    short: "Tipo",
     description:
       "O tipo define a capa, a folha de rosto e o texto de apresentação gerados automaticamente pelo modelo da UECE.",
     fields: [
@@ -162,12 +186,13 @@ export const WIZARD_STEPS: readonly StepDef[] = [
   {
     id: "autor",
     title: "Autor e curso",
+    short: "Autor",
     fields: [
       { macro: "autor", label: "Seu nome completo", kind: "text" },
       {
         macro: "graduacaoem",
         label: "Curso de graduação",
-        hint: "Ex.: “Ciência da Computação”",
+        hint: "Como aparece no seu histórico. Ex.: “Licenciatura em Computação”",
         kind: "text",
         showWhen: isGrad,
       },
@@ -187,6 +212,7 @@ export const WIZARD_STEPS: readonly StepDef[] = [
       {
         macro: "especializacaoem",
         label: "Curso de especialização",
+        hint: "Ex.: “Gestão Escolar”",
         kind: "text",
         showWhen: isEspec,
       },
@@ -228,14 +254,26 @@ export const WIZARD_STEPS: readonly StepDef[] = [
         kind: "text",
         showWhen: isDoutorado,
       },
-      { macro: "ies", label: "Instituição", kind: "text", section: "Instituição" },
-      { macro: "iessigla", label: "Sigla", kind: "text" },
-      { macro: "centro", label: "Centro", kind: "text" },
+      {
+        macro: "ies",
+        label: "Instituição",
+        hint: "Nome por extenso. Ex.: “Universidade Estadual do Ceará”",
+        kind: "text",
+        section: "Instituição",
+      },
+      { macro: "iessigla", label: "Sigla", hint: "Ex.: “UECE”", kind: "text" },
+      {
+        macro: "centro",
+        label: "Centro",
+        hint: "O centro ou faculdade a que o seu curso pertence. Ex.: “Centro de Ciências e Tecnologia”",
+        kind: "text",
+      },
     ],
   },
   {
     id: "orientacao",
     title: "Orientação",
+    short: "Orientação",
     fields: [
       {
         macro: "orientador",
@@ -277,33 +315,49 @@ export const WIZARD_STEPS: readonly StepDef[] = [
     ],
   },
   {
-    id: "finalizacao",
-    title: "Data, local e banca",
+    id: "datalocal",
+    title: "Data e local",
+    short: "Data",
     description:
-      "A banca é opcional agora — preencha quando ela for definida. Membros sem nome não aparecem na folha de aprovação.",
+      "Ano e cidade que aparecem na capa e na folha de rosto. A data de aprovação só é preenchida depois da defesa.",
     fields: [
       { macro: "data", label: "Ano", kind: "year" },
-      { macro: "local", label: "Local", kind: "text" },
+      {
+        macro: "local",
+        label: "Local",
+        hint: "Cidade e estado, como aparecem na capa. Ex.: “Fortaleza -- Ceará”",
+        kind: "text",
+      },
       {
         macro: "dataaprovacao",
         label: "Data de aprovação",
         hint: "Ex.: “01 de Julho de 2026” — deixe vazio até a defesa",
         kind: "text",
       },
+    ],
+  },
+  {
+    id: "banca",
+    title: "Banca examinadora",
+    short: "Banca",
+    description:
+      "A banca é opcional agora — preencha quando ela for definida. Membros sem nome não aparecem na folha de aprovação, e o espaço do próximo membro só abre quando o anterior tem nome.",
+    fields: [
       ...bancaSlot("dois", 2, {
         firstHint: "Deixe vazio para não aparecer na folha de aprovação",
       }),
       ...bancaSlot("tres", 3),
-      ...bancaSlot("quatro", 4),
+      ...bancaSlot("quatro", 4, { showWhen: afterSlot("tres", "quatro") }),
       // TCC (graduação/especialização) imprime só até o membro 4.
-      ...bancaSlot("cinco", 5, { showWhen: isStricto }),
+      ...bancaSlot("cinco", 5, { showWhen: afterSlot("quatro", "cinco", isStricto) }),
       // Só a tese imprime o 6º membro da banca.
-      ...bancaSlot("seis", 6, { showWhen: isDoutorado }),
+      ...bancaSlot("seis", 6, { showWhen: afterSlot("cinco", "seis", isDoutorado) }),
     ],
   },
   {
     id: "resumo",
-    title: "Resumo e Abstract",
+    title: "Resumo",
+    short: "Resumo",
     description:
       "Escreva por último — é a última coisa que você redige, mas a primeira que a banca lê. Um parágrafo único, de 150 a 500 palavras, na voz ativa e na 3ª pessoa (NBR 6028).",
     fields: [
@@ -312,7 +366,6 @@ export const WIZARD_STEPS: readonly StepDef[] = [
         label: "Resumo (português)",
         hint: "Finalize com as palavras-chave no campo abaixo — não repita aqui.",
         kind: "textarea",
-        section: "Resumo",
       },
       {
         macro: "palavraschave",
@@ -320,12 +373,20 @@ export const WIZARD_STEPS: readonly StepDef[] = [
         hint: "De 3 a 5 termos, separados por ponto e vírgula, finalizados por ponto.",
         kind: "text",
       },
+    ],
+  },
+  {
+    id: "abstract",
+    title: "Abstract",
+    short: "Abstract",
+    description:
+      "A tradução do resumo para uma língua de circulação internacional, normalmente o inglês. Mesma estrutura, mesma ênfase e os mesmos dados — não é um texto novo.",
+    fields: [
       {
         macro: "abstractbody",
         label: "Abstract (inglês)",
         hint: "Tradução fiel do resumo — mesma estrutura, mesma ênfase, mesmos dados.",
         kind: "textarea",
-        section: "Abstract",
       },
       {
         macro: "keywords",
