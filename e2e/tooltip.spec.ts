@@ -12,10 +12,14 @@ test("keyboard focus shows a tooltip on shell and editor-toolbar controls", asyn
   await page.goto("/");
   await dismissWelcome(page);
 
-  // Ao mudar o foco, o tooltip anterior ainda pode estar desmontando —
-  // por isso a asserção olha o último montado, não "o único".
+  // Ao mudar o foco, o tooltip anterior ainda pode estar desmontando — por
+  // isso a asserção segue o aria-describedby do controle focado, não "o
+  // único tooltip da página".
   for (const testId of ["compile-button", "engine-full", "toolbar-bold"]) {
-    await page.getByTestId(testId).focus();
-    await expect(page.getByRole("tooltip").last()).toBeVisible();
+    const control = page.getByTestId(testId);
+    await control.focus();
+    await expect(control).toHaveAttribute("aria-describedby", /.+/);
+    const describedBy = await control.getAttribute("aria-describedby");
+    await expect(page.locator(`#${describedBy}`)).toBeVisible();
   }
 });

@@ -157,6 +157,15 @@ describe("normalizeResumoSource", () => {
     expect(normalizeResumoSource("Corpo. Palavras-chave:\n", "palavraschave")).toBeNull();
   });
 
+  it("não engole o parágrafo seguinte", () => {
+    const source =
+      "Corpo. Palavras-chave: a; b.\n\nOutro parágrafo que não é palavra-chave.\n";
+    const normalized = normalizeResumoSource(source, "palavraschave") ?? "";
+    expect(normalized).toContain("\\palavraschave{a; b.}");
+    expect(normalized).toContain("Outro parágrafo que não é palavra-chave.");
+    expect(normalized).not.toContain("{a; b.\n\nOutro");
+  });
+
   it("é idempotente", () => {
     const once = normalizeResumoSource("Corpo. Palavras-chave: a; b.\n", "palavraschave");
     expect(once).not.toBeNull();

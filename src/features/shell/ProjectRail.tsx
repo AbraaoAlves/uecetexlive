@@ -253,6 +253,7 @@ export function ProjectRail({
                               : strings.rail.toggleExcluded
                           }`}
                           checked={file.toggle.enabled}
+                          disabled={!onToggleImprimir}
                           onChange={(e) =>
                             onToggleImprimir?.(
                               file.toggle?.macro ?? "",

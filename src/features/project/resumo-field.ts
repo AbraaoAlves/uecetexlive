@@ -137,9 +137,12 @@ export function normalizeResumoSource(
   const tail = source.slice(last.index + last[0].length);
   // O que vier depois de um comentário fica fora da macro: engolir o `%` faria
   // o `}` cair na linha comentada e o TeX perderia o fim do grupo.
+  // Idem para um parágrafo novo: só a linha lógica do rótulo é palavra-chave.
   const commentAt = findComment(tail);
-  const keywords = tail.slice(0, commentAt).trim();
-  const trailing = tail.slice(commentAt).trimEnd();
+  const paragraphAt = tail.search(/\n[ \t]*\n/);
+  const cutAt = paragraphAt === -1 ? commentAt : Math.min(commentAt, paragraphAt);
+  const keywords = tail.slice(0, cutAt).trim();
+  const trailing = tail.slice(cutAt).trim();
   // Chaves desbalanceadas viram um grupo LaTeX quebrado — melhor deixar o
   // arquivo como está e o wizard avisar do que estragar o documento.
   if (keywords === "" || !hasBalancedBraces(keywords)) return null;

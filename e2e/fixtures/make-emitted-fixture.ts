@@ -53,12 +53,15 @@ export function makeLiteralResumoZip(): Uint8Array {
 export function makeEmittedProjectZip(): Uint8Array {
   const files = templateFiles();
 
-  const entry = decode(files["documento.tex"]);
-  const patched = entry
-    .replace("%\\trabalhoacademico{tccgraduacao}", "\\trabalhoacademico{tccgraduacao}")
-    .replace("\\trabalhoacademico{dissertacao}", "%\\trabalhoacademico{dissertacao}")
-    .replace(/\\membrodabancadoiscentro\{[^}]*\}/, "\\membrodabancadoiscentro{}");
-  if (patched === entry) throw new Error("modelo mudou: os patches do fixture não casam");
+  const patched = [
+    ["%\\trabalhoacademico{tccgraduacao}", "\\trabalhoacademico{tccgraduacao}"],
+    ["\\trabalhoacademico{dissertacao}", "%\\trabalhoacademico{dissertacao}"],
+    [/\\membrodabancadoiscentro\{[^}]*\}/, "\\membrodabancadoiscentro{}"],
+  ].reduce((text, [from, to]) => {
+    const next = text.replace(from as string & RegExp, to as string);
+    if (next === text) throw new Error(`modelo mudou: o patch ${from} não casa`);
+    return next;
+  }, decode(files["documento.tex"]));
   files["documento.tex"] = encode(patched);
 
   return zipSync(files);

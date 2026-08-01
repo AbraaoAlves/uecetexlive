@@ -69,12 +69,31 @@ interface Scan {
   commentLength: number;
 }
 
+/** Só a parte da linha antes de um `%` não escapado conta como código. */
+function codeOf(line: string): string {
+  for (let i = 0; i < line.length; i++) {
+    if (line[i] === "\\") i++;
+    else if (line[i] === "%") return line.slice(0, i);
+  }
+  return line;
+}
+
+/** Offset do delimitador, ignorando ocorrências comentadas. */
+function findDelimiter(source: string, delimiter: string, from: number): number {
+  for (let at = source.indexOf(delimiter, from); at !== -1; ) {
+    const lineStart = source.lastIndexOf("\n", at - 1) + 1;
+    if (codeOf(source.slice(lineStart, at)).length === at - lineStart) return at;
+    at = source.indexOf(delimiter, at + delimiter.length);
+  }
+  return -1;
+}
+
 /** Percorre só o corpo do documento, linha a linha; a última macro vence. */
 function scan(source: string): Map<string, Scan> {
   const out = new Map<string, Scan>();
-  const bodyStart = source.indexOf("\\begin{document}");
+  const bodyStart = findDelimiter(source, "\\begin{document}", 0);
   if (bodyStart === -1) return out;
-  const docEnd = source.indexOf("\\end{document}", bodyStart);
+  const docEnd = findDelimiter(source, "\\end{document}", bodyStart);
   const bodyEnd = docEnd === -1 ? source.length : docEnd;
 
   let lineStart = bodyStart;

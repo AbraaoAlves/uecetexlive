@@ -74,6 +74,25 @@ describe("extractImprimirToggles", () => {
     );
   });
 
+  it("ignora \\begin{document} e \\end{document} comentados", () => {
+    const source = [
+      "% \\begin{document} — exemplo no preâmbulo",
+      "\\imprimirepigrafe{fora}",
+      "\\begin{document}",
+      "\t\\imprimirerrata{dentro}",
+      "% \\end{document} — exemplo",
+      "\t\\imprimirglossario",
+      "\\end{document}",
+      "\t\\imprimirindice",
+      "",
+    ].join("\n");
+    const toggles = extractImprimirToggles(source);
+    expect(toggles.has("imprimirepigrafe")).toBe(false);
+    expect(toggles.has("imprimirerrata")).toBe(true);
+    expect(toggles.has("imprimirglossario")).toBe(true);
+    expect(toggles.has("imprimirindice")).toBe(false);
+  });
+
   it("devolve um mapa vazio para um documento sem corpo", () => {
     expect(extractImprimirToggles("\\documentclass{article}\n").size).toBe(0);
   });
