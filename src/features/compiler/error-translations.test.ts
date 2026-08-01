@@ -26,6 +26,27 @@ describe("translateDiagnostic", () => {
     expect(translateDiagnostic(d, noOpenFile).message).toMatch(/comando desconhecido/i);
   });
 
+  it("aponta a folha de aprovação quando o erro vem dela", () => {
+    // Trecho real do log do motor Rascunho com um centro da banca em branco.
+    const d = diag(
+      "There's no line here to end.",
+      "! LaTeX Error: There's no line here to end.\n\nl.174 \t\\imprimirfolhadeaprovacao\n",
+    );
+    const { message } = translateDiagnostic(d, noOpenFile);
+    expect(message).toMatch(/folha de aprovação/i);
+    expect(message).toMatch(/banca/i);
+  });
+
+  it("dá a explicação geral do mesmo erro fora da folha de aprovação", () => {
+    const d = diag(
+      "There's no line here to end.",
+      "! LaTeX Error: There's no line here to end.\n\nl.42 \\\\\n",
+    );
+    const { message } = translateDiagnostic(d, noOpenFile);
+    expect(message).toMatch(/quebra de linha/i);
+    expect(message).not.toMatch(/folha de aprovação/i);
+  });
+
   it("translates Missing $ inserted", () => {
     const d = diag("Missing $ inserted.");
     expect(translateDiagnostic(d, noOpenFile).message).toMatch(/cifrõe|matemática/i);
