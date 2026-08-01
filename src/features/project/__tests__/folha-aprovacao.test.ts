@@ -80,11 +80,22 @@ describe("repairFolhaAprovacao", () => {
     expect(repairFolhaAprovacao(source)).toBeNull();
   });
 
-  it("corrige o orientador mesmo sem nome — a assinatura dele é sempre impressa", () => {
+  it("corrige o orientador nomeado", () => {
     const source = doc({
       orientador: "Prof. Me. Ciclano",
       orientadorcentro: "",
       orientadories: "Universidade Estadual do Ceará",
+    });
+    expect(repairFolhaAprovacao(source)).toContain(
+      `\\orientadorcentro{${EMPTY_SLOT_FILLER}}`,
+    );
+  });
+
+  it("corrige o orientador mesmo sem nome — a assinatura dele é sempre impressa", () => {
+    const source = doc({
+      orientador: "",
+      orientadorcentro: "",
+      orientadories: "",
     });
     expect(repairFolhaAprovacao(source)).toContain(
       `\\orientadorcentro{${EMPTY_SLOT_FILLER}}`,

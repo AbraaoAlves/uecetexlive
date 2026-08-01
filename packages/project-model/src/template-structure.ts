@@ -85,7 +85,13 @@ export const UECETEX2_STRUCTURE = {
       globs: ["elementos-pos-textuais/**"],
     },
     { id: "library", label: "Biblioteca", globs: ["lib/**"] },
-    { id: "figures", label: "Figuras", globs: ["figuras/**"] },
+    {
+      id: "figures",
+      label: "Figuras",
+      // figuras-extraidas/ é onde caem as imagens de um projeto vindo do
+      // caminho PDF→LaTeX; sem este glob elas iam para o topo do rail.
+      globs: ["figuras/**", "figuras-extraidas/**"],
+    },
   ],
   wysiwygEligible: [
     "elementos-textuais/**/*.tex",
@@ -98,7 +104,7 @@ export const UECETEX2_STRUCTURE = {
     "elementos-pre-textuais/agradecimentos.tex",
   ],
   advancedOnly: ["lib/**", "documento.tex"],
-  simpleModeVisible: ["**/*.bib", "figuras/**"],
+  simpleModeVisible: ["**/*.bib", "figuras/**", "figuras-extraidas/**"],
 } as const satisfies TemplateStructure;
 
 /** Ids de seção do rail para o uecetex2 (mais o fallback "root"). */

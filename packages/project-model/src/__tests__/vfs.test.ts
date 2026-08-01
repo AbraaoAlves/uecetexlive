@@ -57,6 +57,8 @@ describe("railSectionOf (§4.6 grouping)", () => {
     ["lib/uecetex2.sty", "library"],
     ["figuras/figura-1.jpg", "figures"],
     ["figuras/main.cpp", "figures"],
+    // Imagens de um projeto vindo do caminho PDF→LaTeX.
+    ["figuras-extraidas/img-0fbdf8cf5b5b.png", "figures"],
     ["documento.tex", "root"],
   ])("%s -> %s", (path, section) => {
     expect(railSectionOf(UECETEX2_STRUCTURE, path)).toBe(section);
@@ -96,6 +98,7 @@ describe("isSimpleModeVisible (modo simples — allowlist de prosa)", () => {
     ["figuras/main.cpp", true],
     ["figuras/uecetex2-logo-dark-mode.png", true],
     ["figuras/uecetex2-logo-light-mode.png", true],
+    ["figuras-extraidas/img-0fbdf8cf5b5b.png", true],
     // hidden: structural
     ["documento.tex", false],
     ["LICENSE", false],
