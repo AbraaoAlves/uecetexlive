@@ -12,6 +12,7 @@ import {
   countLatexWords,
   exportProjectZip,
   importProjectZip,
+  projectFromFiles,
   UECETEX2_STRUCTURE,
 } from "@papyru/project-model";
 import {
@@ -33,10 +34,21 @@ import {
   type ComplianceAction,
   computeComplianceChecklist,
 } from "@/features/compliance/compliance-checklist";
+import {
+  ImportPdfDialog,
+  type ImportPdfState,
+} from "@/features/import-pdf/ImportPdfDialog";
+import { rejectPdf } from "@/features/import-pdf/pdf-file";
+import {
+  type ImportPdfOutcome,
+  LowConfidenceError,
+  runPdfImport,
+} from "@/features/import-pdf/run-import";
+import { fetchTemplateFiles } from "@/features/import-pdf/template-files";
 import { MetadataWizard } from "@/features/metadata/MetadataWizard";
 import { WelcomeDialog } from "@/features/metadata/WelcomeDialog";
 import { WizardFullscreen } from "@/features/metadata/WizardFullscreen";
-import { deleteProject, loadLastPdf } from "@/features/persistence/db";
+import { deleteProject, loadLastPdf, saveImportReport } from "@/features/persistence/db";
 import { useStoragePersistence } from "@/features/persistence/useStoragePersistence";
 import {
   repairFolhaAprovacao,
@@ -148,6 +160,13 @@ const RAIL_UPLOAD_EXTENSIONS = new Set([
 ]);
 const RAIL_UPLOAD_MAX_BYTES = 10 * 1024 * 1024;
 
+/** Opções de import comuns ao ZIP e ao caminho PDF→projeto. */
+const UECETEX2_IMPORT_OPTS = {
+  structure: UECETEX2_STRUCTURE,
+  templateSource: "https://github.com/thiagodnf/uecetex2",
+  preferredEntry: "documento.tex",
+} as const;
+
 /** Ficha catalográfica do projeto — o guia substitui exatamente este arquivo. */
 const FICHA_PATH = "elementos-pre-textuais/ficha-catalografica.pdf";
 
@@ -200,7 +219,10 @@ function ShellInner() {
     (ImportDialogState & { payload?: unknown }) | null
   >(null);
   const [precompiledBbl, setPrecompiledBbl] = useState<Uint8Array | undefined>();
+  const [pdfImport, setPdfImport] = useState<ImportPdfState | null>(null);
+  const pdfImportResult = useRef<ImportPdfOutcome | null>(null);
   const zipInputRef = useRef<HTMLInputElement>(null);
+  const pdfInputRef = useRef<HTMLInputElement>(null);
   const bblInputRef = useRef<HTMLInputElement>(null);
   const { state: compileState, compile, setEngine } = useCompile();
   const idleWarmup = useIdleWarmup();
@@ -706,11 +728,7 @@ function ShellInner() {
     try {
       const bytes = new Uint8Array(await file.arrayBuffer());
       const imported = normalizeImportedProject(
-        await importProjectZip(bytes, "uecetex2", {
-          structure: UECETEX2_STRUCTURE,
-          templateSource: "https://github.com/thiagodnf/uecetex2",
-          preferredEntry: "documento.tex",
-        }),
+        await importProjectZip(bytes, "uecetex2", UECETEX2_IMPORT_OPTS),
       );
       setImportState({
         kind: "zip-ok",
@@ -721,6 +739,59 @@ function ShellInner() {
     } catch (err) {
       setImportState({ kind: "zip-error", message: (err as Error).message });
     }
+  };
+
+  // O worker consome os bytes (transferíveis), então cada tentativa precisa da
+  // sua própria cópia — inclusive o "tentar mesmo assim".
+  const pdfBytesRef = useRef<Uint8Array | null>(null);
+
+  const runPdfPipeline = async (bytes: Uint8Array, force: boolean) => {
+    setPdfImport({ kind: "running", stage: "lendo", pct: 0 });
+    try {
+      const template = await fetchTemplateFiles();
+      const outcome = await runPdfImport(
+        new Uint8Array(bytes),
+        template,
+        (stage, pct) => setPdfImport({ kind: "running", stage, pct }),
+        force,
+      );
+      pdfImportResult.current = outcome;
+      setPdfImport({
+        kind: "report",
+        report: outcome.report,
+        fileCount: outcome.files.size,
+      });
+    } catch (err) {
+      pdfImportResult.current = null;
+      if (err instanceof LowConfidenceError) setPdfImport({ kind: "low-confidence" });
+      else setPdfImport({ kind: "error", message: (err as Error).message });
+    }
+  };
+
+  const handlePdfFile = async (file: File) => {
+    const bytes = new Uint8Array(await file.arrayBuffer());
+    const problem = rejectPdf(file.name, bytes);
+    if (problem) {
+      setPdfImport({ kind: "error", message: problem });
+      return;
+    }
+    pdfBytesRef.current = bytes;
+    await runPdfPipeline(bytes, false);
+  };
+
+  /** Cria o projeto pelo MESMO caminho do import de zip (normalizações inclusas). */
+  const confirmPdfImport = async () => {
+    const outcome = pdfImportResult.current;
+    if (!outcome) return;
+    const imported = normalizeImportedProject(
+      projectFromFiles(outcome.files, "uecetex2", UECETEX2_IMPORT_OPTS),
+    );
+    replaceProject(imported);
+    openFile("documento.tex");
+    setPdfImport(null);
+    pdfImportResult.current = null;
+    await saveImportReport(imported.id, outcome.report).catch(() => {});
+    setGuideOpen(true);
   };
 
   const handleBblFile = async (file: File) => {
@@ -948,6 +1019,15 @@ function ShellInner() {
                 <Download className="size-3.5" /> {strings.topbar.exportZip}
               </MenuItem>
               <MenuItem
+                testid="menu-import-pdf"
+                onClick={() => {
+                  setMenuOpen(false);
+                  pdfInputRef.current?.click();
+                }}
+              >
+                <FileUp className="size-3.5" /> {strings.importPdf.menuEntry}
+              </MenuItem>
+              <MenuItem
                 testid="menu-open-guide"
                 onClick={() => {
                   setMenuOpen(false);
@@ -1003,6 +1083,18 @@ function ShellInner() {
           onChange={(e) => {
             const file = e.target.files?.[0];
             if (file) void handleZipFile(file);
+            e.target.value = "";
+          }}
+        />
+        <input
+          ref={pdfInputRef}
+          type="file"
+          accept=".pdf"
+          className="hidden"
+          data-testid="pdf-input"
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file) void handlePdfFile(file);
             e.target.value = "";
           }}
         />
@@ -1280,6 +1372,20 @@ function ShellInner() {
           onClose={() => setImportState(null)}
         />
       )}
+      {pdfImport && (
+        <ImportPdfDialog
+          state={pdfImport}
+          onConfirm={() => void confirmPdfImport()}
+          onForce={() => {
+            const bytes = pdfBytesRef.current;
+            if (bytes) void runPdfPipeline(bytes, true);
+          }}
+          onClose={() => {
+            setPdfImport(null);
+            pdfImportResult.current = null;
+          }}
+        />
+      )}
       {guideOpen && (
         <WizardFullscreen
           fields={meta}
@@ -1306,6 +1412,10 @@ function ShellInner() {
             setGuideOpen(true);
           }}
           onLater={() => setUi({ welcomeSeen: true })}
+          onImportPdf={() => {
+            setUi({ welcomeSeen: true });
+            pdfInputRef.current?.click();
+          }}
         />
       )}
     </div>

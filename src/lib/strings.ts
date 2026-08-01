@@ -74,6 +74,30 @@ export const strings = {
     toggleInclude: "Aparece no PDF — desmarque para tirar",
     toggleExcluded: "Fora do PDF — marque para incluir",
   },
+  importPdf: {
+    menuEntry: "Importar PDF (experimental)…",
+    welcomeButton: "Já tenho meu TCC em PDF",
+    title: "Importar um PDF",
+    experimental: "Experimental",
+    intro:
+      "Lemos o PDF aqui no seu navegador — o arquivo não sai do seu computador — e montamos um projeto a partir dele. Funciona bem com PDFs feitos no modelo da UECE.",
+    stageLendo: "Lendo o PDF…",
+    stageReconhecendo: "Reconhecendo capítulos e figuras…",
+    stageMontando: "Montando o projeto…",
+    reportTitle: "O que reconhecemos",
+    pendingTitle: "O que vai precisar da sua mão",
+    create: "Criar projeto",
+    cancel: "Cancelar",
+    replaceWarning:
+      "Criar o projeto substitui o que está aberto agora. Exporte uma cópia antes, se quiser guardar.",
+    errorType: "Escolha um arquivo PDF — este não parece ser um.",
+    errorSize: "O arquivo passa de 40 MB. Um TCC costuma ter bem menos que isso.",
+    errorTitle: "Não deu para importar",
+    retry: "Escolher outro arquivo",
+    lowConfidence:
+      "Este PDF não parece ter sido gerado pelo modelo da UECE. A importação funciona bem apenas para PDFs desse modelo — em outros, o texto costuma sair embaralhado.",
+    tryAnyway: "Tentar mesmo assim",
+  },
   ficha: {
     missing: "Seu projeto ainda não tem uma ficha catalográfica.",
     fromTemplate: "Ainda é a ficha de exemplo do modelo.",
