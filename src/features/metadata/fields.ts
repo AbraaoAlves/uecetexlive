@@ -3,7 +3,11 @@
  * inline, like the slash-menu COMMANDS. Fields with `verbatim` write their
  * value as-is (enums); free text is escaped by the wizard before applying.
  */
-import type { MetadataField, WorkType } from "@/features/project/metadata";
+import {
+  type MetadataField,
+  TEMPLATE_PLACEHOLDER_TITLE,
+  type WorkType,
+} from "@/features/project/metadata";
 
 export interface FieldOption {
   value: string;
@@ -26,6 +30,8 @@ export interface FieldDef {
     type: WorkType | null,
     fields: ReadonlyMap<string, MetadataField>,
   ) => boolean;
+  /** Aviso leve mostrado abaixo do campo; nunca impede avançar. */
+  validate?: (value: string) => string | null;
 }
 
 export interface StepDef {
@@ -33,6 +39,8 @@ export interface StepDef {
   title: string;
   /** Rótulo curto do chip da barra de etapas. */
   short: string;
+  /** Colunas da grade de campos (2 por padrão). */
+  columns?: 2 | 3;
   description?: string;
   fields: FieldDef[];
 }
@@ -107,6 +115,10 @@ export const WIZARD_STEPS: readonly StepDef[] = [
         label: "Título do trabalho",
         hint: "Ex.: “Uso de jogos digitais no ensino de programação no ensino médio”",
         kind: "text",
+        validate: (value) =>
+          value.trim() === TEMPLATE_PLACEHOLDER_TITLE
+            ? "Este ainda é o título de exemplo do modelo."
+            : null,
       },
     ],
   },
@@ -321,7 +333,15 @@ export const WIZARD_STEPS: readonly StepDef[] = [
     description:
       "Ano e cidade que aparecem na capa e na folha de rosto. A data de aprovação só é preenchida depois da defesa.",
     fields: [
-      { macro: "data", label: "Ano", kind: "year" },
+      {
+        macro: "data",
+        label: "Ano",
+        kind: "year",
+        validate: (value) =>
+          value.trim() === "" || /^\d{4}$/.test(value.trim())
+            ? null
+            : "Use o ano com 4 dígitos. Ex.: 2026",
+      },
       {
         macro: "local",
         label: "Local",
@@ -340,6 +360,8 @@ export const WIZARD_STEPS: readonly StepDef[] = [
     id: "banca",
     title: "Banca examinadora",
     short: "Banca",
+    // Nome, instituição e centro cabem numa linha por membro.
+    columns: 3,
     description:
       "A banca é opcional agora — preencha quando ela for definida. Membros sem nome não aparecem na folha de aprovação, e o espaço do próximo membro só abre quando o anterior tem nome.",
     fields: [

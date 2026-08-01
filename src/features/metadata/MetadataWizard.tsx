@@ -5,8 +5,8 @@
  * button); selects/radios commit on change. Fields whose macro is missing
  * from documento.tex render disabled.
  */
-import { AlertTriangle, X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { AlertTriangle, Check, X } from "lucide-react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import {
   escapeMetadataValue,
   type MetadataField,
@@ -22,10 +22,35 @@ export interface MetadataWizardProps {
   fields: ReadonlyMap<string, MetadataField>;
   onApply: (updates: Map<string, string>) => void;
   onClose: () => void;
+  /** Etapa inicial (0-based) — usado pelas stories. */
+  initialStep?: number;
 }
 
-export function MetadataWizard({ fields, onApply, onClose }: MetadataWizardProps) {
-  const [stepIndex, setStepIndex] = useState(0);
+export function MetadataWizard({
+  fields,
+  onApply,
+  onClose,
+  initialStep = 0,
+}: MetadataWizardProps) {
+  const [stepIndex, setStepIndex] = useState(initialStep);
+  const stepBodyRef = useRef<HTMLDivElement>(null);
+
+  const workType = workTypeOf(fields);
+  const step = WIZARD_STEPS[stepIndex] ?? WIZARD_STEPS[0];
+  const visibleFields = (step?.fields ?? []).filter(
+    (f) => !f.showWhen || f.showWhen(workType, fields),
+  );
+
+  // Trocar de etapa põe o cursor no primeiro campo utilizável dela.
+  const firstFieldMacro = visibleFields[0]?.macro;
+  useEffect(() => {
+    if (!firstFieldMacro) return;
+    stepBodyRef.current
+      ?.querySelector<HTMLElement>(
+        "input:not([disabled]), select:not([disabled]), textarea:not([disabled])",
+      )
+      ?.focus();
+  }, [firstFieldMacro]);
 
   // Global Escape: the modal must dismiss even when focus sits outside it
   // (e.g. right after the rail button that opened it).
@@ -37,15 +62,10 @@ export function MetadataWizard({ fields, onApply, onClose }: MetadataWizardProps
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
 
-  const workType = workTypeOf(fields);
-  const step = WIZARD_STEPS[stepIndex] ?? WIZARD_STEPS[0];
   if (!step) return null;
-  const visibleFields = step.fields.filter(
-    (f) => !f.showWhen || f.showWhen(workType, fields),
-  );
   const isLast = stepIndex === WIZARD_STEPS.length - 1;
 
-  const commit = (def: FieldDef, raw: string) => {
+  const commit = (def: FieldDef, raw: string): boolean => {
     // Textarea bodies (resumo/abstract) are "everything before a known
     // macro" (resumo-field.ts), not a single-line value — trimming would
     // eat the paragraph's own trailing spacing on every untouched blur.
@@ -53,13 +73,14 @@ export function MetadataWizard({ fields, onApply, onClose }: MetadataWizardProps
       ? raw
       : escapeMetadataValue(def.kind === "textarea" ? raw : raw.trim());
     const current = fields.get(def.macro)?.value;
-    if (current === undefined || current === value) return;
+    if (current === undefined || current === value) return false;
     const updates = new Map([[def.macro, value]]);
     if (def.macro === "ehuab" && value === "nao") {
       const polo = fields.get("localdopolo");
       if (polo && polo.value !== "") updates.set("localdopolo", "");
     }
     onApply(updates);
+    return true;
   };
 
   const titulo = fields.get("titulo")?.value.trim() ?? "";
@@ -77,7 +98,7 @@ export function MetadataWizard({ fields, onApply, onClose }: MetadataWizardProps
     >
       {/* Fields commit on blur, so closing via the backdrop never loses input. */}
       <div
-        className="flex h-[46rem] max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-lg border bg-surface-elevated shadow-xl"
+        className="flex h-[42rem] max-h-[90vh] w-full max-w-4xl flex-col overflow-hidden rounded-lg border bg-surface-elevated shadow-xl"
         onClick={(e) => e.stopPropagation()}
         onKeyDown={() => {}}
         role="document"
@@ -99,6 +120,7 @@ export function MetadataWizard({ fields, onApply, onClose }: MetadataWizardProps
                   )}
                 >
                   {i + 1}
+                  <span className="hidden md:inline"> · {s.short}</span>
                 </button>
               </Tooltip>
             ))}
@@ -117,7 +139,7 @@ export function MetadataWizard({ fields, onApply, onClose }: MetadataWizardProps
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto">
-          <div className="w-full px-6 py-5">
+          <div className="w-full px-6 py-4">
             <h2 className="font-display text-xl">{step.title}</h2>
             {step.description && (
               <p className="mt-1 text-ink-muted text-sm">{step.description}</p>
@@ -127,14 +149,26 @@ export function MetadataWizard({ fields, onApply, onClose }: MetadataWizardProps
                 {strings.metadata.themeContext} “{titulo}”
               </p>
             )}
-            <div className="mt-4 flex flex-col gap-4">
+            <div
+              ref={stepBodyRef}
+              className={cn(
+                "mt-4 grid grid-cols-1 gap-x-4 gap-y-3",
+                step.columns === 3 ? "md:grid-cols-3" : "md:grid-cols-2",
+              )}
+            >
               {visibleFields.map((def) => (
-                <WizardField
-                  key={def.macro}
-                  def={def}
-                  field={fields.get(def.macro)}
-                  onCommit={commit}
-                />
+                <Fragment key={def.macro}>
+                  {def.section && (
+                    <div className="mt-1 border-b pb-1 font-medium text-[11px] text-ink-subtle uppercase tracking-wider md:col-span-full">
+                      {def.section}
+                    </div>
+                  )}
+                  <WizardField
+                    def={def}
+                    field={fields.get(def.macro)}
+                    onCommit={commit}
+                  />
+                </Fragment>
               ))}
             </div>
           </div>
@@ -171,6 +205,9 @@ export function MetadataWizard({ fields, onApply, onClose }: MetadataWizardProps
   );
 }
 
+/** Quanto tempo o selo "salvo" fica visível depois do blur. */
+const SAVED_BADGE_MS = 1500;
+
 function WizardField({
   def,
   field,
@@ -178,23 +215,36 @@ function WizardField({
 }: {
   def: FieldDef;
   field: MetadataField | undefined;
-  onCommit: (def: FieldDef, raw: string) => void;
+  onCommit: (def: FieldDef, raw: string) => boolean;
 }) {
   const missing = field === undefined;
   const current = field?.value ?? "";
   const inputId = `metadata-input-${def.macro}`;
+  const [saved, setSaved] = useState(false);
+  const savedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(
+    () => () => {
+      if (savedTimer.current) clearTimeout(savedTimer.current);
+    },
+    [],
+  );
+
+  const handleCommit = (raw: string) => {
+    if (!onCommit(def, raw)) return;
+    setSaved(true);
+    if (savedTimer.current) clearTimeout(savedTimer.current);
+    savedTimer.current = setTimeout(() => setSaved(false), SAVED_BADGE_MS);
+  };
+
+  const problem = def.validate?.(current) ?? null;
+  const wide = def.kind === "textarea" || def.kind === "radio";
 
   return (
-    <div>
-      {def.section && (
-        <div className="mt-2 mb-2 border-b pb-1 font-medium text-[11px] text-ink-subtle uppercase tracking-wider">
-          {def.section}
-        </div>
-      )}
+    <div className={cn(wide && "md:col-span-full")}>
       {def.kind === "radio" && def.options ? (
         <fieldset disabled={missing}>
           <legend className="mb-2 block text-ink-muted text-xs">{def.label}</legend>
-          <div className="flex flex-col gap-2">
+          <div className="grid gap-2 md:grid-cols-2">
             {def.options.map((opt) => (
               <label
                 key={opt.value}
@@ -211,7 +261,7 @@ function WizardField({
                   value={opt.value}
                   data-testid={`metadata-option-${opt.value}`}
                   checked={current.trim() === opt.value}
-                  onChange={() => onCommit(def, opt.value)}
+                  onChange={() => handleCommit(opt.value)}
                   className="mt-0.5"
                 />
                 <span>
@@ -228,8 +278,20 @@ function WizardField({
         </fieldset>
       ) : (
         <div>
-          <label htmlFor={inputId} className="mb-1 block text-ink-muted text-xs">
+          <label
+            htmlFor={inputId}
+            className="mb-1 flex items-center gap-1.5 text-ink-muted text-xs"
+          >
             {def.label}
+            {saved && (
+              <span
+                className="flex items-center gap-0.5 text-success"
+                data-testid={`field-saved-${def.macro}`}
+              >
+                <Check className="size-3" />
+                {strings.metadata.savedBadge}
+              </span>
+            )}
           </label>
           {def.kind === "textarea" ? (
             <textarea
@@ -239,7 +301,7 @@ function WizardField({
               data-testid={`metadata-field-${def.macro}`}
               disabled={missing}
               defaultValue={current}
-              onBlur={(e) => onCommit(def, e.target.value)}
+              onBlur={(e) => handleCommit(e.target.value)}
               className="w-full resize-y rounded-md border bg-surface-elevated px-2.5 py-1.5 text-sm disabled:opacity-50"
             />
           ) : def.kind === "select" && def.options ? (
@@ -248,7 +310,7 @@ function WizardField({
               data-testid={`metadata-field-${def.macro}`}
               disabled={missing}
               value={current.trim()}
-              onChange={(e) => onCommit(def, e.target.value)}
+              onChange={(e) => handleCommit(e.target.value)}
               className="w-full rounded-md border bg-surface-elevated px-2.5 py-1.5 text-sm disabled:opacity-50"
             >
               {!def.options.some((o) => o.value === current.trim()) && (
@@ -271,7 +333,7 @@ function WizardField({
               data-testid={`metadata-field-${def.macro}`}
               disabled={missing}
               defaultValue={current}
-              onBlur={(e) => onCommit(def, e.target.value)}
+              onBlur={(e) => handleCommit(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === "Enter") e.currentTarget.blur();
               }}
@@ -279,6 +341,15 @@ function WizardField({
             />
           )}
         </div>
+      )}
+      {problem && !missing && (
+        <p
+          className="mt-1 text-warning text-xs"
+          role="status"
+          data-testid={`field-warning-${def.macro}`}
+        >
+          {problem}
+        </p>
       )}
       {def.hint && !missing && <p className="mt-1 text-ink-subtle text-xs">{def.hint}</p>}
       {missing && (

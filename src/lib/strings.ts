@@ -120,6 +120,7 @@ export const strings = {
     pendingHint: "Preencha o título e os dados do seu trabalho",
     missingMacro:
       "Este campo não existe no arquivo do seu projeto. Ative o modo Avançado, abra o arquivo correspondente e acrescente a linha que falta.",
+    savedBadge: "salvo",
     themeContext: "Seu tema:",
     prev: "Anterior",
     next: "Avançar",
