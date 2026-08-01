@@ -116,7 +116,8 @@ export const strings = {
     railEntry: "Dados do Trabalho",
     stepsLabel: "Etapas",
     pendingHint: "Preencha o título e os dados do seu trabalho",
-    missingMacro: "Não encontrado no arquivo — edite pelo modo Avançado",
+    missingMacro:
+      "Este campo não existe no arquivo do seu projeto. Ative o modo Avançado, abra o arquivo correspondente e acrescente a linha que falta.",
     themeContext: "Seu tema:",
     prev: "Anterior",
     next: "Avançar",

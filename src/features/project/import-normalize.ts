@@ -10,6 +10,7 @@
 
 import { bytesToText, type Project, textToBytes } from "@papyru/project-model";
 import { repairFolhaAprovacao } from "./folha-aprovacao";
+import { ABSTRACT_PATH, normalizeResumoSource, RESUMO_PATH } from "./resumo-field";
 
 /** Reescreve o texto de um arquivo; devolve o projeto original se nada mudou. */
 function rewriteFile(
@@ -30,5 +31,12 @@ function rewriteFile(
 
 /** Devolve o projeto pronto para persistir (o mesmo objeto se nada mudou). */
 export function normalizeImportedProject(project: Project): Project {
-  return rewriteFile(project, project.entry, repairFolhaAprovacao);
+  let next = rewriteFile(project, project.entry, repairFolhaAprovacao);
+  next = rewriteFile(next, RESUMO_PATH, (source) =>
+    normalizeResumoSource(source, "palavraschave"),
+  );
+  next = rewriteFile(next, ABSTRACT_PATH, (source) =>
+    normalizeResumoSource(source, "keywords"),
+  );
+  return next;
 }

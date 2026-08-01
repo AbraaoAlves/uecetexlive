@@ -41,6 +41,22 @@ describe("normalizeImportedProject", () => {
     );
   });
 
+  it("converte o rótulo literal de palavras-chave do resumo e do abstract", () => {
+    const normalized = normalizeImportedProject(
+      project({
+        "documento.tex": "\\trabalhoacademico{dissertacao}\n",
+        "elementos-pre-textuais/resumo.tex": "Corpo. Palavras-chave: a; b.\n",
+        "elementos-pre-textuais/abstract.tex": "Body. Keywords: c; d.\n",
+      }),
+    );
+    const read = (path: string) =>
+      bytesToText(
+        normalized.files.find((f) => f.path === path)?.bytes ?? new Uint8Array(),
+      );
+    expect(read("elementos-pre-textuais/resumo.tex")).toContain("\\palavraschave{a; b.}");
+    expect(read("elementos-pre-textuais/abstract.tex")).toContain("\\keywords{c; d.}");
+  });
+
   it("devolve o mesmo objeto quando não há nada a normalizar", () => {
     const original = project({
       "documento.tex": "\\trabalhoacademico{dissertacao}\n",

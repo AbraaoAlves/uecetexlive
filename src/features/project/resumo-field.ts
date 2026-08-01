@@ -71,6 +71,59 @@ export function extractResumoField(
   return field;
 }
 
+/** Rótulo textual das palavras-chave, nas duas línguas que o modelo usa. */
+const KEYWORD_LABEL = /(^|[\s])(Palavras-chave|Keywords)[ \t]*:[ \t]*/gi;
+
+/** Chaves LaTeX pareadas, ignorando as escapadas (`\{`, `\}`). */
+function hasBalancedBraces(text: string): boolean {
+  let depth = 0;
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (ch === "\\") {
+      i++; // o próximo caractere está escapado
+    } else if (ch === "{") {
+      depth++;
+    } else if (ch === "}" && --depth < 0) {
+      return false;
+    }
+  }
+  return depth === 0;
+}
+
+/**
+ * Reconhece "Palavras-chave:"/"Keywords:" escrito como texto corrido no fim do
+ * arquivo — a forma que sai do caminho PDF→LaTeX — e devolve a forma canônica,
+ * com a macro que o wizard procura. `null` quando não há nada a fazer.
+ *
+ * O rótulo procurado é a ÚLTIMA ocorrência: o texto do resumo pode citar a
+ * expressão antes (o próprio modelo cita, ao explicar a norma).
+ */
+export function normalizeResumoSource(
+  source: string,
+  keywordMacro: ResumoKeywordMacro,
+): string | null {
+  // Já canônico: a macro manda, mesmo que o rótulo apareça no corpo.
+  if (extractResumoField(source, keywordMacro) !== null) return null;
+
+  let last: RegExpExecArray | null = null;
+  KEYWORD_LABEL.lastIndex = 0;
+  for (
+    let match = KEYWORD_LABEL.exec(source);
+    match !== null;
+    match = KEYWORD_LABEL.exec(source)
+  ) {
+    last = match;
+  }
+  if (!last) return null;
+
+  const body = source.slice(0, last.index).trimEnd();
+  const keywords = source.slice(last.index + last[0].length).trim();
+  // Chaves desbalanceadas viram um grupo LaTeX quebrado — melhor deixar o
+  // arquivo como está e o wizard avisar do que estragar o documento.
+  if (!hasBalancedBraces(keywords)) return null;
+  return `${body}\n\n\\${keywordMacro}{${keywords}}\n`;
+}
+
 export function applyResumoField(
   source: string,
   field: ResumoField,
