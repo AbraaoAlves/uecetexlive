@@ -36,11 +36,15 @@ import { MetadataWizard } from "@/features/metadata/MetadataWizard";
 import { WelcomeDialog } from "@/features/metadata/WelcomeDialog";
 import { deleteProject, loadLastPdf } from "@/features/persistence/db";
 import { useStoragePersistence } from "@/features/persistence/useStoragePersistence";
+import {
+  repairFolhaAprovacao,
+  withHiddenSlotFillers,
+} from "@/features/project/folha-aprovacao";
+import { normalizeImportedProject } from "@/features/project/import-normalize";
 import { buildIncludeGraph, type IncludeGraph } from "@/features/project/include-graph";
 import {
   applyMetadata,
   extractMetadata,
-  type MetadataField,
   TEMPLATE_PLACEHOLDER_TITLE,
   workTypeOf,
 } from "@/features/project/metadata";
@@ -436,7 +440,7 @@ function ShellInner() {
   // synthetic ids (resumobody/abstractbody) so the wizard sees one flat
   // fields map, same as every documento.tex macro.
   const meta = useMemo(() => {
-    const merged = new Map<string, MetadataField>(extractMetadata(entrySource));
+    const merged = withHiddenSlotFillers(extractMetadata(entrySource));
     if (resumoField) {
       merged.set("resumobody", {
         macro: "resumobody",
@@ -513,7 +517,10 @@ function ShellInner() {
         else docUpdates.set(key, value);
       }
       if (docUpdates.size > 0) {
-        updateFileText(project.entry, applyMetadata(entrySource, docUpdates));
+        // Reparar depois de gravar: esvaziar o centro de um membro (ou trocar
+        // o tipo de trabalho para TCC) recria a folha de aprovação quebrada.
+        const next = applyMetadata(entrySource, docUpdates);
+        updateFileText(project.entry, repairFolhaAprovacao(next) ?? next);
       }
       if (
         resumoField &&
@@ -641,11 +648,13 @@ function ShellInner() {
   const handleZipFile = async (file: File) => {
     try {
       const bytes = new Uint8Array(await file.arrayBuffer());
-      const imported = await importProjectZip(bytes, "uecetex2", {
-        structure: UECETEX2_STRUCTURE,
-        templateSource: "https://github.com/thiagodnf/uecetex2",
-        preferredEntry: "documento.tex",
-      });
+      const imported = normalizeImportedProject(
+        await importProjectZip(bytes, "uecetex2", {
+          structure: UECETEX2_STRUCTURE,
+          templateSource: "https://github.com/thiagodnf/uecetex2",
+          preferredEntry: "documento.tex",
+        }),
+      );
       setImportState({
         kind: "zip-ok",
         fileCount: imported.files.length,

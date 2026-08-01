@@ -6,7 +6,9 @@ import {
   isEmptySlotFiller,
   repairFolhaAprovacao,
   SIGNATURE_SLOTS,
+  withHiddenSlotFillers,
 } from "../folha-aprovacao";
+import { extractMetadata } from "../metadata";
 
 /** Preâmbulo mínimo com os campos que a folha de aprovação imprime. */
 function doc(fields: Record<string, string>, type = "tccgraduacao"): string {
@@ -174,6 +176,34 @@ describe("repairFolhaAprovacao", () => {
 
   it("mantém o documento.tex vendorado intacto", () => {
     expect(repairFolhaAprovacao(documentoTex)).toBeNull();
+  });
+});
+
+describe("withHiddenSlotFillers", () => {
+  it("mostra o campo preenchido pelo app como vazio no wizard", () => {
+    const source =
+      repairFolhaAprovacao(
+        doc({
+          ...FULL_ORIENTADOR,
+          membrodabancadois: "Profa. Dra. Beltrana",
+          membrodabancadoiscentro: "",
+        }),
+      ) ?? "";
+    const visible = withHiddenSlotFillers(extractMetadata(source));
+    expect(visible.get("membrodabancadoiscentro")?.value).toBe("");
+  });
+
+  it("preserva o que o autor digitou", () => {
+    const source = doc({
+      ...FULL_ORIENTADOR,
+      membrodabancadois: "Profa. Dra. Beltrana",
+      membrodabancadoiscentro: "Faculdade de Educação",
+    });
+    const visible = withHiddenSlotFillers(extractMetadata(source));
+    expect(visible.get("membrodabancadoiscentro")?.value).toBe("Faculdade de Educação");
+    expect(visible.get("orientadorcentro")?.value).toBe(
+      "Centro de Ciências e Tecnologia",
+    );
   });
 });
 

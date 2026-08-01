@@ -18,7 +18,12 @@
  * mostra o campo como vazio (ver `isEmptySlotFiller`).
  */
 
-import { applyMetadata, extractMetadata, workTypeOf } from "./metadata";
+import {
+  applyMetadata,
+  extractMetadata,
+  type MetadataField,
+  workTypeOf,
+} from "./metadata";
 
 /** Valor gravado num campo vazio que o modelo não pode deixar em branco. */
 export const EMPTY_SLOT_FILLER = "\\mbox{}";
@@ -51,9 +56,22 @@ export function isEmptySlotFiller(value: string): boolean {
   return value.trim() === EMPTY_SLOT_FILLER;
 }
 
-/** O que o wizard deve exibir: o preenchimento do app aparece como vazio. */
-export function displaySlotValue(value: string): string {
-  return isEmptySlotFiller(value) ? "" : value;
+/**
+ * O wizard mostra o preenchimento do app como campo vazio — que é a verdade
+ * sobre o dado. Se o autor digitar algo, substitui; se deixar em branco, o
+ * reparo volta a gravar o preenchimento.
+ */
+export function withHiddenSlotFillers(
+  fields: ReadonlyMap<string, MetadataField>,
+): Map<string, MetadataField> {
+  const out = new Map(fields);
+  for (const slot of SIGNATURE_SLOTS) {
+    const field = out.get(slot.centroMacro);
+    if (field && isEmptySlotFiller(field.value)) {
+      out.set(slot.centroMacro, { ...field, value: "" });
+    }
+  }
+  return out;
 }
 
 /**
