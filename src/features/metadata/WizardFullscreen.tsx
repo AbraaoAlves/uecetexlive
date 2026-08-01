@@ -205,7 +205,7 @@ export function WizardFullscreen({
           </button>
         </div>
 
-        <div className="min-h-0 flex-1 overflow-y-auto">
+        <div className="min-h-0 flex-1 overflow-y-auto" data-testid="wizard-fs-body">
           <div className="mx-auto w-full max-w-4xl px-6 py-4">
             {step.description && (
               <p className="text-ink-muted text-sm">{step.description}</p>
