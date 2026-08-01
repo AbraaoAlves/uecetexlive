@@ -128,8 +128,10 @@ export function normalizeResumoSource(
     match !== null;
     match = KEYWORD_LABEL.exec(source)
   ) {
-    // Um rótulo dentro de comentário é exemplo, não conteúdo.
-    if (!isInsideComment(source, match.index)) last = match;
+    // Um rótulo dentro de comentário é exemplo, não conteúdo. A checagem é na
+    // posição do rótulo: o grupo 1 do regex pode ser a própria quebra de linha
+    // que encerra um comentário anterior.
+    if (!isInsideComment(source, match.index + (match[1]?.length ?? 0))) last = match;
   }
   if (!last) return null;
 

@@ -45,11 +45,23 @@ function legacyIsAdvancedOnly(path: string): boolean {
   return path.startsWith("lib/") || path === "documento.tex";
 }
 
+/**
+ * Extensão deliberada, posterior à extração do pacote: as páginas opcionais
+ * sem edição visual passaram a aparecer no modo simples porque é ali que fica
+ * a caixinha que as inclui ou tira do PDF.
+ */
+const OPTIONAL_PAGES = new Set([
+  "elementos-pre-textuais/errata.tex",
+  "elementos-pre-textuais/lista-de-abreviaturas-e-siglas.tex",
+  "elementos-pre-textuais/lista-de-simbolos.tex",
+  "elementos-pos-textuais/glossario.tex",
+]);
+
 function legacyIsSimpleModeVisible(path: string): boolean {
   if (legacyIsWysiwygEligible(path)) return true;
   if (path.endsWith(".bib")) return true;
   if (legacyRailSectionOf(path) === "figures") return true;
-  return false;
+  return OPTIONAL_PAGES.has(path);
 }
 
 const manifest = JSON.parse(

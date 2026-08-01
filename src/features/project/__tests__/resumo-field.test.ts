@@ -140,6 +140,13 @@ describe("normalizeResumoSource", () => {
     );
   });
 
+  it("reconhece o rótulo na linha seguinte a um comentário", () => {
+    const source = "% Exemplo do modelo\nPalavras-chave: a; b.\n";
+    expect(normalizeResumoSource(source, "palavraschave")).toContain(
+      "\\palavraschave{a; b.}",
+    );
+  });
+
   it("ignora o rótulo que está dentro de um comentário", () => {
     const source = "% Exemplo: Palavras-chave: modelo\nCorpo sem rótulo de verdade.\n";
     expect(normalizeResumoSource(source, "palavraschave")).toBeNull();

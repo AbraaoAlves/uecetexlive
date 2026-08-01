@@ -67,6 +67,8 @@ interface Scan {
   /** Bytes entre o início da linha e o começo da macro (indentação + `%`). */
   prefixLength: number;
   commentLength: number;
+  /** Quantas linhas do corpo repetem esta macro. */
+  occurrences: number;
 }
 
 /** Só a parte da linha antes de um `%` não escapado conta como código. */
@@ -112,6 +114,7 @@ function scan(source: string): Map<string, Scan> {
         },
         prefixLength: indent.length + (comment?.length ?? 0),
         commentLength: comment?.length ?? 0,
+        occurrences: (out.get(macro)?.occurrences ?? 0) + 1,
       });
     }
     lineStart = lineEnd + 1;
@@ -119,9 +122,18 @@ function scan(source: string): Map<string, Scan> {
   return out;
 }
 
+/**
+ * Estado de cada macro do corpo do documento.
+ *
+ * Macro repetida fica de fora: ao contrário de `\def`, estas linhas executam
+ * as duas vezes — a página sairia duplicada, e mexer só na última não a
+ * removeria. Sem estado seguro para mostrar, não há controle.
+ */
 export function extractImprimirToggles(source: string): Map<string, ImprimirToggle> {
   const out = new Map<string, ImprimirToggle>();
-  for (const [macro, entry] of scan(source)) out.set(macro, entry.toggle);
+  for (const [macro, entry] of scan(source)) {
+    if (entry.occurrences === 1) out.set(macro, entry.toggle);
+  }
   return out;
 }
 
@@ -160,7 +172,8 @@ export function applyImprimirToggle(
   enabled: boolean,
 ): string {
   const entry = scan(source).get(macro);
-  if (!entry || entry.toggle.enabled === enabled) return source;
+  // Repetida: qualquer escolha de linha estaria errada (ver acima).
+  if (!entry || entry.occurrences > 1 || entry.toggle.enabled === enabled) return source;
 
   const { lineStart } = entry.toggle;
   const indentLength = entry.prefixLength - entry.commentLength;

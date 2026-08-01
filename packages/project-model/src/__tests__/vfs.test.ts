@@ -106,11 +106,11 @@ describe("isSimpleModeVisible (modo simples — allowlist de prosa)", () => {
     ["lib/uecetex2.sty", false],
     ["lib/abntex2-alf.bst", false],
     ["lib/logo-uece.png", false],
-    ["elementos-pre-textuais/errata.tex", false],
+    ["elementos-pre-textuais/errata.tex", true],
     ["elementos-pre-textuais/ficha-catalografica.pdf", false],
-    ["elementos-pre-textuais/lista-de-abreviaturas-e-siglas.tex", false],
-    ["elementos-pre-textuais/lista-de-simbolos.tex", false],
-    ["elementos-pos-textuais/glossario.tex", false],
+    ["elementos-pre-textuais/lista-de-abreviaturas-e-siglas.tex", true],
+    ["elementos-pre-textuais/lista-de-simbolos.tex", true],
+    ["elementos-pos-textuais/glossario.tex", true],
   ])("%s -> %s", (path, visible) => {
     expect(isSimpleModeVisible(UECETEX2_STRUCTURE, path)).toBe(visible);
   });

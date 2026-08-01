@@ -56,9 +56,9 @@ describe("extractImprimirToggles", () => {
     expect(toggles.has("imprimirsumario")).toBe(true);
   });
 
-  it("na duplicata, a última ocorrência vence", () => {
+  it("macro repetida não vira controle — o LaTeX executa as duas linhas", () => {
     const source = doc("\t\\imprimirepigrafe{a}\n\t%\\imprimirepigrafe{b}");
-    expect(extractImprimirToggles(source).get("imprimirepigrafe")?.enabled).toBe(false);
+    expect(extractImprimirToggles(source).has("imprimirepigrafe")).toBe(false);
   });
 
   it("lê um documento com quebras de linha do Windows", () => {
@@ -132,11 +132,9 @@ describe("applyImprimirToggle", () => {
     expect(applyImprimirToggle(source, "imprimirglossario", true)).toBe(source);
   });
 
-  it("age na última ocorrência quando há duplicata", () => {
+  it("é no-op quando a macro está repetida — nenhuma escolha estaria certa", () => {
     const duplicado = doc("\t\\imprimirepigrafe{a}\n\t\\imprimirepigrafe{b}");
-    const off = applyImprimirToggle(duplicado, "imprimirepigrafe", false);
-    expect(off).toContain("\t\\imprimirepigrafe{a}");
-    expect(off).toContain("\t%\\imprimirepigrafe{b}");
+    expect(applyImprimirToggle(duplicado, "imprimirepigrafe", false)).toBe(duplicado);
   });
 
   it("o estado extraído reflete o que foi aplicado", () => {

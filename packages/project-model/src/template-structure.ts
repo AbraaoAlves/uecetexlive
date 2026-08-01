@@ -104,7 +104,17 @@ export const UECETEX2_STRUCTURE = {
     "elementos-pre-textuais/agradecimentos.tex",
   ],
   advancedOnly: ["lib/**", "documento.tex"],
-  simpleModeVisible: ["**/*.bib", "figuras/**", "figuras-extraidas/**"],
+  // As páginas opcionais entram aqui mesmo sem edição visual: é no painel do
+  // modo simples que fica a caixinha que as inclui ou tira do PDF.
+  simpleModeVisible: [
+    "**/*.bib",
+    "figuras/**",
+    "figuras-extraidas/**",
+    "elementos-pre-textuais/errata.tex",
+    "elementos-pre-textuais/lista-de-abreviaturas-e-siglas.tex",
+    "elementos-pre-textuais/lista-de-simbolos.tex",
+    "elementos-pos-textuais/glossario.tex",
+  ],
 } as const satisfies TemplateStructure;
 
 /** Ids de seção do rail para o uecetex2 (mais o fallback "root"). */
