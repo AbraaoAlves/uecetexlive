@@ -32,6 +32,8 @@ export interface FieldDef {
   ) => boolean;
   /** Aviso leve mostrado abaixo do campo; nunca impede avançar. */
   validate?: (value: string) => string | null;
+  /** Sem ele o trabalho não fica pronto — usado pelo guia em tela cheia. */
+  required?: boolean;
 }
 
 export interface StepDef {
@@ -112,6 +114,7 @@ export const WIZARD_STEPS: readonly StepDef[] = [
     fields: [
       {
         macro: "titulo",
+        required: true,
         label: "Título do trabalho",
         hint: "Ex.: “Uso de jogos digitais no ensino de programação no ensino médio”",
         kind: "text",
@@ -131,6 +134,7 @@ export const WIZARD_STEPS: readonly StepDef[] = [
     fields: [
       {
         macro: "trabalhoacademico",
+        required: true,
         label: "Tipo",
         kind: "radio",
         verbatim: true,
@@ -200,7 +204,7 @@ export const WIZARD_STEPS: readonly StepDef[] = [
     title: "Autor e curso",
     short: "Autor",
     fields: [
-      { macro: "autor", label: "Seu nome completo", kind: "text" },
+      { required: true, macro: "autor", label: "Seu nome completo", kind: "text" },
       {
         macro: "graduacaoem",
         label: "Curso de graduação",
@@ -289,6 +293,7 @@ export const WIZARD_STEPS: readonly StepDef[] = [
     fields: [
       {
         macro: "orientador",
+        required: true,
         label: "Nome do orientador(a)",
         hint: "Inclua o título: Prof. Dr., Profa. Dra., …",
         kind: "text",
@@ -335,6 +340,7 @@ export const WIZARD_STEPS: readonly StepDef[] = [
     fields: [
       {
         macro: "data",
+        required: true,
         label: "Ano",
         kind: "year",
         validate: (value) =>
@@ -344,6 +350,7 @@ export const WIZARD_STEPS: readonly StepDef[] = [
       },
       {
         macro: "local",
+        required: true,
         label: "Local",
         hint: "Cidade e estado, como aparecem na capa. Ex.: “Fortaleza -- Ceará”",
         kind: "text",
@@ -385,12 +392,14 @@ export const WIZARD_STEPS: readonly StepDef[] = [
     fields: [
       {
         macro: "resumobody",
+        required: true,
         label: "Resumo (português)",
         hint: "Finalize com as palavras-chave no campo abaixo — não repita aqui.",
         kind: "textarea",
       },
       {
         macro: "palavraschave",
+        required: true,
         label: "Palavras-chave",
         hint: "De 3 a 5 termos, separados por ponto e vírgula, finalizados por ponto.",
         kind: "text",

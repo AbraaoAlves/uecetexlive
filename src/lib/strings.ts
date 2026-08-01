@@ -23,6 +23,7 @@ export const strings = {
     saving: "Salvando…",
     saved: "Salvo",
     toggleRail: "Painel lateral (Ctrl/Cmd+B): mostrar ou ocultar a árvore de arquivos.",
+    openGuide: "Guia do trabalho…",
     compileHint: "Gerar PDF (Ctrl/Cmd+Enter): atualiza o PDF com as últimas edições.",
     menuHint:
       "Menu: importar ZIP, exportar PDF ou projeto, importar .bbl, restaurar modelo.",
@@ -72,6 +73,14 @@ export const strings = {
       "Este arquivo guarda suas referências bibliográficas. Edite pela aba “Referências”, ao lado de “Arquivos”.",
     toggleInclude: "Aparece no PDF — desmarque para tirar",
     toggleExcluded: "Fora do PDF — marque para incluir",
+  },
+  ficha: {
+    missing: "Seu projeto ainda não tem uma ficha catalográfica.",
+    fromTemplate: "Ainda é a ficha de exemplo do modelo.",
+    uploaded: "Ficha enviada por você.",
+    upload: "Enviar a ficha da biblioteca (PDF)",
+    errorType: "Envie o PDF que a biblioteca gerou — o arquivo não parece ser um PDF.",
+    errorSize: "O arquivo passa de 5 MB. A ficha catalográfica tem uma página só.",
   },
   editor: {
     rawLatexTooltip:
@@ -125,6 +134,8 @@ export const strings = {
     missingMacro:
       "Este campo não existe no arquivo do seu projeto. Ative o modo Avançado, abra o arquivo correspondente e acrescente a linha que falta.",
     savedBadge: "salvo",
+    guideTitle: "Guia do trabalho",
+    reviewReady: "Tudo que é obrigatório já está preenchido.",
     themeContext: "Seu tema:",
     prev: "Anterior",
     next: "Avançar",
