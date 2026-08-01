@@ -23,18 +23,18 @@ export interface ImportProjectZipOptions {
   preferredEntry: string;
 }
 
-export async function importProjectZip(
-  zipBytes: Uint8Array,
+/**
+ * Projeto a partir de um conjunto de arquivos, venha ele de um ZIP ou do
+ * caminho PDF→LaTeX. Caminhos inseguros são descartados (não abortam), e o
+ * arquivo de entrada é o preferido, ou o maior .tex da raiz.
+ */
+export function projectFromFiles(
+  entries: Iterable<readonly [string, Uint8Array]>,
   id: string,
   options: ImportProjectZipOptions,
-): Promise<Project> {
-  if (zipBytes.length > MAX_ZIP_BYTES) {
-    throw new Error("ZIP excede o limite de 50 MB");
-  }
-  const entries = unzipSync(zipBytes);
-
-  const files = Object.entries(entries)
-    .filter(([path, bytes]) => !path.endsWith("/") && bytes.length >= 0)
+): Project {
+  const files = [...entries]
+    .filter(([path]) => !path.endsWith("/"))
     .flatMap(([path, bytes]) => {
       const candidate = {
         path,
@@ -48,7 +48,7 @@ export async function importProjectZip(
 
   const texFiles = files.filter((f) => f.path.endsWith(".tex"));
   if (texFiles.length === 0) {
-    throw new Error("O ZIP não contém nenhum arquivo .tex");
+    throw new Error("O projeto não contém nenhum arquivo .tex");
   }
 
   const entry =
@@ -67,4 +67,22 @@ export async function importProjectZip(
     files,
     updatedAt: Date.now(),
   });
+}
+
+export async function importProjectZip(
+  zipBytes: Uint8Array,
+  id: string,
+  options: ImportProjectZipOptions,
+): Promise<Project> {
+  if (zipBytes.length > MAX_ZIP_BYTES) {
+    throw new Error("ZIP excede o limite de 50 MB");
+  }
+  try {
+    return projectFromFiles(Object.entries(unzipSync(zipBytes)), id, options);
+  } catch (err) {
+    if ((err as Error).message.includes("nenhum arquivo .tex")) {
+      throw new Error("O ZIP não contém nenhum arquivo .tex");
+    }
+    throw err;
+  }
 }

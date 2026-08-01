@@ -27,4 +27,5 @@ export {
   exportProjectZip,
   type ImportProjectZipOptions,
   importProjectZip,
+  projectFromFiles,
 } from "./zip";

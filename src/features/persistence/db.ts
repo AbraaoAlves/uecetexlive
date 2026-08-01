@@ -22,4 +22,6 @@ export const {
   saveUiSettings,
   cacheLastPdf,
   loadLastPdf,
+  saveImportReport,
+  loadImportReport,
 } = db;

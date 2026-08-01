@@ -40,6 +40,14 @@ export interface ProjectDb {
   saveUiSettings(settings: UiSettings): Promise<void>;
   cacheLastPdf(entry: CachedPdf): Promise<void>;
   loadLastPdf(): Promise<CachedPdf | undefined>;
+  /**
+   * Relatório da última importação de PDF do projeto — as pendências
+   * sobrevivem ao recarregamento, senão some justamente a lista do que o
+   * aluno ainda tem de refazer. Opaco de propósito: o formato pertence a
+   * quem importa, não ao banco.
+   */
+  saveImportReport(projectId: string, report: unknown): Promise<void>;
+  loadImportReport(projectId: string): Promise<unknown>;
 }
 
 export function createProjectDb(dbName: string): ProjectDb {
@@ -121,6 +129,16 @@ export function createProjectDb(dbName: string): ProjectDb {
     async saveUiSettings(settings) {
       const db = await getDb();
       await db.put("settings", settings, "ui");
+    },
+
+    async saveImportReport(projectId, report) {
+      const db = await getDb();
+      await db.put("settings", report, `import-report:${projectId}`);
+    },
+
+    async loadImportReport(projectId) {
+      const db = await getDb();
+      return db.get("settings", `import-report:${projectId}`);
     },
 
     async cacheLastPdf(entry) {
