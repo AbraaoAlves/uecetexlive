@@ -15,6 +15,7 @@ import {
   UECETEX2_STRUCTURE,
 } from "@papyru/project-model";
 import {
+  Compass,
   Download,
   FileUp,
   Loader2,
@@ -34,6 +35,7 @@ import {
 } from "@/features/compliance/compliance-checklist";
 import { MetadataWizard } from "@/features/metadata/MetadataWizard";
 import { WelcomeDialog } from "@/features/metadata/WelcomeDialog";
+import { WizardFullscreen } from "@/features/metadata/WizardFullscreen";
 import { deleteProject, loadLastPdf } from "@/features/persistence/db";
 import { useStoragePersistence } from "@/features/persistence/useStoragePersistence";
 import {
@@ -146,6 +148,9 @@ const RAIL_UPLOAD_EXTENSIONS = new Set([
 ]);
 const RAIL_UPLOAD_MAX_BYTES = 10 * 1024 * 1024;
 
+/** Ficha catalográfica do projeto — o guia substitui exatamente este arquivo. */
+const FICHA_PATH = "elementos-pre-textuais/ficha-catalografica.pdf";
+
 /**
  * Three-pane shell (§6.1): rail 240px / editor flex / preview 45%.
  */
@@ -167,6 +172,7 @@ function ShellInner() {
     dirtyPaths,
     openFile,
     updateFileText,
+    updateFileBytes,
     replaceProject,
     createFile,
   } = useProject();
@@ -184,6 +190,7 @@ function ShellInner() {
   const { showReminder: showBackupReminder, resetReminder: resetBackupReminder } =
     useBackupReminder(ui, setUi, uiReady);
   const [metadataOpen, setMetadataOpen] = useState(false);
+  const [guideOpen, setGuideOpen] = useState(false);
   const [checklistOpen, setChecklistOpen] = useState(false);
   const [newChapterOpen, setNewChapterOpen] = useState(false);
   const [previewTab, setPreviewTab] = useState<"pdf" | "log">("pdf");
@@ -582,6 +589,26 @@ function ShellInner() {
     [project, entrySource, updateFileText],
   );
 
+  const runCompile = useCallback(() => {
+    if (!project) return;
+    setPreviewTab("pdf");
+    void compile(project, { precompiledBbl });
+  }, [project, compile, precompiledBbl]);
+
+  /** Estado das linhas opcionais, indexado por macro (o guia usa a macro). */
+  const guideToggles = useMemo(() => extractImprimirToggles(entrySource), [entrySource]);
+
+  const fichaFile = project?.files.find((f) => f.path === FICHA_PATH);
+  const fichaSize = fichaFile?.bytes.byteLength ?? null;
+  const replaceFicha = useCallback(
+    (bytes: Uint8Array) => {
+      if (!project) return;
+      if (fichaFile) updateFileBytes(FICHA_PATH, bytes);
+      else createFile(FICHA_PATH, bytes);
+    },
+    [project, fichaFile, updateFileBytes, createFile],
+  );
+
   const wysiwygCapable =
     currentFile !== null &&
     currentFile.kind === "tex" &&
@@ -864,10 +891,7 @@ function ShellInner() {
         <CompileButton
           status={compileState.status}
           progressLabel={compileState.progress?.label}
-          onCompile={() => {
-            setPreviewTab("pdf");
-            void compile(project, { precompiledBbl });
-          }}
+          onCompile={runCompile}
         />
         <Tooltip content={strings.topbar.exportPdf}>
           <button
@@ -922,6 +946,15 @@ function ShellInner() {
                 }}
               >
                 <Download className="size-3.5" /> {strings.topbar.exportZip}
+              </MenuItem>
+              <MenuItem
+                testid="menu-open-guide"
+                onClick={() => {
+                  setMenuOpen(false);
+                  setGuideOpen(true);
+                }}
+              >
+                <Compass className="size-3.5" /> {strings.topbar.openGuide}
               </MenuItem>
               <MenuItem
                 testid="menu-import-zip"
@@ -1247,11 +1280,27 @@ function ShellInner() {
           onClose={() => setImportState(null)}
         />
       )}
+      {guideOpen && (
+        <WizardFullscreen
+          fields={meta}
+          onApply={applyWorkMetadata}
+          onClose={() => setGuideOpen(false)}
+          toggles={guideToggles}
+          onToggle={toggleImprimir}
+          onFicha={replaceFicha}
+          fichaSize={fichaSize}
+          onCompile={() => {
+            setGuideOpen(false);
+            runCompile();
+          }}
+          persisted={saveState === "saved"}
+        />
+      )}
       {uiReady && !ui.welcomeSeen && !importState && (
         <WelcomeDialog
           onFill={() => {
             setUi({ welcomeSeen: true });
-            setMetadataOpen(true);
+            setGuideOpen(true);
           }}
           onLater={() => setUi({ welcomeSeen: true })}
         />

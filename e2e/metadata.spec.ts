@@ -11,7 +11,10 @@ test("welcome → wizard fills title; documento.tex updated; persists", async ({
   // First boot on a cold preview server (seed + chunk download) can beat the
   // default 5 s expect timeout — clicks elsewhere auto-wait far longer.
   await expect(page.getByTestId("welcome-dialog")).toBeVisible({ timeout: 15_000 });
-  await page.getByTestId("welcome-fill").click();
+  // "Preencher dados" abre o guia em tela cheia (M3 Fase 2); estas specs são
+  // do modal de edição rápida, que se abre pelo painel.
+  await page.getByTestId("welcome-later").click();
+  await page.getByTestId("rail-metadata").click();
   await expect(page.getByTestId("metadata-wizard")).toBeVisible();
 
   // Step 1: fill the title; commit on blur.
@@ -62,7 +65,10 @@ test("UAB toggle reveals local do polo and clears it when turned off", async ({
 }) => {
   await page.goto("/");
   await expect(page.getByTestId("welcome-dialog")).toBeVisible({ timeout: 15_000 });
-  await page.getByTestId("welcome-fill").click();
+  // "Preencher dados" abre o guia em tela cheia (M3 Fase 2); estas specs são
+  // do modal de edição rápida, que se abre pelo painel.
+  await page.getByTestId("welcome-later").click();
+  await page.getByTestId("rail-metadata").click();
   await expect(page.getByTestId("metadata-wizard")).toBeVisible();
 
   // "tipo" is the 2nd step; ehuab defaults to "nao" so localdopolo starts hidden.
@@ -103,7 +109,10 @@ test("banca slots respect the work-type cap (TCC: 3, dissertação: 4, tese: 5)"
 }) => {
   await page.goto("/");
   await expect(page.getByTestId("welcome-dialog")).toBeVisible({ timeout: 15_000 });
-  await page.getByTestId("welcome-fill").click();
+  // "Preencher dados" abre o guia em tela cheia (M3 Fase 2); estas specs são
+  // do modal de edição rápida, que se abre pelo painel.
+  await page.getByTestId("welcome-later").click();
+  await page.getByTestId("rail-metadata").click();
   await expect(page.getByTestId("metadata-wizard")).toBeVisible();
 
   await page.getByTestId("wizard-step-2").click();
@@ -130,7 +139,10 @@ test("resumo/abstract step writes surgically into their own files, not documento
 }) => {
   await page.goto("/");
   await expect(page.getByTestId("welcome-dialog")).toBeVisible({ timeout: 15_000 });
-  await page.getByTestId("welcome-fill").click();
+  // "Preencher dados" abre o guia em tela cheia (M3 Fase 2); estas specs são
+  // do modal de edição rápida, que se abre pelo painel.
+  await page.getByTestId("welcome-later").click();
+  await page.getByTestId("rail-metadata").click();
   await expect(page.getByTestId("metadata-wizard")).toBeVisible();
 
   await page.getByTestId("wizard-step-7").click();
