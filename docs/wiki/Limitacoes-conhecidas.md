@@ -55,6 +55,21 @@ uma entrega.
   regressão conhecida (não há teste automatizado ali), mas relate mesmo
   assim com a label certa — ajuda a mapear o que realmente funciona.
 
+## Importar um PDF: o que não volta
+
+A leitura de PDF é **experimental** e funciona bem apenas com PDFs gerados
+pelo próprio modelo uecetex2. Um PDF não guarda o código-fonte, então:
+
+- **equações** viram um lugar reservado, para você reescrever;
+- **notas de rodapé** voltam presas ao parágrafo, não à palavra exata;
+- **citações** que não puderam ser ligadas às referências ficam como texto
+  comum — o relatório da importação diz quantas foram;
+- **acentos em nomes de autores** na lista de referências podem sair
+  separados da letra, dependendo de como o PDF de origem foi gerado;
+- **cores, espaçamentos e ajustes finos** feitos à mão.
+
+O passo a passo está em [Importar um PDF](Importar-um-PDF).
+
 ## Próximo passo
 
 [Onde pedir ajuda](Onde-pedir-ajuda), se algo daqui te bloqueou.

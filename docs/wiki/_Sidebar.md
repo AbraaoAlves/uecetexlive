@@ -7,6 +7,9 @@
 **Gerar o projeto**
 - [Rascunho versus Completa](Rascunho-vs-Completa)
 
+**Trazer um trabalho pronto**
+- [Importar um PDF](Importar-um-PDF)
+
 **Ajuda**
 - [Onde pedir ajuda](Onde-pedir-ajuda)
 - [Limitações conhecidas](Limitacoes-conhecidas)
