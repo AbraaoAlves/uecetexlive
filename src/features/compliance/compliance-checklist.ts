@@ -21,7 +21,8 @@ export type CheckId =
   | "references"
   | "figures"
   | "orphanCitations"
-  | "uncitedEntries";
+  | "uncitedEntries"
+  | "importPdf";
 
 export type ComplianceAction =
   | { kind: "openMetadata" }
@@ -42,6 +43,12 @@ export interface ComplianceInput {
   bibText: string | null;
   texSources: Record<string, string>;
   citeCommands: readonly string[];
+  /**
+   * Pendências da importação de PDF, se o projeto veio por esse caminho.
+   * Ficam aqui porque é a lista que o aluno consulta para saber o que ainda
+   * tem de refazer — e ela precisa sobreviver ao recarregamento.
+   */
+  importPendencies?: number;
 }
 
 /** Shipped template defaults — a field still equal to these was never touched. */
@@ -195,5 +202,14 @@ export function computeComplianceChecklist(input: ComplianceInput): ComplianceCh
     checkFiguresAcrossProject(input.texSources),
     checkOrphanCitations(input.texSources, input.citeCommands, input.bibText),
     checkUncitedEntries(input.texSources, input.citeCommands, input.bibText),
+    ...(input.importPendencies === undefined
+      ? []
+      : [
+          {
+            id: "importPdf" as const,
+            status: (input.importPendencies > 0 ? "warn" : "ok") as "ok" | "warn",
+            count: input.importPendencies,
+          },
+        ]),
   ];
 }

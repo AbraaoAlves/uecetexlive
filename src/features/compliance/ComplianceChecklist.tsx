@@ -51,6 +51,11 @@ const COPY: Record<
     warnOne: strings.compliance.uncitedEntriesWarnOne,
     warnMany: strings.compliance.uncitedEntriesWarnMany,
   },
+  importPdf: {
+    ok: strings.compliance.importPdfOk,
+    warnOne: strings.compliance.importPdfWarnOne,
+    warnMany: strings.compliance.importPdfWarnMany,
+  },
 };
 
 function messageFor(check: ComplianceCheck): string {

@@ -97,6 +97,8 @@ export const strings = {
     lowConfidence:
       "Este PDF não parece ter sido gerado pelo modelo da UECE. A importação funciona bem apenas para PDFs desse modelo — em outros, o texto costuma sair embaralhado.",
     tryAnyway: "Tentar mesmo assim",
+    errorResources:
+      "Não foi possível ler este PDF neste navegador — provavelmente faltou memória. Feche outras abas e tente de novo; se persistir, um PDF menor costuma passar.",
   },
   ficha: {
     missing: "Seu projeto ainda não tem uma ficha catalográfica.",
@@ -313,5 +315,8 @@ export const strings = {
     uncitedEntriesOk: "Toda referência cadastrada foi citada no texto.",
     uncitedEntriesWarnOne: "1 referência cadastrada nunca foi citada no texto.",
     uncitedEntriesWarnMany: "{n} referências cadastradas nunca foram citadas no texto.",
+    importPdfOk: "A importação do PDF não deixou nada pendente.",
+    importPdfWarnOne: "1 trecho do PDF importado precisa da sua revisão.",
+    importPdfWarnMany: "{n} trechos do PDF importado precisam da sua revisão.",
   },
 } as const;

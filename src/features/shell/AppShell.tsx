@@ -48,7 +48,12 @@ import { fetchTemplateFiles } from "@/features/import-pdf/template-files";
 import { MetadataWizard } from "@/features/metadata/MetadataWizard";
 import { WelcomeDialog } from "@/features/metadata/WelcomeDialog";
 import { WizardFullscreen } from "@/features/metadata/WizardFullscreen";
-import { deleteProject, loadLastPdf, saveImportReport } from "@/features/persistence/db";
+import {
+  deleteProject,
+  loadImportReport,
+  loadLastPdf,
+  saveImportReport,
+} from "@/features/persistence/db";
 import { useStoragePersistence } from "@/features/persistence/useStoragePersistence";
 import {
   repairFolhaAprovacao,
@@ -526,6 +531,24 @@ function ShellInner() {
 
   // 3.2 — not a per-keystroke hot path (opened deliberately from the rail),
   // so it can key on the debounced source map like the include graph does.
+  // Relatório da última importação de PDF deste projeto — persistido para a
+  // lista de pendências não sumir no recarregamento.
+  const [importPendencies, setImportPendencies] = useState<number | undefined>();
+  const projectId = project?.id ?? null;
+  useEffect(() => {
+    if (!projectId) return;
+    let cancelled = false;
+    loadImportReport(projectId)
+      .then((report: unknown) => {
+        const pendencias = (report as { pendencias?: unknown[] } | undefined)?.pendencias;
+        if (!cancelled) setImportPendencies(pendencias?.length);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [projectId]);
+
   const complianceChecks = useMemo(
     () =>
       computeComplianceChecklist({
@@ -534,8 +557,9 @@ function ShellInner() {
         bibText,
         texSources: derivedTexSources,
         citeCommands: ABNT_CITATION_PROFILE.citeCommands,
+        importPendencies,
       }),
-    [meta, bibText, derivedTexSources],
+    [meta, bibText, derivedTexSources, importPendencies],
   );
   const checklistWarnCount = complianceChecks.filter((c) => c.status === "warn").length;
 
@@ -791,6 +815,7 @@ function ShellInner() {
     setPdfImport(null);
     pdfImportResult.current = null;
     await saveImportReport(imported.id, outcome.report).catch(() => {});
+    setImportPendencies(outcome.report.pendencias.length);
     setGuideOpen(true);
   };
 

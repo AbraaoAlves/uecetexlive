@@ -3,6 +3,7 @@
  * o worker é criado, usado e encerrado — sem estado entre importações.
  */
 import type { EmitReport } from "@papyru/inverse-core";
+import { strings } from "@/lib/strings";
 import type { ImportPdfMessage, ImportStage } from "./protocol";
 
 export interface ImportPdfOutcome {
@@ -37,9 +38,11 @@ export function runPdfImport(
         reject(new LowConfidenceError(message.bodyFraction));
       else resolve({ files: new Map(message.files), report: message.report });
     };
-    worker.onerror = (event) => {
+    // Estouro de memória do WASM chega aqui como erro do worker, sem mensagem
+    // aproveitável — melhor uma explicação em português do que a tela branca.
+    worker.onerror = () => {
       worker.terminate();
-      reject(new Error(event.message || "falha ao ler o PDF"));
+      reject(new Error(strings.importPdf.errorResources));
     };
     const payload = [...template.entries()];
     worker.postMessage({ pdf, template: payload, force }, [pdf.buffer]);
