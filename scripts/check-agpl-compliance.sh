@@ -10,6 +10,10 @@
 #   (c) todo arquivo de engine alterado localmente carrega a marcação
 #       `papyru:` / `Papyru patch:` (rastreabilidade dos patches).
 #
+# Mesma disciplina para o segundo componente AGPL, o leitor mupdf.js usado
+# pelo caminho PDF→projeto: o pacote que o consome declara a licença e o
+# THIRD_PARTY.md e a rota /sobre o nomeiam.
+#
 # Sem dependência de nenhum vendor-*.sh — só lê arquivos já commitados no
 # git, roda em qualquer ordem/momento (ver scripts/README.md).
 set -euo pipefail
@@ -55,6 +59,22 @@ for engine_file in "$SWIFTLATEX_DIR/PdfTeXEngine.js" "$SWIFTLATEX_DIR/swiftlatex
     fi
   fi
 done
+
+# (d) Núcleo do caminho PDF→projeto: vendorado e ligado ao mupdf.js (AGPL).
+INVERSE_PKG="packages/inverse-core"
+if [[ -d "$INVERSE_PKG" ]]; then
+  grep -q "AGPL-3.0" "$INVERSE_PKG/package.json" ||
+    err "$INVERSE_PKG/package.json não declara AGPL-3.0"
+  [[ -f "$INVERSE_PKG/manifest.json" ]] ||
+    err "$INVERSE_PKG/manifest.json ausente (commit de origem do vendor)"
+  grep -q "mupdf" THIRD_PARTY.md ||
+    err "THIRD_PARTY.md não nomeia o mupdf.js (AGPL-3.0)"
+  grep -q "mupdf" src/routes/sobre.tsx ||
+    err "a rota /sobre não nomeia o mupdf.js (AGPL-3.0)"
+  if grep -REq '^\s*import[^;]*from\s+"node:' "$INVERSE_PKG/src" 2>/dev/null; then
+    err "$INVERSE_PKG/src importa node:* — o núcleo vendorado precisa ser puro"
+  fi
+fi
 
 if [[ $fail -ne 0 ]]; then
   echo "AGPL-GATE: reprovado — ver mensagens acima." >&2

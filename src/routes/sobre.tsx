@@ -71,8 +71,10 @@ export function SobreRoute() {
         <p className="mt-2 text-ink-muted leading-relaxed">
           UeceTexLive é software livre (MIT). Componentes de terceiros — abnTeX2 (LPPL),
           busytex e a fatia do TeX Live (agregado GPL/LPPL), o motor SwiftLaTeX (AGPL-3.0,
-          distribuído com correções documentadas), Tiptap, KaTeX, pdf.js e outros — mantêm
-          suas próprias licenças. A lista completa está em{" "}
+          distribuído com correções documentadas), o leitor de PDF mupdf.js (AGPL-3.0, da
+          Artifex, distribuído sem modificações e carregado só quando você importa um
+          PDF), Tiptap, KaTeX, pdf.js e outros — mantêm suas próprias licenças. A lista
+          completa está em{" "}
           <a
             href="https://github.com/AbraaoAlves/uecetexlive/blob/main/THIRD_PARTY.md"
             className="text-accent underline"
