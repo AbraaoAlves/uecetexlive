@@ -24,6 +24,8 @@ export interface MetadataWizardProps {
   onClose: () => void;
   /** Etapa inicial (0-based) — usado pelas stories. */
   initialStep?: number;
+  /** O projeto já está gravado? Governa o selo "salvo" dos campos. */
+  persisted?: boolean;
 }
 
 export function MetadataWizard({
@@ -31,6 +33,7 @@ export function MetadataWizard({
   onApply,
   onClose,
   initialStep = 0,
+  persisted = true,
 }: MetadataWizardProps) {
   const [stepIndex, setStepIndex] = useState(initialStep);
   const stepBodyRef = useRef<HTMLDivElement>(null);
@@ -167,6 +170,7 @@ export function MetadataWizard({
                     def={def}
                     field={fields.get(def.macro)}
                     onCommit={commit}
+                    persisted={persisted}
                   />
                 </Fragment>
               ))}
@@ -212,10 +216,12 @@ function WizardField({
   def,
   field,
   onCommit,
+  persisted,
 }: {
   def: FieldDef;
   field: MetadataField | undefined;
   onCommit: (def: FieldDef, raw: string) => boolean;
+  persisted: boolean;
 }) {
   const missing = field === undefined;
   const current = field?.value ?? "";
@@ -283,7 +289,7 @@ function WizardField({
             className="mb-1 flex items-center gap-1.5 text-ink-muted text-xs"
           >
             {def.label}
-            {saved && (
+            {saved && persisted && (
               <span
                 className="flex items-center gap-0.5 text-success"
                 data-testid={`field-saved-${def.macro}`}

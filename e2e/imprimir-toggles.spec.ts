@@ -86,6 +86,26 @@ test("checkbox e editor-fonte compartilham o mesmo estado", async ({ page }) => 
   await expect(checkbox).toBeChecked();
 });
 
+/** Todas as páginas opcionais precisam de caixinha, inclusive no modo simples. */
+test("todas as páginas opcionais têm caixinha no modo simples", async ({ page }) => {
+  await page.goto("/");
+  await dismissWelcome(page);
+  await expect(page.getByTestId("rail-section-chapters")).toBeVisible();
+  await expect(page.getByTestId("advanced-toggle")).not.toBeChecked();
+
+  for (const macro of [
+    "imprimirerrata",
+    "imprimirdedicatoria",
+    "imprimiragradecimentos",
+    "imprimirepigrafe",
+    "imprimirlistadeabreviaturasesiglas",
+    "imprimirlistadesimbolos",
+    "imprimirglossario",
+  ]) {
+    await expect(page.getByTestId(`rail-toggle-${macro}`)).toBeVisible();
+  }
+});
+
 /** Projeto que chega com a página já desligada abre com o checkbox limpo. */
 test("projeto importado reflete o estado que veio no documento", async ({ page }) => {
   page.on("dialog", (dialog) => dialog.accept());

@@ -1214,6 +1214,7 @@ function ShellInner() {
           fields={meta}
           onApply={applyWorkMetadata}
           onClose={() => setMetadataOpen(false)}
+          persisted={saveState === "saved"}
         />
       )}
       {checklistOpen && (
