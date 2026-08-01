@@ -1,7 +1,3 @@
-// Arquivo vendorado de uecetex-inverse (ab0eb48d3029b8ddce28dfd8f645afd06e9cb500) por
-// scripts/vendor-inverse-core.sh. NÃO EDITE AQUI: a mudança se perde na
-// próxima vendorização. Corrija na origem, que é onde ele é verificado.
-// @ts-nocheck
 /**
  * Chaves BibTeX das entradas reconstruídas.
  *
