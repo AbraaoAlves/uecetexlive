@@ -65,6 +65,8 @@ export interface WizardFullscreenProps {
   fichaSize: number | null;
   /** Gera o PDF e fecha o guia. */
   onCompile: () => void;
+  /** Já há uma geração em curso? O motor recusa duas ao mesmo tempo. */
+  compiling?: boolean;
   /** O projeto já está gravado? Governa o selo "salvo" dos campos. */
   persisted?: boolean;
   initialStep?: number;
@@ -100,6 +102,7 @@ export function WizardFullscreen({
   onFicha,
   fichaSize,
   onCompile,
+  compiling = false,
   persisted = true,
   initialStep = 0,
 }: WizardFullscreenProps) {
@@ -264,10 +267,14 @@ export function WizardFullscreen({
                 <button
                   type="button"
                   data-testid="wizard-fs-compile"
+                  // O motor recusa duas gerações ao mesmo tempo: com o botão
+                  // ativo, o guia fecharia sem gerar nada e o PDF anterior
+                  // passaria por atual.
+                  disabled={compiling}
                   onClick={onCompile}
-                  className="mt-4 rounded bg-accent px-3 py-1.5 text-accent-foreground text-sm hover:bg-accent-strong"
+                  className="mt-4 rounded bg-accent px-3 py-1.5 text-accent-foreground text-sm hover:bg-accent-strong disabled:cursor-wait disabled:opacity-50"
                 >
-                  {strings.topbar.compile}
+                  {compiling ? strings.topbar.compiling : strings.topbar.compile}
                 </button>
               </div>
             )}

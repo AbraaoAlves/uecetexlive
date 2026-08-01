@@ -1294,6 +1294,9 @@ function ShellInner() {
             runCompile();
           }}
           persisted={saveState === "saved"}
+          compiling={
+            compileState.status === "compiling" || compileState.status === "warming"
+          }
         />
       )}
       {uiReady && !ui.welcomeSeen && !importState && (

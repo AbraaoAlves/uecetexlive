@@ -115,3 +115,35 @@ describe("planNewSection — nome já usado", () => {
     );
   });
 });
+
+describe("planNewSection — formas do documento importado", () => {
+  const comentado = [
+    "\\begin{document}",
+    "\t\\textual",
+    "\t\\input{elementos-textuais/introducao}",
+    "\t%\\imprimirapendices",
+    "\t%\\imprimiranexos",
+    "\\end{document}",
+    "",
+  ].join("\n");
+
+  it("a linha comentada da seção serve de âncora", () => {
+    const plan = planNewSection(comentado, "Primeiro", "apendice");
+    expect(plan.source).toContain(
+      "\t%\\imprimirapendices\n\t\t\\input{elementos-pos-textuais/apendices/primeiro}\n",
+    );
+    expect(plan.enableMacro).toBe("imprimirapendices");
+  });
+});
+
+describe("planNewSection — título com caractere especial", () => {
+  it("escapa o título do apêndice", () => {
+    const plan = planNewSection(documentoTex, "Custos & 50% do total", "apendice");
+    expect(plan.content).toContain("\\apendice{Custos \\& 50\\% do total}");
+  });
+
+  it("escapa o título do capítulo", () => {
+    const plan = planNewSection(documentoTex, "Custos & 50% do total", "chapter");
+    expect(plan.content).toContain("\\chapter{Custos \\& 50\\% do total}");
+  });
+});

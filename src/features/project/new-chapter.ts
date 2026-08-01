@@ -11,6 +11,7 @@
  */
 
 import { slugify } from "@/lib/utils";
+import { escapeMetadataValue } from "./metadata";
 
 /** Matches an active (non-commented) chapter \input at line start. */
 const CHAPTER_INPUT = /^([ \t]*)\\input\{elementos-textuais\/[^}]*\}/;
@@ -55,7 +56,7 @@ const TARGETS: Record<Exclude<SectionTarget, "chapter">, TargetSpec> = {
 };
 
 export function chapterScaffold(title: string, slug: string): string {
-  return `\\chapter{${title}}\n\\label{cap:${slug}}\n\n`;
+  return `\\chapter{${escapeMetadataValue(title)}}\n\\label{cap:${slug}}\n\n`;
 }
 
 /**
@@ -90,7 +91,10 @@ export function insertChapterInput(source: string, target: string): string {
 function insertSectionInput(source: string, spec: TargetSpec, target: string): string {
   const lines = source.split("\n");
   const sibling = new RegExp(`^([ \\t]*)\\\\input\\{${spec.dir}/[^}]*\\}`);
-  const macroLine = new RegExp(`^([ \\t]*)\\\\${spec.macro}\\b`);
+  // A linha da seção pode estar comentada — é a forma que o caminho PDF→LaTeX
+  // produz quando o trabalho de origem não tinha apêndices. Serve de âncora do
+  // mesmo jeito; quem cria a seção liga a macro depois.
+  const macroLine = new RegExp(`^([ \\t]*)(?:%[ \\t]*)?\\\\${spec.macro}\\b`);
   let at = -1;
   let indent = "\t\t";
   for (let i = 0; i < lines.length; i++) {
@@ -150,7 +154,7 @@ export function planNewSection(
   const path = `${spec.dir}/${slug}`;
   return {
     path: `${path}.tex`,
-    content: `\\${spec.command}{${title}}\n\\label{${spec.labelPrefix}:${slug}}\n\n`,
+    content: `\\${spec.command}{${escapeMetadataValue(title)}}\n\\label{${spec.labelPrefix}:${slug}}\n\n`,
     source: insertSectionInput(source, spec, path),
     enableMacro: spec.macro,
   };
