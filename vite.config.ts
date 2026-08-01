@@ -21,6 +21,11 @@ process.env.VITE_VENDOR_HASH = computeVendorHash(
 );
 
 export default defineConfig({
+  // O worker do caminho PDF→projeto é um módulo ES (importa o núcleo
+  // dinamicamente, para o WASM do leitor só descer quando alguém importa um
+  // PDF). O formato padrão do Vite para workers é `iife`, que não aceita
+  // await no topo — é o que o leitor usa para carregar o próprio WASM.
+  worker: { format: "es" },
   base,
   plugins: [
     react(),

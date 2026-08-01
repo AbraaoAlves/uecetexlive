@@ -1,0 +1,47 @@
+/**
+ * Roda o worker do PDF e devolve o projeto pronto. Uma execução por chamada:
+ * o worker é criado, usado e encerrado — sem estado entre importações.
+ */
+import type { EmitReport } from "@papyru/inverse-core";
+import type { ImportPdfMessage, ImportStage } from "./protocol";
+
+export interface ImportPdfOutcome {
+  files: Map<string, Uint8Array>;
+  report: EmitReport;
+}
+
+/** O PDF não tem o perfil do modelo; o chamador decide se insiste. */
+export class LowConfidenceError extends Error {
+  constructor(readonly bodyFraction: number) {
+    super("perfil do PDF não confere com o modelo");
+    this.name = "LowConfidenceError";
+  }
+}
+
+export function runPdfImport(
+  pdf: Uint8Array,
+  template: ReadonlyMap<string, Uint8Array>,
+  onProgress?: (stage: ImportStage, pct: number) => void,
+  force = false,
+): Promise<ImportPdfOutcome> {
+  const worker = new Worker(new URL("./inverse.worker.ts", import.meta.url), {
+    type: "module",
+  });
+  return new Promise<ImportPdfOutcome>((resolve, reject) => {
+    worker.onmessage = (event: MessageEvent<ImportPdfMessage>) => {
+      const message = event.data;
+      if (message.type === "progress") return onProgress?.(message.stage, message.pct);
+      worker.terminate();
+      if (message.type === "error") reject(new Error(message.message));
+      else if (message.type === "low-confidence")
+        reject(new LowConfidenceError(message.bodyFraction));
+      else resolve({ files: new Map(message.files), report: message.report });
+    };
+    worker.onerror = (event) => {
+      worker.terminate();
+      reject(new Error(event.message || "falha ao ler o PDF"));
+    };
+    const payload = [...template.entries()];
+    worker.postMessage({ pdf, template: payload, force }, [pdf.buffer]);
+  });
+}
