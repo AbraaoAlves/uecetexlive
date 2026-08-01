@@ -5,6 +5,7 @@ import {
   extractImprimirToggles,
   TOGGLE_FILES,
   TOGGLE_LISTS,
+  togglesByFile,
 } from "../imprimir-toggles";
 
 /** Documento mínimo: só o corpo importa para os toggles. */
@@ -58,6 +59,19 @@ describe("extractImprimirToggles", () => {
   it("na duplicata, a última ocorrência vence", () => {
     const source = doc("\t\\imprimirepigrafe{a}\n\t%\\imprimirepigrafe{b}");
     expect(extractImprimirToggles(source).get("imprimirepigrafe")?.enabled).toBe(false);
+  });
+
+  it("lê um documento com quebras de linha do Windows", () => {
+    const source = doc("\t\\imprimirepigrafe{x}\n\t%\\imprimirerrata{y}").replace(
+      /\n/g,
+      "\r\n",
+    );
+    const toggles = extractImprimirToggles(source);
+    expect(toggles.get("imprimirepigrafe")?.enabled).toBe(true);
+    expect(toggles.get("imprimirerrata")?.enabled).toBe(false);
+    expect(applyImprimirToggle(source, "imprimirepigrafe", false)).toContain(
+      "\t%\\imprimirepigrafe{x}\r\n",
+    );
   });
 
   it("devolve um mapa vazio para um documento sem corpo", () => {
@@ -162,5 +176,36 @@ describe("sentinela do modelo vendorado", () => {
     )) as { files: { path: string }[] };
     const paths = new Set(manifest.files.map((f) => f.path));
     for (const path of TOGGLE_FILES.values()) expect(paths.has(path)).toBe(true);
+  });
+});
+
+describe("togglesByFile", () => {
+  it("usa o caminho canônico quando a macro não tem argumento", () => {
+    const byFile = togglesByFile(extractImprimirToggles(doc("\t\\imprimirglossario")));
+    expect(byFile.get("elementos-pos-textuais/glossario.tex")?.macro).toBe(
+      "imprimirglossario",
+    );
+  });
+
+  it("segue o caminho escrito no documento, não o canônico", () => {
+    const byFile = togglesByFile(
+      extractImprimirToggles(doc("\t\\imprimiragradecimentos{outro/obrigado}")),
+    );
+    expect(byFile.get("outro/obrigado.tex")?.macro).toBe("imprimiragradecimentos");
+    expect(byFile.has("elementos-pre-textuais/agradecimentos.tex")).toBe(false);
+  });
+
+  it("aceita o caminho já com extensão", () => {
+    const byFile = togglesByFile(
+      extractImprimirToggles(doc("\t\\imprimirepigrafe{outro/epigrafe.tex}")),
+    );
+    expect(byFile.has("outro/epigrafe.tex")).toBe(true);
+  });
+
+  it("deixa de fora as listas automáticas, que não têm arquivo", () => {
+    const byFile = togglesByFile(
+      extractImprimirToggles(doc("\t\\imprimirlistadetabelas")),
+    );
+    expect(byFile.size).toBe(0);
   });
 });

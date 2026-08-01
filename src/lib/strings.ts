@@ -66,6 +66,8 @@ export const strings = {
     unsavedChanges: "Alterações não salvas",
     bibFileHint:
       "Este arquivo guarda suas referências bibliográficas. Edite pela aba “Referências”, ao lado de “Arquivos”.",
+    toggleInclude: "Aparece no PDF — desmarque para tirar",
+    toggleExcluded: "Fora do PDF — marque para incluir",
   },
   editor: {
     rawLatexTooltip:

@@ -41,6 +41,11 @@ import {
   withHiddenSlotFillers,
 } from "@/features/project/folha-aprovacao";
 import { normalizeImportedProject } from "@/features/project/import-normalize";
+import {
+  applyImprimirToggle,
+  extractImprimirToggles,
+  togglesByFile,
+} from "@/features/project/imprimir-toggles";
 import { buildIncludeGraph, type IncludeGraph } from "@/features/project/include-graph";
 import {
   applyMetadata,
@@ -259,6 +264,16 @@ function ShellInner() {
   const derivedTexSources =
     Object.keys(settledTexSources).length > 0 ? settledTexSources : texSources;
   const entryPath = project?.entry ?? null;
+  // Depende da *string* do arquivo de entrada (não de `project`): texSources
+  // é reconstruído a cada tecla, mas conteúdo igual devolve o mesmo primitivo
+  // → os memos abaixo seguram.
+  const entrySource = entryPath ? (texSources[entryPath] ?? "") : "";
+  // Indexado pelo arquivo que cada macro inclui — o argumento escrito no
+  // documento manda, para o checkbox nunca ficar ao lado do arquivo errado.
+  const imprimirToggles = useMemo(
+    () => togglesByFile(extractImprimirToggles(entrySource)),
+    [entrySource],
+  );
   const graph = useMemo(
     () => (entryPath ? buildIncludeGraph(derivedTexSources, entryPath) : EMPTY_GRAPH),
     [derivedTexSources, entryPath],
@@ -285,11 +300,16 @@ function ShellInner() {
       if (input.resolved) graphRank.set(input.resolved, i);
     });
     return visibleFiles
-      .map((f) => ({
-        path: f.path,
-        dirty: dirtyPaths.has(f.path),
-        locked: isAdvancedOnly(f.path) && !advanced,
-      }))
+      .map((f) => {
+        const toggle = imprimirToggles.get(f.path);
+        return {
+          path: f.path,
+          dirty: dirtyPaths.has(f.path),
+          locked: isAdvancedOnly(f.path) && !advanced,
+          // Sem a linha no documento não há controle — nunca inventar.
+          ...(toggle ? { toggle: { macro: toggle.macro, enabled: toggle.enabled } } : {}),
+        };
+      })
       .sort((a, b) => {
         const sa = SECTION_RANK[railSectionOf(a.path)];
         const sb = SECTION_RANK[railSectionOf(b.path)];
@@ -299,7 +319,7 @@ function ShellInner() {
         if (ga !== gb) return ga - gb;
         return a.path.localeCompare(b.path);
       });
-  }, [visibleFiles, graph, dirtyPaths, advanced]);
+  }, [visibleFiles, graph, dirtyPaths, advanced, imprimirToggles]);
 
   const missingIncludes = useMemo(
     () => graph.inputs.filter((i) => i.resolved === null).map((i) => i.path),
@@ -423,9 +443,6 @@ function ShellInner() {
     }
   };
 
-  // Depends on the entry's *string* (not `project`): texSources rebuilds per
-  // keystroke, but equal content yields the same primitive → memo holds.
-  const entrySource = project ? (texSources[project.entry] ?? "") : "";
   const resumoSource = texSources[RESUMO_PATH] ?? "";
   const abstractSource = texSources[ABSTRACT_PATH] ?? "";
   const resumoField = useMemo(
@@ -550,6 +567,15 @@ function ShellInner() {
       abstractSource,
       updateFileText,
     ],
+  );
+
+  const toggleImprimir = useCallback(
+    (macro: string, enabled: boolean) => {
+      if (!project) return;
+      const next = applyImprimirToggle(entrySource, macro, enabled);
+      if (next !== entrySource) updateFileText(project.entry, next);
+    },
+    [project, entrySource, updateFileText],
   );
 
   const wysiwygCapable =
@@ -1022,6 +1048,7 @@ function ShellInner() {
               {railTab === "files" ? (
                 <ProjectRail
                   files={railFiles}
+                  onToggleImprimir={toggleImprimir}
                   currentPath={currentPath}
                   missingIncludes={missingIncludes}
                   hiddenCount={hiddenCount}

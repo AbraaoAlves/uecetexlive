@@ -60,7 +60,7 @@ export const TOGGLE_LISTS: readonly string[] = [
  * seu argumento e nada mais. Comentário à direita não casa — o toggle não
  * apagaria a observação do autor ao religar a linha.
  */
-const TOGGLE_LINE = /^([ \t]*)(%[ \t]*)?(\\(imprimir[a-z]+)(?:\{([^}]*)\})?)[ \t]*$/;
+const TOGGLE_LINE = /^([ \t]*)(%[ \t]*)?(\\(imprimir[a-z]+)(?:\{([^}]*)\})?)[ \t]*\r?$/;
 
 interface Scan {
   toggle: ImprimirToggle;
@@ -103,6 +103,31 @@ function scan(source: string): Map<string, Scan> {
 export function extractImprimirToggles(source: string): Map<string, ImprimirToggle> {
   const out = new Map<string, ImprimirToggle>();
   for (const [macro, entry] of scan(source)) out.set(macro, entry.toggle);
+  return out;
+}
+
+/**
+ * Arquivo que a macro inclui no PDF. O argumento escrito no documento manda —
+ * um projeto pode apontar para outro caminho; sem argumento vale o canônico.
+ * `null` quando a macro não tem arquivo próprio (listas automáticas).
+ */
+export function toggleFilePath(toggle: ImprimirToggle): string | null {
+  const canonical = TOGGLE_FILES.get(toggle.macro);
+  if (canonical === undefined) return null;
+  const argument = toggle.argument?.trim();
+  if (!argument) return canonical;
+  return argument.endsWith(".tex") ? argument : `${argument}.tex`;
+}
+
+/** Índice caminho-do-arquivo → estado, para o painel casar cada checkbox. */
+export function togglesByFile(
+  toggles: ReadonlyMap<string, ImprimirToggle>,
+): Map<string, ImprimirToggle> {
+  const out = new Map<string, ImprimirToggle>();
+  for (const toggle of toggles.values()) {
+    const path = toggleFilePath(toggle);
+    if (path !== null) out.set(path, toggle);
+  }
   return out;
 }
 

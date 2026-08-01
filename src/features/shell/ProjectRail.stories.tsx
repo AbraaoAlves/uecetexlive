@@ -51,3 +51,32 @@ export const LockedLib: Story = {
     currentPath: "lib/uecetex2.sty",
   },
 };
+
+/** Elementos opcionais: um incluído, um fora do PDF, o resto sem controle. */
+export const OptionalElements: Story = {
+  args: {
+    files: [
+      {
+        path: "elementos-pre-textuais/agradecimentos.tex",
+        dirty: false,
+        locked: false,
+        toggle: { macro: "imprimiragradecimentos", enabled: true },
+      },
+      {
+        path: "elementos-pre-textuais/dedicatoria.tex",
+        dirty: false,
+        locked: false,
+        toggle: { macro: "imprimirdedicatoria", enabled: false },
+      },
+      { path: "elementos-pre-textuais/resumo.tex", dirty: false, locked: false },
+      {
+        path: "elementos-pos-textuais/glossario.tex",
+        dirty: true,
+        locked: false,
+        toggle: { macro: "imprimirglossario", enabled: false },
+      },
+    ],
+    currentPath: "elementos-pre-textuais/resumo.tex",
+    onToggleImprimir: () => {},
+  },
+};

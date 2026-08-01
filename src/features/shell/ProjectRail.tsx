@@ -18,6 +18,8 @@ export interface RailFile {
   path: string;
   dirty: boolean;
   locked: boolean;
+  /** Página opcional: o checkbox inclui ou tira o arquivo do PDF (M2). */
+  toggle?: { macro: string; enabled: boolean };
 }
 
 export interface ProjectRailProps {
@@ -50,6 +52,8 @@ export interface ProjectRailProps {
   checklistActive?: boolean;
   /** Number of checklist items currently failing — 0 hides the badge. */
   checklistWarnCount?: number;
+  /** Inclui ou tira do PDF a página opcional do arquivo (M2). */
+  onToggleImprimir?: (macro: string, enabled: boolean) => void;
 }
 
 const SECTION_ORDER: RailSection[] = [
@@ -92,6 +96,7 @@ export function ProjectRail({
   onOpenChecklist,
   checklistActive = false,
   checklistWarnCount = 0,
+  onToggleImprimir,
 }: ProjectRailProps) {
   const uploadInputRef = useRef<HTMLInputElement>(null);
   // Uncontrolled fallback (stories/tests without the persisted UiSettings).
@@ -230,7 +235,34 @@ export function ProjectRail({
             {!isCollapsed && (
               <ul>
                 {sectionFiles?.map((file) => (
-                  <li key={file.path}>
+                  <li key={file.path} className="flex items-center">
+                    {file.toggle && (
+                      <Tooltip
+                        content={
+                          file.toggle.enabled
+                            ? strings.rail.toggleInclude
+                            : strings.rail.toggleExcluded
+                        }
+                      >
+                        <input
+                          type="checkbox"
+                          data-testid={`rail-toggle-${file.toggle.macro}`}
+                          aria-label={`${baseName(file.path)} — ${
+                            file.toggle.enabled
+                              ? strings.rail.toggleInclude
+                              : strings.rail.toggleExcluded
+                          }`}
+                          checked={file.toggle.enabled}
+                          onChange={(e) =>
+                            onToggleImprimir?.(
+                              file.toggle?.macro ?? "",
+                              e.currentTarget.checked,
+                            )
+                          }
+                          className="ml-3 size-3.5 shrink-0 accent-accent"
+                        />
+                      </Tooltip>
+                    )}
                     <button
                       type="button"
                       onClick={() => onSelect(file.path)}
@@ -250,12 +282,21 @@ export function ProjectRail({
                         }
                       }}
                       className={cn(
-                        "flex w-full items-center gap-2 px-3 py-1 text-left hover:bg-accent-soft/60",
+                        "flex w-full min-w-0 items-center gap-2 px-3 py-1 text-left hover:bg-accent-soft/60",
+                        file.toggle && "pl-2",
                         currentPath === file.path &&
                           "bg-accent-soft font-medium text-accent-strong",
                       )}
                     >
-                      <span className="truncate">{baseName(file.path)}</span>
+                      <span
+                        className={cn(
+                          "truncate",
+                          // Desligado continua editável — só não entra no PDF.
+                          file.toggle?.enabled === false && "opacity-60",
+                        )}
+                      >
+                        {baseName(file.path)}
+                      </span>
                       {file.path.endsWith(".bib") && (
                         <Tooltip content={strings.rail.bibFileHint}>
                           <BookMarked
