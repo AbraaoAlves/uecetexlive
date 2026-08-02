@@ -6,20 +6,21 @@
  * reconhecido. Os três estágios continuam disponíveis em separado para o CLI e
  * para os testes.
  */
+
+export { buildCiteIndex, countUnresolved, segmentCitations } from "./cite.js";
 export { classify } from "./classify.js";
-export { extract, extractIR, type ExtractResult } from "./extract.js";
 export {
-  emitFiles,
   type EmitFilesOptions,
   type EmitFilesResult,
   type EmitReport,
+  emitFiles,
 } from "./emit.js";
-export { buildCiteIndex, countUnresolved, segmentCitations } from "./cite.js";
+export { type ExtractResult, extract, extractIR } from "./extract.js";
 export type { DocumentIR } from "./ir.js";
 export type { SemanticDoc } from "./semantic.js";
 
 import { classify } from "./classify.js";
-import { emitFiles, type EmitReport } from "./emit.js";
+import { type EmitReport, emitFiles } from "./emit.js";
 import { extract } from "./extract.js";
 import type { DocumentIR } from "./ir.js";
 import type { SemanticDoc } from "./semantic.js";

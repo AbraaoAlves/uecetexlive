@@ -32,6 +32,7 @@ function at(nums: number[], fromEnd: number): number {
 function sha256(data: Uint8Array): string {
   return bytesToHex(sha256Bytes(data));
 }
+
 import * as mupdf from "mupdf";
 import type {
   BBox,
@@ -55,7 +56,10 @@ export function canonicalFontName(name: string): string {
 }
 
 /** Heuristic-free style flags: derived from the font program itself. */
-function styleFlags(fontName: string, mupdfFont?: mupdf.Font): { bold: boolean; italic: boolean } {
+function styleFlags(
+  fontName: string,
+  mupdfFont?: mupdf.Font,
+): { bold: boolean; italic: boolean } {
   // Prefer the font's own metrics tables when mupdf exposes them…
   if (mupdfFont) {
     return { bold: mupdfFont.isBold(), italic: mupdfFont.isItalic() };
@@ -74,7 +78,12 @@ function rectToBBox(r: [number, number, number, number]): BBox {
 
 /** Stable reading-order comparator (top-to-bottom, then left-to-right). */
 function byReadingOrder(a: { bbox: BBox }, b: { bbox: BBox }): number {
-  return a.bbox.y0 - b.bbox.y0 || a.bbox.x0 - b.bbox.x0 || a.bbox.y1 - b.bbox.y1 || a.bbox.x1 - b.bbox.x1;
+  return (
+    a.bbox.y0 - b.bbox.y0 ||
+    a.bbox.x0 - b.bbox.x0 ||
+    a.bbox.y1 - b.bbox.y1 ||
+    a.bbox.x1 - b.bbox.x1
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -122,7 +131,7 @@ interface STextBlock {
  * citações.
  */
 const T1_ACCENTS: Record<string, string> = {
-  "ˇ": "̌", // caron    ˇ
+  ˇ: "̌", // caron    ˇ
   "´": "́", // acute    ´
   "˜": "̃", // tilde    ˜
   "¨": "̈", // trema    ¨
@@ -131,7 +140,7 @@ const T1_ACCENTS: Record<string, string> = {
   "˝": "̋", // agudo duplo ˝
   "˛": "̨", // ogonek   ˛
   "¸": "̧", // cedilha  ¸
-  "ˆ": "̂", // circunflexo ˆ
+  ˆ: "̂", // circunflexo ˆ
   "¯": "̄", // mácron   ¯
   "˘": "̆", // breve    ˘
 };
@@ -188,7 +197,10 @@ function mergeAccentSpans(spans: TextSpan[]): TextSpan[] {
   return spans.filter((_, i) => !dropped.has(i));
 }
 
-function extractTextBlocks(page: mupdf.PDFPage, fontStats: Map<string, FontUsage>): TextBlock[] {
+function extractTextBlocks(
+  page: mupdf.PDFPage,
+  fontStats: Map<string, FontUsage>,
+): TextBlock[] {
   const stext = page.toStructuredText("preserve-spans");
   const data = JSON.parse(stext.asJSON()) as { blocks: STextBlock[] };
   const blocks: TextBlock[] = [];
@@ -201,7 +213,9 @@ function extractTextBlocks(page: mupdf.PDFPage, fontStats: Map<string, FontUsage
     const byBaseline = new Map<number, STextLine[]>();
     for (const l of b.lines) {
       const key = R(l.y);
-      (byBaseline.get(key) ?? byBaseline.set(key, []).get(key)!).push(l);
+      const group = byBaseline.get(key) ?? [];
+      group.push(l);
+      byBaseline.set(key, group);
     }
 
     const lines: TextLine[] = [];
@@ -215,11 +229,15 @@ function extractTextBlocks(page: mupdf.PDFPage, fontStats: Map<string, FontUsage
             italic: s.font.style === "italic" || styleFlags(font).italic,
           };
           const size = R(s.font.size);
-          const stat =
-            fontStats.get(`${font}|${bold}|${italic}`) ??
-            fontStats
-              .set(`${font}|${bold}|${italic}`, { font, bold, italic, sizes: [], chars: 0 })
-              .get(`${font}|${bold}|${italic}`)!;
+          const statKey = `${font}|${bold}|${italic}`;
+          const stat = fontStats.get(statKey) ?? {
+            font,
+            bold,
+            italic,
+            sizes: [],
+            chars: 0,
+          };
+          fontStats.set(statKey, stat);
           if (!stat.sizes.includes(size)) stat.sizes.push(size);
           stat.chars += s.text.length;
           return {
@@ -322,7 +340,8 @@ function pageContentStream(page: mupdf.PDFPage): string {
   const dec = new TextDecoder("latin1");
   if (c.isArray()) {
     const parts: string[] = [];
-    for (let i = 0; i < c.length; i++) parts.push(dec.decode(c.get(i).readStream().asUint8Array()));
+    for (let i = 0; i < c.length; i++)
+      parts.push(dec.decode(c.get(i).readStream().asUint8Array()));
     return parts.join("\n");
   }
   return dec.decode(c.readStream().asUint8Array());
@@ -337,7 +356,10 @@ function pageContentStream(page: mupdf.PDFPage): string {
  */
 function extractVectors(page: mupdf.PDFPage, pageHeight: number): VectorSegment[] {
   const src = pageContentStream(page);
-  const tokens = src.match(/\/[^\s/<>[\]()]+|<[^>]*>|\((?:\\.|[^\\)])*\)|\[[^\]]*\]|-?\d*\.?\d+|[A-Za-z'*]+/g) ?? [];
+  const tokens =
+    src.match(
+      /\/[^\s/<>[\]()]+|<[^>]*>|\((?:\\.|[^\\)])*\)|\[[^\]]*\]|-?\d*\.?\d+|[A-Za-z'*]+/g,
+    ) ?? [];
 
   const segments: VectorSegment[] = [];
   let ctm: Matrix = IDENTITY;
@@ -345,7 +367,13 @@ function extractVectors(page: mupdf.PDFPage, pageHeight: number): VectorSegment[
   let lw = 1;
   let inText = false;
   const nums: number[] = [];
-  let path: { x0: number; y0: number; x1: number; y1: number; from: [number, number] | null }[] = [];
+  let path: {
+    x0: number;
+    y0: number;
+    x1: number;
+    y1: number;
+    from: [number, number] | null;
+  }[] = [];
   let cur: [number, number] | null = null;
 
   const emit = (stroked: boolean) => {
@@ -379,13 +407,27 @@ function extractVectors(page: mupdf.PDFPage, pageHeight: number): VectorSegment[
       continue;
     }
     switch (t) {
-      case "BT": inText = true; break;
-      case "ET": inText = false; break;
-      case "q": stack.push({ ctm, lw }); break;
-      case "Q": ({ ctm, lw } = stack.pop() ?? { ctm: IDENTITY, lw: 1 }); break;
-      case "cm": if (nums.length >= 6) ctm = matMul(nums.slice(-6) as Matrix, ctm); break;
-      case "w": if (nums.length >= 1) lw = at(nums, -1); break;
-      case "m": if (!inText && nums.length >= 2) cur = apply(ctm, at(nums, -2), at(nums, -1)); break;
+      case "BT":
+        inText = true;
+        break;
+      case "ET":
+        inText = false;
+        break;
+      case "q":
+        stack.push({ ctm, lw });
+        break;
+      case "Q":
+        ({ ctm, lw } = stack.pop() ?? { ctm: IDENTITY, lw: 1 });
+        break;
+      case "cm":
+        if (nums.length >= 6) ctm = matMul(nums.slice(-6) as Matrix, ctm);
+        break;
+      case "w":
+        if (nums.length >= 1) lw = at(nums, -1);
+        break;
+      case "m":
+        if (!inText && nums.length >= 2) cur = apply(ctm, at(nums, -2), at(nums, -1));
+        break;
       case "l":
         if (!inText && cur && nums.length >= 2) {
           const p2 = apply(ctm, at(nums, -2), at(nums, -1));
@@ -401,9 +443,21 @@ function extractVectors(page: mupdf.PDFPage, pageHeight: number): VectorSegment[
           path.push({ x0: ax, y0: ay, x1: bx, y1: by, from: null });
         }
         break;
-      case "S": case "s": if (!inText) emit(true); break;
-      case "f": case "F": case "f*": case "B": case "B*": if (!inText) emit(false); break;
-      case "n": path = []; cur = null; break;
+      case "S":
+      case "s":
+        if (!inText) emit(true);
+        break;
+      case "f":
+      case "F":
+      case "f*":
+      case "B":
+      case "B*":
+        if (!inText) emit(false);
+        break;
+      case "n":
+        path = [];
+        cur = null;
+        break;
     }
     nums.length = 0;
   }
@@ -418,12 +472,18 @@ function extractVectors(page: mupdf.PDFPage, pageHeight: number): VectorSegment[
 function extractLinks(doc: mupdf.PDFDocument, page: mupdf.PDFPage): LinkRegion[] {
   const links: LinkRegion[] = [];
   for (const link of page.getLinks()) {
-    const bbox = rectToBBox(link.getBounds() as never as [number, number, number, number]);
+    const bbox = rectToBBox(
+      link.getBounds() as never as [number, number, number, number],
+    );
     const uri = link.getURI();
     links.push(
       link.isExternal()
         ? { kind: "link", bbox, target: { type: "external", uri } }
-        : { kind: "link", bbox, target: { type: "internal", page: doc.resolveLink(uri) } },
+        : {
+            kind: "link",
+            bbox,
+            target: { type: "internal", page: doc.resolveLink(uri) },
+          },
     );
   }
   links.sort(byReadingOrder);
@@ -431,7 +491,10 @@ function extractLinks(doc: mupdf.PDFDocument, page: mupdf.PDFPage): LinkRegion[]
 }
 
 type RawOutline = { title?: string; uri?: string; down?: RawOutline[] };
-function mapOutline(items: RawOutline[] | null | undefined, doc: mupdf.PDFDocument): OutlineNode[] {
+function mapOutline(
+  items: RawOutline[] | null | undefined,
+  doc: mupdf.PDFDocument,
+): OutlineNode[] {
   if (!items) return [];
   return items.map((it) => ({
     title: it.title ?? "",
@@ -463,7 +526,10 @@ export interface ExtractResult {
 export function extract(pdfBytes: Uint8Array, opts: ExtractOptions = {}): ExtractResult {
   const assets = new Map<string, Uint8Array>();
 
-  const doc = mupdf.PDFDocument.openDocument(pdfBytes, "application/pdf") as mupdf.PDFDocument;
+  const doc = mupdf.PDFDocument.openDocument(
+    pdfBytes,
+    "application/pdf",
+  ) as mupdf.PDFDocument;
   const pageCount = doc.countPages();
   const [from, to] = opts.pageRange ?? [0, pageCount - 1];
 

@@ -13,10 +13,9 @@
  */
 import type { DocumentIR, OutlineNode, PageIR, TextLine } from "./ir.js";
 import type {
-  BibEntry,
-  FrontMatter,
   BodyNode,
   FootnoteEntry,
+  FrontMatter,
   HeadingNode,
   ListNode,
   PretextualSection,
@@ -31,7 +30,6 @@ const INDENT = 141.5;
 const TOL_X = 4;
 const QUOTE_X_MIN = 185;
 const QUOTE_X_MAX = 215;
-const ALPHA_ITEM_X: [number, number] = [138, 152];
 /**
  * Recuo pendente de continuação de item, medido em relação ao x0 do próprio
  * item — não em coordenada absoluta. As duas geometrias observadas:
@@ -76,7 +74,8 @@ export function lineText(line: TextLine): string {
   let out = "";
   let prevX1 = -Infinity;
   for (const s of line.spans) {
-    if (out && s.bbox.x0 - prevX1 > 1.5 && !out.endsWith(" ") && !s.text.startsWith(" ")) out += " ";
+    if (out && s.bbox.x0 - prevX1 > 1.5 && !out.endsWith(" ") && !s.text.startsWith(" "))
+      out += " ";
     out += s.text;
     prevX1 = s.bbox.x1;
   }
@@ -137,12 +136,16 @@ function flattenPage(p: PageIR): Line[] {
         italic: first.italic,
         font: first.font,
         hasMath: l.spans.some((s) => MATH_FONTS.test(s.font)),
-        boldRuns: l.spans.filter((s) => s.bold && /[A-Za-zÀ-ú]/.test(s.text)).map((s) => s.text.trim()),
+        boldRuns: l.spans
+          .filter((s) => s.bold && /[A-Za-zÀ-ú]/.test(s.text))
+          .map((s) => s.text.trim()),
         codeLike,
         page: p.index,
         pageWidth: p.width,
         consumed: false,
-        parts: l.spans.map((sp) => ({ text: sp.text.trim(), x0: sp.bbox.x0 })).filter((sp) => sp.text),
+        parts: l.spans
+          .map((sp) => ({ text: sp.text.trim(), x0: sp.bbox.x0 }))
+          .filter((sp) => sp.text),
       });
     }
   }
@@ -179,13 +182,15 @@ function markLists(lines: Line[], carryItemX0?: number): void {
     for (const l of lines) {
       if (l.consumed) continue;
       const hang = l.x0 - carryItemX0;
-      if (hang >= ITEM_HANG_MIN && hang <= ITEM_HANG_MAX && !ITEM_MARKER.test(l.text)) l.listRole = "cont";
+      if (hang >= ITEM_HANG_MIN && hang <= ITEM_HANG_MAX && !ITEM_MARKER.test(l.text))
+        l.listRole = "cont";
       else break;
     }
   }
   for (let i = 0; i < lines.length; i++) {
     const first = lines[i];
-    if (!first || first.consumed || first.listRole || !ITEM_MARKER.test(first.text)) continue;
+    if (!first || first.consumed || first.listRole || !ITEM_MARKER.test(first.text))
+      continue;
     if (!(first.x0 >= ITEM_X[0] && first.x0 <= ITEM_X[1])) continue;
 
     // Estende o run: itens no mesmo x0 + continuações com recuo pendente.
@@ -215,8 +220,8 @@ function markLists(lines: Line[], carryItemX0?: number): void {
 }
 
 const near = (v: number, target: number, tol = TOL_X) => Math.abs(v - target) <= tol;
-const inRange = (v: number, [lo, hi]: [number, number]) => v >= lo && v <= hi;
-const isCentered = (l: Line) => Math.abs((l.x0 + l.x1) / 2 - l.pageWidth / 2) <= CENTER_TOL;
+const isCentered = (l: Line) =>
+  Math.abs((l.x0 + l.x1) / 2 - l.pageWidth / 2) <= CENTER_TOL;
 const isUpper = (t: string) => /[A-ZÀ-Ú]/.test(t) && t === t.toLocaleUpperCase("pt-BR");
 const isBodySize = (l: Line) => l.size >= 11 && l.size <= 12;
 const isReducedSize = (l: Line) => l.size >= 9 && l.size <= 10;
@@ -238,7 +243,8 @@ const isLeaderLine = (t: string) => /(\. ){2,}\.?/.test(t);
  * leader lines.
  */
 const TOC_LEADER_MIN = 4;
-const isTocPage = (lines: Line[]) => lines.filter((l) => isLeaderLine(l.text)).length >= TOC_LEADER_MIN;
+const isTocPage = (lines: Line[]) =>
+  lines.filter((l) => isLeaderLine(l.text)).length >= TOC_LEADER_MIN;
 
 /** Join wrapped lines, resolving end-of-line hyphenation (pt-BR safe rule). */
 function joinWrapped(parts: string[]): string {
@@ -249,7 +255,7 @@ function joinWrapped(parts: string[]): string {
       continue;
     }
     if (/[a-zà-ú]-$/.test(out) && /^[a-zà-ú]/.test(part)) out = out.slice(0, -1) + part;
-    else out += " " + part;
+    else out += ` ${part}`;
   }
   return out.replace(/\s+/g, " ").trim();
 }
@@ -276,7 +282,11 @@ function buildOutlineIndex(nodes: OutlineNode[], out: string[] = []): string[] {
 }
 
 const canonTitle = (s: string) =>
-  s.normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^A-Za-z0-9]/g, "").toUpperCase();
+  s
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .replace(/[^A-Za-z0-9]/g, "")
+    .toUpperCase();
 
 /** Devolve o título íntegro do outline que começa com o fragmento dado. */
 function repairTitle(fragment: string, outlineTitles: string[]): string {
@@ -296,22 +306,50 @@ function matchHeading(l: Line, gapBefore: number): HeadingNode | null {
   // chapter: "N TITLE" — bold, uppercase, at left margin
   let m = /^(\d+) ([A-ZÀ-Ú].+)$/.exec(t);
   if (m && l.bold && near(l.x0, LEFT) && isUpper(m[2] ?? "")) {
-    return { kind: "heading", level: "chapter", numbered: true, number: m[1] ?? "", title: m[2] ?? "", page: l.page };
+    return {
+      kind: "heading",
+      level: "chapter",
+      numbered: true,
+      number: m[1] ?? "",
+      title: m[2] ?? "",
+      page: l.page,
+    };
   }
   // subsubsection: "N.N.N.N Title" (per .sty: italic — accept any weight)
   m = /^(\d+\.\d+\.\d+\.\d+)\.? (.+)$/.exec(t);
   if (m && near(l.x0, LEFT) && gapBefore >= HEADING_GAP_MIN) {
-    return { kind: "heading", level: "subsubsection", numbered: true, number: m[1] ?? "", title: m[2] ?? "", page: l.page };
+    return {
+      kind: "heading",
+      level: "subsubsection",
+      numbered: true,
+      number: m[1] ?? "",
+      title: m[2] ?? "",
+      page: l.page,
+    };
   }
   // subsection: "N.N.N Title" — REGULAR weight (\normalfont cancels \bfseries)
   m = /^(\d+\.\d+\.\d+)\.? (.+)$/.exec(t);
   if (m && near(l.x0, LEFT) && gapBefore >= HEADING_GAP_MIN) {
-    return { kind: "heading", level: "subsection", numbered: true, number: m[1] ?? "", title: m[2] ?? "", page: l.page };
+    return {
+      kind: "heading",
+      level: "subsection",
+      numbered: true,
+      number: m[1] ?? "",
+      title: m[2] ?? "",
+      page: l.page,
+    };
   }
   // section: "N.N Title" — bold, mixed case
   m = /^(\d+\.\d+)\.? (.+)$/.exec(t);
   if (m && l.bold && near(l.x0, LEFT)) {
-    return { kind: "heading", level: "section", numbered: true, number: m[1] ?? "", title: m[2] ?? "", page: l.page };
+    return {
+      kind: "heading",
+      level: "section",
+      numbered: true,
+      number: m[1] ?? "",
+      title: m[2] ?? "",
+      page: l.page,
+    };
   }
   return null;
 }
@@ -336,7 +374,12 @@ function matchUnnumberedChapter(l: Line): string | null {
 
 function stripFolio(lines: Line[]): void {
   for (const l of lines) {
-    if (l.y0 <= FOLIO_Y_MAX && /^\d{1,3}$/.test(l.text) && l.x0 > l.pageWidth * 0.7 && isReducedSize(l)) {
+    if (
+      l.y0 <= FOLIO_Y_MAX &&
+      /^\d{1,3}$/.test(l.text) &&
+      l.x0 > l.pageWidth * 0.7 &&
+      isReducedSize(l)
+    ) {
       l.consumed = true;
       return;
     }
@@ -347,7 +390,12 @@ function extractFootnotes(lines: Line[], out: FootnoteEntry[]): void {
   // Footnote block: bottom zone, reduced size, opened by a tiny (≤8pt)
   // superscript digit at the left margin.
   const starts = lines.filter(
-    (l) => !l.consumed && l.y0 > 640 && l.size <= 8 && /^\d{1,2}$/.test(l.text) && near(l.x0, LEFT, 6),
+    (l) =>
+      !l.consumed &&
+      l.y0 > 640 &&
+      l.size <= 8 &&
+      /^\d{1,2}$/.test(l.text) &&
+      near(l.x0, LEFT, 6),
   );
   if (!starts.length) return;
   const zoneTop = Math.min(...starts.map((l) => l.y0));
@@ -356,13 +404,23 @@ function extractFootnotes(lines: Line[], out: FootnoteEntry[]): void {
   for (const l of zone) {
     l.consumed = true;
     if (l.size <= 8 && /^\d{1,2}$/.test(l.text)) {
-      if (current) out.push({ marker: current.marker, text: joinWrapped(current.parts), page: current.page });
+      if (current)
+        out.push({
+          marker: current.marker,
+          text: joinWrapped(current.parts),
+          page: current.page,
+        });
       current = { marker: l.text, parts: [], page: l.page };
     } else if (current) {
       current.parts.push(l.text);
     }
   }
-  if (current) out.push({ marker: current.marker, text: joinWrapped(current.parts), page: current.page });
+  if (current)
+    out.push({
+      marker: current.marker,
+      text: joinWrapped(current.parts),
+      page: current.page,
+    });
 }
 
 // ---------------------------------------------------------------------------
@@ -389,7 +447,9 @@ function extractFloats(lines: Line[], page: PageIR, pending: PendingNode[]): voi
     const caption = joinWrapped(captionParts);
 
     // Float body spans from the caption down to the "Fonte:" line.
-    const fonteLine = lines.find((x) => !x.consumed && x.y0 > l.y0 && isReducedSize(x) && /^Fonte ?:/.test(x.text));
+    const fonteLine = lines.find(
+      (x) => !x.consumed && x.y0 > l.y0 && isReducedSize(x) && /^Fonte ?:/.test(x.text),
+    );
     const yTop = l.y0;
     const yBottom = fonteLine ? fonteLine.y0 + 14 : l.y0 + 320;
     const source = fonteLine?.text.replace(/^Fonte ?: ?/, "");
@@ -397,49 +457,77 @@ function extractFloats(lines: Line[], page: PageIR, pending: PendingNode[]): voi
       fonteLine.consumed = true;
       // Apparatus continuations: "Nota:" + wrapped reduced-size lines below Fonte.
       for (const x of lines) {
-        if (!x.consumed && x.y0 > fonteLine.y0 && x.y0 < fonteLine.y0 + 60 && isReducedSize(x)) x.consumed = true;
+        if (
+          !x.consumed &&
+          x.y0 > fonteLine.y0 &&
+          x.y0 < fonteLine.y0 + 60 &&
+          isReducedSize(x)
+        )
+          x.consumed = true;
       }
     }
 
     if (m[1] === "Figura") {
-      const imgs = page.images.filter((im) => im.bbox.y0 >= yTop - 6 && im.bbox.y0 <= yBottom);
-      pending.push({ y0: l.y0, node: {
-        kind: "figure",
-        number: Number(m[2]),
-        caption,
-        source,
-        imageFiles: [...new Set(imgs.map((im) => im.file ?? `img-${im.sha256.slice(0, 12)}.png`))],
-        page: l.page,
-      } });
+      const imgs = page.images.filter(
+        (im) => im.bbox.y0 >= yTop - 6 && im.bbox.y0 <= yBottom,
+      );
+      pending.push({
+        y0: l.y0,
+        node: {
+          kind: "figure",
+          number: Number(m[2]),
+          caption,
+          source,
+          imageFiles: [
+            ...new Set(imgs.map((im) => im.file ?? `img-${im.sha256.slice(0, 12)}.png`)),
+          ],
+          page: l.page,
+        },
+      });
     } else {
       // Table region: prefer booktabs heavy rules (th≈0.94) below the caption.
       const heavy = page.vectors.filter(
-        (v) => v.orientation === "horizontal" && v.thickness >= 0.85 && v.bbox.y0 > yTop && v.bbox.y0 < yBottom + 60,
+        (v) =>
+          v.orientation === "horizontal" &&
+          v.thickness >= 0.85 &&
+          v.bbox.y0 > yTop &&
+          v.bbox.y0 < yBottom + 60,
       );
       const top = heavy.length ? Math.min(...heavy.map((v) => v.bbox.y0)) : yTop;
       const bottom = heavy.length ? Math.max(...heavy.map((v) => v.bbox.y1)) : yBottom;
-      const cellLines = lines.filter((x) => !x.consumed && x.y0 >= top - 2 && x.y0 <= bottom + 2);
+      const cellLines = lines.filter(
+        (x) => !x.consumed && x.y0 >= top - 2 && x.y0 <= bottom + 2,
+      );
       // Todas as réguas da região, não só as booktabs pesadas: o quadro do
       // documento real é traçado com 0,4bp e delimita as linhas lógicas.
       const ruleYs = [
         ...new Set(
           page.vectors
-            .filter((v) => v.orientation === "horizontal" && v.thickness >= 0.3 && v.bbox.y0 >= top - 4 && v.bbox.y0 <= bottom + 4)
+            .filter(
+              (v) =>
+                v.orientation === "horizontal" &&
+                v.thickness >= 0.3 &&
+                v.bbox.y0 >= top - 4 &&
+                v.bbox.y0 <= bottom + 4,
+            )
             .map((v) => v.bbox.y0),
         ),
       ].sort((a, b) => a - b);
       const { rows, colWidths } = clusterRows(cellLines, ruleYs);
       for (const x of cellLines) x.consumed = true;
-      pending.push({ y0: l.y0, node: {
-        kind: "table",
-        label: m[1] as "Tabela" | "Quadro",
-        number: Number(m[2]),
-        caption,
-        source,
-        rows,
-        colWidths,
-        page: l.page,
-      } });
+      pending.push({
+        y0: l.y0,
+        node: {
+          kind: "table",
+          label: m[1] as "Tabela" | "Quadro",
+          number: Number(m[2]),
+          caption,
+          source,
+          rows,
+          colWidths,
+          page: l.page,
+        },
+      });
     }
   }
 }
@@ -459,22 +547,29 @@ const COL_GAP_MIN = 20;
  * coluna (x0) e se juntam com de-hifenização. Sem réguas suficientes cai no
  * agrupamento por baseline, que é o melhor palpite disponível.
  */
-function clusterRows(cellLines: Line[], ruleYs: number[] = []): { rows: string[][]; colWidths?: number[] } {
+function clusterRows(
+  cellLines: Line[],
+  ruleYs: number[] = [],
+): { rows: string[][]; colWidths?: number[] } {
   const bands: [number, number][] = [];
-  for (let i = 0; i + 1 < ruleYs.length; i++) bands.push([ruleYs[i] ?? 0, ruleYs[i + 1] ?? 0]);
+  for (let i = 0; i + 1 < ruleYs.length; i++)
+    bands.push([ruleYs[i] ?? 0, ruleYs[i + 1] ?? 0]);
 
   if (bands.length >= 2) {
     // Colunas: início de coluna é um x0 distante > COL_GAP_MIN do anterior.
     const xs = [...new Set(cellLines.map((l) => l.x0))].sort((a, b) => a - b);
     const cols: number[] = [];
-    for (const x of xs) if (!cols.length || x - (cols[cols.length - 1] ?? 0) > COL_GAP_MIN) cols.push(x);
+    for (const x of xs)
+      if (!cols.length || x - (cols[cols.length - 1] ?? 0) > COL_GAP_MIN) cols.push(x);
 
     const rows: string[][] = [];
     for (const [top, bot] of bands) {
       const inBand = cellLines.filter((l) => l.baseline > top && l.baseline <= bot);
       if (!inBand.length) continue;
       const cells: string[][] = cols.map(() => []);
-      for (const l of [...inBand].sort((a, b) => a.baseline - b.baseline || a.x0 - b.x0)) {
+      for (const l of [...inBand].sort(
+        (a, b) => a.baseline - b.baseline || a.x0 - b.x0,
+      )) {
         const frags = l.parts.length ? l.parts : [{ text: l.text, x0: l.x0 }];
         // Acumula por coluna dentro da MESMA linha visual antes de empilhar,
         // para não intercalar fragmentos de colunas diferentes.
@@ -509,16 +604,13 @@ function clusterRows(cellLines: Line[], ruleYs: number[] = []): { rows: string[]
   const byRow = new Map<number, Line[]>();
   for (const l of cellLines) {
     const key = Math.round(l.baseline / 4) * 4;
-    (byRow.get(key) ?? byRow.set(key, []).get(key)!).push(l);
+    const row = byRow.get(key) ?? [];
+    row.push(l);
+    byRow.set(key, row);
   }
   const rows: string[][] = [];
-  for (const key of [...byRow.keys()].sort((a, b) => a - b)) {
-    rows.push(
-      byRow
-        .get(key)!
-        .sort((a, b) => a.x0 - b.x0)
-        .map((l) => l.text),
-    );
+  for (const [, row] of [...byRow].sort(([a], [b]) => a - b)) {
+    rows.push(row.sort((a, b) => a.x0 - b.x0).map((l) => l.text));
   }
   return { rows };
 }
@@ -531,14 +623,22 @@ interface PendingNode {
 /** algorithm2e ruled frames: full-width horizontal rules, th ≈ 0.8bp. */
 function extractAlgorithms(lines: Line[], page: PageIR, pending: PendingNode[]): void {
   const rules = page.vectors
-    .filter((v) => v.orientation === "horizontal" && v.thickness >= 0.7 && v.thickness <= 0.85 && v.bbox.x0 < LEFT + 6)
+    .filter(
+      (v) =>
+        v.orientation === "horizontal" &&
+        v.thickness >= 0.7 &&
+        v.thickness <= 0.85 &&
+        v.bbox.x0 < LEFT + 6,
+    )
     .sort((a, b) => a.bbox.y0 - b.bbox.y0);
   const firstRule = rules[0];
   const lastRule = rules[rules.length - 1];
   if (rules.length < 2 || !firstRule || !lastRule) return;
   const top = firstRule.bbox.y0;
   const bottom = lastRule.bbox.y1;
-  const inside = lines.filter((x) => !x.consumed && x.y0 >= top - 14 && x.y0 <= bottom + 2);
+  const inside = lines.filter(
+    (x) => !x.consumed && x.y0 >= top - 14 && x.y0 <= bottom + 2,
+  );
   const firstInside = inside[0];
   if (!firstInside) return;
   const capLine = inside.find((x) => /^Algoritmo \d+ ?:/.test(x.text));
@@ -561,7 +661,8 @@ function extractAlgorithms(lines: Line[], page: PageIR, pending: PendingNode[]):
 // ---------------------------------------------------------------------------
 
 /** Assinaturas textuais que identificam cada página pré-textual. */
-const SIG_PREAMBLE = /^(Trabalho de Conclusão de Curso|Dissertação|Tese|Proposta de qualificação) apresentad/;
+const SIG_PREAMBLE =
+  /^(Trabalho de Conclusão de Curso|Dissertação|Tese|Proposta de qualificação) apresentad/;
 const SIG_CATALOG = /Ficha Catalográfica|Formulário Eletrônico|^CDU$/i;
 const SIG_BOARD = /^BANCA EXAMINADORA$/;
 const SIG_ADVISOR = /^Orientador(a)? ?:/;
@@ -594,9 +695,11 @@ function extractFrontMatter(ir: DocumentIR): FrontMatter {
     const texts = lines.map((l) => l.text);
     const joined = texts.join(" ");
 
-    if (texts.some((t) => /^LISTA DE ILUSTRA[ÇC]/i.test(t))) fm.has.illustrationList = true;
+    if (texts.some((t) => /^LISTA DE ILUSTRA[ÇC]/i.test(t)))
+      fm.has.illustrationList = true;
     if (texts.some((t) => /^LISTA DE TABELAS$/i.test(t))) fm.has.tableList = true;
-    if (texts.some((t) => /^LISTA DE ABREVIATURAS/i.test(t))) fm.has.abbreviationList = true;
+    if (texts.some((t) => /^LISTA DE ABREVIATURAS/i.test(t)))
+      fm.has.abbreviationList = true;
     if (texts.some((t) => /^LISTA DE S[ÍI]MBOLOS$/i.test(t))) fm.has.symbolList = true;
     if (SIG_CATALOG.test(joined)) fm.has.catalogCard = true;
     if (texts.some((t) => SIG_BOARD.test(t)) || texts.some((t) => SIG_APPROVED.test(t))) {
@@ -666,7 +769,9 @@ function collectBoard(lines: Line[], fm: FrontMatter): void {
   for (let i = start + 1; i < lines.length; i++) {
     const t = lines[i]?.text ?? "";
     if (!NAME.test(t) || /^(Universidade|Centro|Faculdade|Instituto)/.test(t)) continue;
-    const member: FrontMatter["board"][number] = { name: t.replace(/\s*\(Orientador[a]?\)\s*$/, "").trim() };
+    const member: FrontMatter["board"][number] = {
+      name: t.replace(/\s*\(Orientador[a]?\)\s*$/, "").trim(),
+    };
     for (let k = i + 1; k < lines.length && k <= i + 2; k++) {
       const v = lines[k]?.text ?? "";
       if (/^(Centro|Faculdade|Instituto)/.test(v)) member.center = v;
@@ -709,7 +814,12 @@ export function classify(ir: DocumentIR): SemanticDoc {
 
   const flushPara = () => {
     if (para) {
-      doc.body.push({ kind: "paragraph", text: joinWrapped(para.parts), hasInlineMath: para.hasMath, page: para.page });
+      doc.body.push({
+        kind: "paragraph",
+        text: joinWrapped(para.parts),
+        hasInlineMath: para.hasMath,
+        page: para.page,
+      });
       para = null;
     }
   };
@@ -733,7 +843,11 @@ export function classify(ir: DocumentIR): SemanticDoc {
   };
   const flushBib = () => {
     if (bibParts) {
-      doc.bibliography.push({ raw: joinWrapped(bibParts.parts), emphasized: bibParts.emphasized, page: bibParts.page });
+      doc.bibliography.push({
+        raw: joinWrapped(bibParts.parts),
+        emphasized: bibParts.emphasized,
+        page: bibParts.page,
+      });
       bibParts = null;
     }
   };
@@ -785,7 +899,13 @@ export function classify(ir: DocumentIR): SemanticDoc {
         flushSection();
         if (unnum === "REFERÊNCIAS") {
           mode = "bibliography";
-          doc.body.push({ kind: "heading", level: "chapter", numbered: false, title: unnum, page: l.page });
+          doc.body.push({
+            kind: "heading",
+            level: "chapter",
+            numbered: false,
+            title: unnum,
+            page: l.page,
+          });
         } else if (POSTTEXTUAL_PREFIX.some((p) => unnum.startsWith(p))) {
           mode = "posttextual";
           pendingSection = { title: unnum, paragraphs: [], page: l.page };
@@ -801,7 +921,8 @@ export function classify(ir: DocumentIR): SemanticDoc {
       // Numa página de sumário nenhuma linha é heading: a entrada de duas
       // linhas do sumário imita um capítulo e, ao casar, arrastava o modo
       // para "body" páginas antes do primeiro capítulo real.
-      const heading = mode !== "bibliography" && !tocPage ? matchHeading(l, gapBefore) : null;
+      const heading =
+        mode !== "bibliography" && !tocPage ? matchHeading(l, gapBefore) : null;
       if (heading) {
         // Título que transbordou para a(s) linha(s) seguintes: o outline diz
         // qual é o título íntegro, e absorvemos linhas até cobri-lo. Só
@@ -874,7 +995,13 @@ export function classify(ir: DocumentIR): SemanticDoc {
         flushList();
         flushQuote();
         if (!code) {
-          code = { kind: "code", variant: "listing", caption: pendingCodeCaption ?? undefined, lines: [], page: l.page };
+          code = {
+            kind: "code",
+            variant: "listing",
+            caption: pendingCodeCaption ?? undefined,
+            lines: [],
+            page: l.page,
+          };
           pendingCodeCaption = null;
         }
         code.lines.push(l.text.replace(/^\d+ /, ""));
@@ -882,9 +1009,14 @@ export function classify(ir: DocumentIR): SemanticDoc {
       }
       flushCode();
 
-
       // citação longa
-      if (isReducedSize(l) && l.x0 >= QUOTE_X_MIN && l.x1 <= 545 && l.x0 <= QUOTE_X_MAX + 40 && !/^(Fonte|Nota) ?:/.test(l.text)) {
+      if (
+        isReducedSize(l) &&
+        l.x0 >= QUOTE_X_MIN &&
+        l.x1 <= 545 &&
+        l.x0 <= QUOTE_X_MAX + 40 &&
+        !/^(Fonte|Nota) ?:/.test(l.text)
+      ) {
         flushPara();
         flushList();
         if (!quote) quote = { parts: [], page: l.page };
@@ -896,7 +1028,11 @@ export function classify(ir: DocumentIR): SemanticDoc {
       // alíneas / bullets / itemize — papéis já resolvidos por markLists()
       if (l.listRole === "item") {
         flushPara();
-        const style = /^(\([a-z]\)|[a-z]\)) /.test(l.text) ? "alpha" : /^\d/.test(l.text) ? "numeric" : "bullet";
+        const style = /^(\([a-z]\)|[a-z]\)) /.test(l.text)
+          ? "alpha"
+          : /^\d/.test(l.text)
+            ? "numeric"
+            : "bullet";
         if (!list || list.style !== style || Math.abs(listItemX0 - l.x0) > TOL_X) {
           flushList();
           list = { kind: "list", style, items: [], page: l.page };
@@ -917,12 +1053,17 @@ export function classify(ir: DocumentIR): SemanticDoc {
       // equation number "(N.N)" and stray sub/superscript fragments attach
       // to an adjacent display-math region (same page, one leading apart)
       const lastNode = doc.body[doc.body.length - 1];
-      const nearMath = lastNode?.kind === "displayMath" && lastNode.page === l.page && gapBefore <= 60 && !para;
+      const nearMath =
+        lastNode?.kind === "displayMath" &&
+        lastNode.page === l.page &&
+        gapBefore <= 60 &&
+        !para;
       if (nearMath && /^\(\d+\.\d+\)$/.test(l.text)) {
         lastNode.raw += ` ${l.text}`;
         continue;
       }
-      const mathFragment = l.text.length <= 12 && !/[A-ZÀ-Ú]{2,}|[a-zà-ú]{3,}/.test(l.text);
+      const mathFragment =
+        l.text.length <= 12 && !/[A-ZÀ-Ú]{2,}|[a-zà-ú]{3,}/.test(l.text);
       if (nearMath && mathFragment && !near(l.x0, LEFT) && !near(l.x0, INDENT)) {
         lastNode.raw += ` ${l.text}`;
         continue;
@@ -934,7 +1075,7 @@ export function classify(ir: DocumentIR): SemanticDoc {
         flushQuote();
         const prev = doc.body[doc.body.length - 1];
         if (prev?.kind === "displayMath" && prev.page === l.page && gapBefore <= 60) {
-          prev.raw = (prev.raw + " " + l.text).trim();
+          prev.raw = `${prev.raw} ${l.text}`.trim();
         } else {
           doc.body.push({ kind: "displayMath", raw: l.text, page: l.page });
         }

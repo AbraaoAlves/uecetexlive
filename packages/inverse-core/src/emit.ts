@@ -17,13 +17,7 @@
  *  - table cell wraps may surface as extra rows;
  *  - inline \cite calls are left as literal (Autor, ano) text.
  */
-import type {
-  BibEntry,
-  BodyNode,
-  FootnoteEntry,
-  SemanticDoc,
-  TableNode,
-} from "./semantic.js";
+import type { BibEntry, BodyNode, SemanticDoc, TableNode } from "./semantic.js";
 
 // ---------------------------------------------------------------------------
 // Text helpers
@@ -40,16 +34,33 @@ export function escapeLatex(s: string): string {
 }
 
 import { slug, toAsciiWithTexAccents } from "./text-util.js";
+
 export { slug };
 
 /** Chapter titles arrive uppercased by chapter=TITLE; emit in title case
  *  for readable source (compilation re-uppercases — idempotent). */
 function titleCase(t: string): string {
-  const small = new Set(["e", "de", "da", "do", "das", "dos", "em", "a", "o", "as", "os", "para", "com"]);
+  const small = new Set([
+    "e",
+    "de",
+    "da",
+    "do",
+    "das",
+    "dos",
+    "em",
+    "a",
+    "o",
+    "as",
+    "os",
+    "para",
+    "com",
+  ]);
   return t
     .toLocaleLowerCase("pt-BR")
     .split(" ")
-    .map((w, i) => (i > 0 && small.has(w) ? w : w.charAt(0).toLocaleUpperCase("pt-BR") + w.slice(1)))
+    .map((w, i) =>
+      i > 0 && small.has(w) ? w : w.charAt(0).toLocaleUpperCase("pt-BR") + w.slice(1),
+    )
     .join(" ");
 }
 
@@ -74,13 +85,19 @@ function emitTable(t: TableNode): string {
 
   // Colunas `p{}` na proporção medida: `l` não quebra linha e estouraria a
   // margem em células longas como as do Quadro 1.
-  const widths = t.colWidths?.length === ncols ? t.colWidths : Array(ncols).fill(1 / ncols);
+  const widths =
+    t.colWidths?.length === ncols ? t.colWidths : Array(ncols).fill(1 / ncols);
   const spec = widths
-    .map((w) => `p{${(w * 0.96).toFixed(4)}\\dimexpr\\textwidth-${(2 * ncols).toFixed(0)}\\tabcolsep\\relax}`)
+    .map(
+      (w) =>
+        `p{${(w * 0.96).toFixed(4)}\\dimexpr\\textwidth-${(2 * ncols).toFixed(0)}\\tabcolsep\\relax}`,
+    )
     .join("");
 
   const line = (cells: string[]) =>
-    [...cells, ...Array(Math.max(0, ncols - cells.length)).fill("")].map(escapeLatex).join(" & ") + " \\\\";
+    `${[...cells, ...Array(Math.max(0, ncols - cells.length)).fill("")]
+      .map(escapeLatex)
+      .join(" & ")} \\\\`;
   const [head = [""], ...rest] = t.rows.length ? t.rows : [[""]];
   return [
     `\\begin{${env}}[htb]`,
@@ -127,26 +144,45 @@ function emitNode(
 ): string {
   switch (n.kind) {
     case "heading": {
-      const cmd = { chapter: "chapter", section: "section", subsection: "subsection", subsubsection: "subsubsection" }[
-        n.level
-      ];
+      const cmd = {
+        chapter: "chapter",
+        section: "section",
+        subsection: "subsection",
+        subsubsection: "subsubsection",
+      }[n.level];
       const title = n.level === "chapter" ? titleCase(n.title) : n.title;
-      const label = n.level === "chapter" ? `\n\\label{cap:${slug(n.title)}}` : `\n\\label{sec:${slug(n.title)}}`;
+      const label =
+        n.level === "chapter"
+          ? `\n\\label{cap:${slug(n.title)}}`
+          : `\n\\label{sec:${slug(n.title)}}`;
       return `\\${cmd}{${escapeLatex(title)}}${label}`;
     }
     case "paragraph": {
-      const todo = n.hasInlineMath ? "\n%% TODO(matemática inline): revisar símbolos neste parágrafo" : "";
+      const todo = n.hasInlineMath
+        ? "\n%% TODO(matemática inline): revisar símbolos neste parágrafo"
+        : "";
       return emitProse(n.text, citeIndex, used) + todo;
     }
     case "quote":
       return `\\begin{citacao}\n${emitProse(n.text, citeIndex, used)}\n\\end{citacao}`;
     case "list": {
-      const env = n.style === "alpha" ? "alineas" : n.style === "numeric" ? "alineascomnumero" : "alineascomponto";
-      return [`\\begin{${env}}`, ...n.items.map((i) => `\t\\item ${escapeLatex(i)}`), `\\end{${env}}`].join("\n");
+      const env =
+        n.style === "alpha"
+          ? "alineas"
+          : n.style === "numeric"
+            ? "alineascomnumero"
+            : "alineascomponto";
+      return [
+        `\\begin{${env}}`,
+        ...n.items.map((i) => `\t\\item ${escapeLatex(i)}`),
+        `\\end{${env}}`,
+      ].join("\n");
     }
     case "figure": {
       const graphics = n.imageFiles.length
-        ? n.imageFiles.map((f) => `\\includegraphics[width=0.75\\textwidth]{${figDir}/${f}}`).join("\n")
+        ? n.imageFiles
+            .map((f) => `\\includegraphics[width=0.75\\textwidth]{${figDir}/${f}}`)
+            .join("\n")
         : "%% TODO(figura): imagem não recuperada da IR";
       return [
         `\\begin{figure}[htb]`,
@@ -162,7 +198,7 @@ function emitNode(
     case "displayMath":
       return [
         `%% TODO(matemática): reconstruir a partir dos glifos extraídos:`,
-        ...n.raw.match(/.{1,70}/g)!.map((c) => `%%   ${c}`),
+        ...(n.raw.match(/.{1,70}/g) ?? []).map((c) => `%%   ${c}`),
         `\\begin{equation}`,
         `\\text{[equação extraída — reconstrução simbólica pendente]}`,
         `\\end{equation}`,
@@ -187,7 +223,13 @@ function emitNode(
 // ---------------------------------------------------------------------------
 
 import { bibKeys } from "./bibkey.js";
-import { type CiteIndex, buildCiteIndex, countUnresolved, segmentCitations } from "./cite.js";
+import {
+  buildCiteIndex,
+  type CiteIndex,
+  countUnresolved,
+  segmentCitations,
+} from "./cite.js";
+
 export { bibKeys };
 
 /**
@@ -209,8 +251,10 @@ export function authorsOf(raw: string): string {
   if (!prefix) return "";
   const names: string[] = [];
   let abbreviated = false;
+  const ET_AL = /\bet\s+al\.?/iu;
   for (const part of prefix.split(";")) {
-    const name = part.replace(/\bet\s+al\.?/iu, () => ((abbreviated = true), "")).trim();
+    if (ET_AL.test(part)) abbreviated = true;
+    const name = part.replace(ET_AL, "").trim();
     if (name) names.push(name);
   }
   // "and others" é como o BibTeX escreve "et al." — a lista de referências do
@@ -229,7 +273,9 @@ export function emitBib(entries: BibEntry[]): string {
   for (const [i, e] of entries.entries()) {
     const key = keys[i] as string;
     const authors = authorsOf(e.raw);
-    const title = e.emphasized.length ? e.emphasized.join(" ").replace(/\.\s*$/, "") : undefined;
+    const title = e.emphasized.length
+      ? e.emphasized.join(" ").replace(/\.\s*$/, "")
+      : undefined;
     const year = /\b(1[89]\d\d|20\d\d)\b/.exec(e.raw)?.[1];
     // escapeLatex em TODO campo, não só em `note`: um "&" cru em `title`
     // ("… Engineering & Technology") aborta a compilação com
@@ -461,7 +507,8 @@ export function emitFiles(sem: SemanticDoc, opts: EmitFilesOptions): EmitFilesRe
       `\\nocite{${uncited.join(",")}} % referências não citadas no texto reconstruído`,
     );
 
-  for (const ch of chapters) w(`elementos-textuais/${ch.slugName}.tex`, ch.parts.join("\n\n") + "\n");
+  for (const ch of chapters)
+    w(`elementos-textuais/${ch.slugName}.tex`, `${ch.parts.join("\n\n")}\n`);
 
   // 4) pré-textuais
   const pretextuais: string[] = [];
@@ -480,9 +527,15 @@ export function emitFiles(sem: SemanticDoc, opts: EmitFilesOptions): EmitFilesRe
     if (!m) continue;
     const title = m[2] ?? "";
     const rel = `elementos-pos-textuais/${m[1] === "APÊNDICE" ? "apendices" : "anexos"}/${slug(title)}.tex`;
-    const body = [`\\chapter{${escapeLatex(titleCase(title))}}`, "", ...p.paragraphs.map(escapeLatex)].join("\n") + "\n";
+    const body = `${[
+      `\\chapter{${escapeLatex(titleCase(title))}}`,
+      "",
+      ...p.paragraphs.map(escapeLatex),
+    ].join("\n")}\n`;
     w(rel, body);
-    (m[1] === "APÊNDICE" ? apInputs : anInputs).push(`\t\t\\input{${rel.replace(/\.tex$/, "")}}`);
+    (m[1] === "APÊNDICE" ? apInputs : anInputs).push(
+      `\t\t\\input{${rel.replace(/\.tex$/, "")}}`,
+    );
   }
 
   // 6) bibliografia
@@ -494,15 +547,25 @@ export function emitFiles(sem: SemanticDoc, opts: EmitFilesOptions): EmitFilesRe
   let doc = decoder.decode(docBytes);
   doc = patchFrontMatter(doc, sem);
 
-  const textualInputs = chapters.map((c) => `\t\\input{elementos-textuais/${c.slugName}}`).join("\n");
-  doc = doc.replace(/(\t\\input\{elementos-textuais\/[^}]+\}\n?)+/, textualInputs + "\n");
+  const textualInputs = chapters
+    .map((c) => `\t\\input{elementos-textuais/${c.slugName}}`)
+    .join("\n");
+  doc = doc.replace(/(\t\\input\{elementos-textuais\/[^}]+\}\n?)+/, `${textualInputs}\n`);
 
   // Apêndices e anexos: substitui os \input do template pelos emitidos —
   // e REMOVE os do template quando não há substituto. O passo 1 já apagou os
   // .tex correspondentes, então deixá-los era `Emergency stop` garantido em
   // qualquer documento sem apêndice nem anexo (o caso comum).
-  doc = replaceOrDrop(doc, /(\t\t\\input\{elementos-pos-textuais\/apendices\/[^}]+\}[ \t]*\n)+/, apInputs);
-  doc = replaceOrDrop(doc, /(\t\t\\input\{elementos-pos-textuais\/anexos\/[^}]+\}[ \t]*\n)+/, anInputs);
+  doc = replaceOrDrop(
+    doc,
+    /(\t\t\\input\{elementos-pos-textuais\/apendices\/[^}]+\}[ \t]*\n)+/,
+    apInputs,
+  );
+  doc = replaceOrDrop(
+    doc,
+    /(\t\t\\input\{elementos-pos-textuais\/anexos\/[^}]+\}[ \t]*\n)+/,
+    anInputs,
+  );
   doc = pruneFrontMatterCommands(doc, sem, apInputs.length > 0, anInputs.length > 0);
   w("documento.tex", doc);
 
@@ -532,7 +595,7 @@ export function emitFiles(sem: SemanticDoc, opts: EmitFilesOptions): EmitFilesRe
 
 /** Troca um bloco de \input pelos emitidos; sem substitutos, apaga o bloco. */
 function replaceOrDrop(doc: string, block: RegExp, lines: string[]): string {
-  return doc.replace(block, lines.length ? lines.join("\n") + "\n" : "");
+  return doc.replace(block, lines.length ? `${lines.join("\n")}\n` : "");
 }
 
 /**
@@ -601,12 +664,22 @@ function patchFrontMatter(doc: string, sem: SemanticDoc): string {
   if (workType) doc = selectWorkType(doc, workType);
   // Qualificação: o preâmbulo diz "Exame de Qualificação" / "de qualificação".
   if (/\bqualifica[çc][ãa]o\b/i.test(pre)) set("ehqualificacao", "sim");
-  const course = /Curso de Graduação em (.+?) do (?:Centro|Instituto|Faculdade)/.exec(pre)?.[1];
+  const course = /Curso de Graduação em (.+?) do (?:Centro|Instituto|Faculdade)/.exec(
+    pre,
+  )?.[1];
   if (course) set("graduacaoem", escapeLatex(course));
   const degree = /obtenção do grau de (\w+)/.exec(pre)?.[1];
   if (degree) set("habilitacao", degree);
-  set("ehuab", /Universidade Aberta do Brasil/.test(pre) || fm.institutionLines.some((l) => /ABERTA DO BRASIL/.test(l)) ? "sim" : "nao");
-  const centro = fm.institutionLines.find((l) => /^CENTRO |^INSTITUTO |^FACULDADE /.test(l));
+  set(
+    "ehuab",
+    /Universidade Aberta do Brasil/.test(pre) ||
+      fm.institutionLines.some((l) => /ABERTA DO BRASIL/.test(l))
+      ? "sim"
+      : "nao",
+  );
+  const centro = fm.institutionLines.find((l) =>
+    /^CENTRO |^INSTITUTO |^FACULDADE /.test(l),
+  );
   if (centro) set("centro", escapeLatex(titleCaseInstitution(centro)));
 
   // Orientador e banca. O 1º membro da folha de aprovação é o orientador; os
@@ -636,9 +709,15 @@ function patchFrontMatter(doc: string, sem: SemanticDoc): string {
  * ganhava ~6 páginas de placeholder que o original não tem — e o `\imprimirindice`
  * ainda puxava um índice vazio.
  */
-function pruneFrontMatterCommands(doc: string, sem: SemanticDoc, hasAp: boolean, hasAn: boolean): string {
+function pruneFrontMatterCommands(
+  doc: string,
+  sem: SemanticDoc,
+  hasAp: boolean,
+  hasAn: boolean,
+): string {
   const has = (title: string) =>
-    sem.pretextual.some((p) => p.title === title) || sem.posttextual.some((p) => p.title === title);
+    sem.pretextual.some((p) => p.title === title) ||
+    sem.posttextual.some((p) => p.title === title);
   const fm = sem.frontMatter;
   const keep: Record<string, boolean> = {
     imprimirerrata: has("ERRATA"),
@@ -650,8 +729,12 @@ function pruneFrontMatterCommands(doc: string, sem: SemanticDoc, hasAp: boolean,
     imprimirlistadeilustracoes: fm.has.illustrationList,
     imprimirlistadetabelas: fm.has.tableList,
     imprimirlistadequadros: false,
-    imprimirlistadealgoritmos: sem.body.some((n) => n.kind === "code" && n.variant === "algorithm"),
-    imprimirlistadecodigosfonte: sem.body.some((n) => n.kind === "code" && n.variant === "listing"),
+    imprimirlistadealgoritmos: sem.body.some(
+      (n) => n.kind === "code" && n.variant === "algorithm",
+    ),
+    imprimirlistadecodigosfonte: sem.body.some(
+      (n) => n.kind === "code" && n.variant === "listing",
+    ),
     imprimirlistadeabreviaturasesiglas: fm.has.abbreviationList,
     imprimirlistadesimbolos: fm.has.symbolList,
     imprimirglossario: has("GLOSSÁRIO"),
@@ -663,7 +746,10 @@ function pruneFrontMatterCommands(doc: string, sem: SemanticDoc, hasAp: boolean,
     if (wanted) continue;
     // Só comenta linhas cujo conteúdo é exatamente o comando (com argumento
     // opcional), preservando indentação — nunca toca em texto de capítulo.
-    doc = doc.replace(new RegExp(`^([ \\t]*)(\\\\${cmd}(?:\\{[^}]*\\})?[ \\t]*)$`, "gm"), "$1%$2");
+    doc = doc.replace(
+      new RegExp(`^([ \\t]*)(\\\\${cmd}(?:\\{[^}]*\\})?[ \\t]*)$`, "gm"),
+      "$1%$2",
+    );
   }
   return doc;
 }
@@ -678,10 +764,24 @@ function cityToLatex(city: string): string {
 
 /** Caixa alta -> caixa mista preservando preposições. */
 function titleCaseInstitution(s: string): string {
-  const small = new Set(["e", "de", "da", "do", "das", "dos", "em", "a", "o", "as", "os"]);
+  const small = new Set([
+    "e",
+    "de",
+    "da",
+    "do",
+    "das",
+    "dos",
+    "em",
+    "a",
+    "o",
+    "as",
+    "os",
+  ]);
   return s
     .toLocaleLowerCase("pt-BR")
     .split(" ")
-    .map((w, i) => (i > 0 && small.has(w) ? w : w.charAt(0).toLocaleUpperCase("pt-BR") + w.slice(1)))
+    .map((w, i) =>
+      i > 0 && small.has(w) ? w : w.charAt(0).toLocaleUpperCase("pt-BR") + w.slice(1),
+    )
     .join(" ");
 }
