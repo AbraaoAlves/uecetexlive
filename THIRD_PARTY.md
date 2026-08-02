@@ -14,7 +14,6 @@ user-facing summary.
 | **cm-super** (typewriter subset) | GPL (with font exception) | Unmodified `.pfb`/`.enc` files served for embedding. |
 | **SwiftLaTeX engine** (`PdfTeXEngine.js`, `swiftlatexpdftex.js`, `swiftlatexpdftex.wasm`) | **AGPL-3.0** | We serve **patched** artifacts. The three patches are documented and diffed in `docs/prototype-compile-pipeline.md` §2 and `DEVIATIONS.md` D7; source: <https://github.com/SwiftLaTeX/SwiftLaTeX>. The draft engine is the isolable/removable piece if distribution posture ever requires it. |
 | **mupdf.js** (`mupdf`, `mupdf-wasm.wasm`) | **AGPL-3.0** | Served **unmodified** from the npm package; source: <https://github.com/ArtifexSoftware/mupdf.js>. Loaded only when the student imports a PDF (never at boot) by `packages/inverse-core`. If a patch ever becomes necessary, document and diff it as in the SwiftLaTeX row. |
-| **uecetex-inverse core** (`packages/inverse-core/src/`) | AGPL-3.0-or-later | Vendored from <https://github.com/AbraaoAlves/uecetex-inverse> at the commit pinned in `packages/inverse-core/manifest.json` (`scripts/vendor-inverse-core.sh`). Links against mupdf.js, hence the AGPL terms. |
 | **@noble/hashes** | MIT | Notice; SHA-256 for the PDF import path. |
 | **Tiptap** core + extensions | MIT | Notice. |
 | **unified-latex** | MIT | Notice. |
@@ -26,9 +25,16 @@ user-facing summary.
 
 UeceTexLive's own source is MIT (`LICENSE`, plain MIT text only — no
 third-party notices there, to keep GitHub's license detector matching MIT
-cleanly). The AGPL-3.0 SwiftLaTeX engine, the AGPL-3.0 mupdf.js reader (and
-the `inverse-core` package that links against it) and the aggregate-licensed
-busytex/TeX Live bundles above are the notable third-party exceptions.
+cleanly). The AGPL-3.0 SwiftLaTeX engine, the AGPL-3.0 mupdf.js reader and
+the aggregate-licensed busytex/TeX Live bundles above are the notable
+third-party exceptions.
+
+**One first-party exception:** `packages/inverse-core/` — the PDF → project
+importer — is our own code, but it is distributed under **AGPL-3.0-or-later**
+rather than MIT, because `extract.ts` links mupdf.js and the combined work
+inherits mupdf's terms. The package's `package.json` and `README.md` state
+this, and `scripts/check-agpl-compliance.sh` fails the build if either stops
+saying so.
 
 **Por que um fork, e não o upstream direto:** o commit vendorado
 (`4c4ab76d…`) está 2 commits à frente do `master` de `thiagodnf/uecetex2`:

@@ -11,8 +11,9 @@
 #       `papyru:` / `Papyru patch:` (rastreabilidade dos patches).
 #
 # Mesma disciplina para o segundo componente AGPL, o leitor mupdf.js usado
-# pelo caminho PDF→projeto: o pacote que o consome declara a licença e o
-# THIRD_PARTY.md e a rota /sobre o nomeiam.
+# pelo caminho PDF→projeto: o pacote que o consome é código próprio, mas
+# herda os termos do mupdf por ligá-lo — então declara AGPL, e o
+# THIRD_PARTY.md e a rota /sobre nomeiam o mupdf.
 #
 # Sem dependência de nenhum vendor-*.sh — só lê arquivos já commitados no
 # git, roda em qualquer ordem/momento (ver scripts/README.md).
@@ -60,19 +61,22 @@ for engine_file in "$SWIFTLATEX_DIR/PdfTeXEngine.js" "$SWIFTLATEX_DIR/swiftlatex
   fi
 done
 
-# (d) Núcleo do caminho PDF→projeto: vendorado e ligado ao mupdf.js (AGPL).
+# (d) Núcleo do caminho PDF→projeto: código próprio, ligado ao mupdf.js (AGPL).
 INVERSE_PKG="packages/inverse-core"
 if [[ -d "$INVERSE_PKG" ]]; then
   grep -q "AGPL-3.0" "$INVERSE_PKG/package.json" ||
     err "$INVERSE_PKG/package.json não declara AGPL-3.0"
-  [[ -f "$INVERSE_PKG/manifest.json" ]] ||
-    err "$INVERSE_PKG/manifest.json ausente (commit de origem do vendor)"
+  grep -q "AGPL-3.0" "$INVERSE_PKG/README.md" ||
+    err "$INVERSE_PKG/README.md não explica por que o pacote não é MIT"
   grep -q "mupdf" THIRD_PARTY.md ||
     err "THIRD_PARTY.md não nomeia o mupdf.js (AGPL-3.0)"
   grep -q "mupdf" src/routes/sobre.tsx ||
     err "a rota /sobre não nomeia o mupdf.js (AGPL-3.0)"
-  if grep -REq '^\s*import[^;]*from\s+"node:' "$INVERSE_PKG/src" 2>/dev/null; then
-    err "$INVERSE_PKG/src importa node:* — o núcleo vendorado precisa ser puro"
+  # Qualquer literal "node:…" — pega `from`, import de efeito colateral,
+  # import() dinâmico e require(). Este grep é a única coisa que segura a
+  # pureza do núcleo desde que o script de vendorização saiu.
+  if grep -REq '["'"'"']node:' "$INVERSE_PKG/src" 2>/dev/null; then
+    err "$INVERSE_PKG/src usa node:* — o núcleo roda no navegador e precisa ser puro"
   fi
 fi
 
