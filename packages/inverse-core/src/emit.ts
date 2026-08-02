@@ -222,8 +222,8 @@ export function authorsOf(raw: string): string {
 export function emitBib(entries: BibEntry[]): string {
   const keys = bibKeys(entries);
   const out: string[] = [
-    "%% Gerado por uecetex-inverse — entradas reconstruídas heuristicamente",
-    "%% do texto ABNT; revisar campos antes do uso definitivo.",
+    "%% Gerado pelo UeceTexLive — entradas reconstruídas a partir das",
+    "%% referências em ABNT do PDF; revisar os campos antes do uso definitivo.",
     "",
   ];
   for (const [i, e] of entries.entries()) {
