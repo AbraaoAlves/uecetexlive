@@ -8,14 +8,15 @@
     ".": "./src/index.ts"
   },
   "scripts": {
-    "check": "tsc --noEmit"
+    "check": "tsc --noEmit && vitest run"
   },
   "dependencies": {
     "@noble/hashes": "^2.2.0",
     "mupdf": "^1.28.0"
   },
   "devDependencies": {
-    "typescript": "^6.0.3"
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.9"
   },
   "files": [
     "src",

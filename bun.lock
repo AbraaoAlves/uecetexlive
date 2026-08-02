@@ -179,6 +179,7 @@
       },
       "devDependencies": {
         "typescript": "^6.0.3",
+        "vitest": "^4.1.9",
       },
     },
     "packages/latex-mapping": {
