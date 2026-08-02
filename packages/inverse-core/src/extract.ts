@@ -1,7 +1,3 @@
-// Arquivo vendorado de uecetex-inverse (ab0eb48d3029b8ddce28dfd8f645afd06e9cb500) por
-// scripts/vendor-inverse-core.sh. NÃO EDITE AQUI: a mudança se perde na
-// próxima vendorização. Corrija na origem, que é onde ele é verificado.
-// @ts-nocheck
 /**
  * Stage 1 — PDF -> IR extractor (deterministic).
  *
@@ -148,13 +144,14 @@ export function recomposeAccents(text: string): string {
   if (!HAS_ACCENT.test(text)) return text;
   let out = "";
   for (let i = 0; i < text.length; i++) {
-    const comb = T1_ACCENTS[text[i]];
+    const cur = text[i] ?? "";
+    const comb = T1_ACCENTS[cur];
     const next = text[i + 1];
     if (comb && next && /\p{L}/u.test(next)) {
       out += (next + comb).normalize("NFC");
       i++;
     } else {
-      out += text[i];
+      out += cur;
     }
   }
   return out;
@@ -170,18 +167,22 @@ const ACCENT_ANCHOR_TOL = 3;
 function mergeAccentSpans(spans: TextSpan[]): TextSpan[] {
   if (!spans.some((s) => ONLY_ACCENTS.test(s.text))) return spans;
   const dropped = new Set<number>();
-  for (let i = 0; i < spans.length; i++) {
-    if (!ONLY_ACCENTS.test(spans[i].text)) continue;
-    const acc = spans[i].text.trim();
+  for (const [i, span] of spans.entries()) {
+    if (!ONLY_ACCENTS.test(span.text)) continue;
+    const acc = span.text.trim();
     let best = -1;
-    for (let j = 0; j < spans.length; j++) {
-      if (j === i || dropped.has(j) || ONLY_ACCENTS.test(spans[j].text)) continue;
-      if (Math.abs(spans[j].bbox.x0 - spans[i].bbox.x0) > ACCENT_ANCHOR_TOL) continue;
-      if (!/^\p{L}/u.test(spans[j].text)) continue;
-      if (best < 0 || spans[j].bbox.x0 < spans[best].bbox.x0) best = j;
+    let bestSpan: TextSpan | undefined;
+    for (const [j, cand] of spans.entries()) {
+      if (j === i || dropped.has(j) || ONLY_ACCENTS.test(cand.text)) continue;
+      if (Math.abs(cand.bbox.x0 - span.bbox.x0) > ACCENT_ANCHOR_TOL) continue;
+      if (!/^\p{L}/u.test(cand.text)) continue;
+      if (best < 0 || (bestSpan && cand.bbox.x0 < bestSpan.bbox.x0)) {
+        best = j;
+        bestSpan = cand;
+      }
     }
-    if (best < 0) continue;
-    spans[best] = { ...spans[best], text: acc + spans[best].text };
+    if (best < 0 || !bestSpan) continue;
+    spans[best] = { ...bestSpan, text: acc + bestSpan.text };
     dropped.add(i);
   }
   return spans.filter((_, i) => !dropped.has(i));

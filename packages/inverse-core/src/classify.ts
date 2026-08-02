@@ -1,7 +1,3 @@
-// Arquivo vendorado de uecetex-inverse (ab0eb48d3029b8ddce28dfd8f645afd06e9cb500) por
-// scripts/vendor-inverse-core.sh. NÃO EDITE AQUI: a mudança se perde na
-// próxima vendorização. Corrija na origem, que é onde ele é verificado.
-// @ts-nocheck
 /**
  * Stage 2 — IR -> semantic tree classifier.
  *
@@ -124,11 +120,10 @@ function flattenPage(p: PageIR): Line[] {
       if (!first) continue;
       const t = lineText(l);
       if (!t) continue;
-      const first2 = l.spans[0];
       const rest = l.spans.slice(1);
       const codeLike =
-        /^\d+$/.test(first2.text.trim()) &&
-        first2.size <= 8 &&
+        /^\d+$/.test(first.text.trim()) &&
+        first.size <= 8 &&
         rest.length > 0 &&
         rest.every((s) => !BODY_FONT.test(s.font) && !MATH_FONTS.test(s.font));
       lines.push({
@@ -190,7 +185,7 @@ function markLists(lines: Line[], carryItemX0?: number): void {
   }
   for (let i = 0; i < lines.length; i++) {
     const first = lines[i];
-    if (first.consumed || first.listRole || !ITEM_MARKER.test(first.text)) continue;
+    if (!first || first.consumed || first.listRole || !ITEM_MARKER.test(first.text)) continue;
     if (!(first.x0 >= ITEM_X[0] && first.x0 <= ITEM_X[1])) continue;
 
     // Estende o run: itens no mesmo x0 + continuações com recuo pendente.
@@ -200,7 +195,7 @@ function markLists(lines: Line[], carryItemX0?: number): void {
     let j = i;
     for (; j < lines.length; j++) {
       const l = lines[j];
-      if (l.consumed) break;
+      if (!l || l.consumed) break;
       const isItem = Math.abs(l.x0 - itemX0) <= TOL_X && ITEM_MARKER.test(l.text);
       const hang = l.x0 - itemX0;
       const isCont = items.length > 0 && hang >= ITEM_HANG_MIN && hang <= ITEM_HANG_MAX;
@@ -288,9 +283,10 @@ function repairTitle(fragment: string, outlineTitles: string[]): string {
   const frag = canonTitle(fragment.replace(/-$/, ""));
   if (frag.length < 8) return fragment;
   const hits = outlineTitles.filter((t) => canonTitle(t).startsWith(frag));
+  const hit = hits[0];
   // Só repara quando o gabarito é único e realmente mais longo.
-  if (hits.length !== 1 || canonTitle(hits[0]).length <= frag.length) return fragment;
-  return hits[0].toLocaleUpperCase("pt-BR");
+  if (hits.length !== 1 || !hit || canonTitle(hit).length <= frag.length) return fragment;
+  return hit.toLocaleUpperCase("pt-BR");
 }
 
 function matchHeading(l: Line, gapBefore: number): HeadingNode | null {
@@ -299,23 +295,23 @@ function matchHeading(l: Line, gapBefore: number): HeadingNode | null {
 
   // chapter: "N TITLE" — bold, uppercase, at left margin
   let m = /^(\d+) ([A-ZÀ-Ú].+)$/.exec(t);
-  if (m && l.bold && near(l.x0, LEFT) && isUpper(m[2])) {
-    return { kind: "heading", level: "chapter", numbered: true, number: m[1], title: m[2], page: l.page };
+  if (m && l.bold && near(l.x0, LEFT) && isUpper(m[2] ?? "")) {
+    return { kind: "heading", level: "chapter", numbered: true, number: m[1] ?? "", title: m[2] ?? "", page: l.page };
   }
   // subsubsection: "N.N.N.N Title" (per .sty: italic — accept any weight)
   m = /^(\d+\.\d+\.\d+\.\d+)\.? (.+)$/.exec(t);
   if (m && near(l.x0, LEFT) && gapBefore >= HEADING_GAP_MIN) {
-    return { kind: "heading", level: "subsubsection", numbered: true, number: m[1], title: m[2], page: l.page };
+    return { kind: "heading", level: "subsubsection", numbered: true, number: m[1] ?? "", title: m[2] ?? "", page: l.page };
   }
   // subsection: "N.N.N Title" — REGULAR weight (\normalfont cancels \bfseries)
   m = /^(\d+\.\d+\.\d+)\.? (.+)$/.exec(t);
   if (m && near(l.x0, LEFT) && gapBefore >= HEADING_GAP_MIN) {
-    return { kind: "heading", level: "subsection", numbered: true, number: m[1], title: m[2], page: l.page };
+    return { kind: "heading", level: "subsection", numbered: true, number: m[1] ?? "", title: m[2] ?? "", page: l.page };
   }
   // section: "N.N Title" — bold, mixed case
   m = /^(\d+\.\d+)\.? (.+)$/.exec(t);
   if (m && l.bold && near(l.x0, LEFT)) {
-    return { kind: "heading", level: "section", numbered: true, number: m[1], title: m[2], page: l.page };
+    return { kind: "heading", level: "section", numbered: true, number: m[1] ?? "", title: m[2] ?? "", page: l.page };
   }
   return null;
 }
@@ -376,19 +372,19 @@ function extractFootnotes(lines: Line[], out: FootnoteEntry[]): void {
 const CAPTION_RE = /^(Figura|Tabela|Quadro) (\d+) [–—-] (.*)$/;
 
 function extractFloats(lines: Line[], page: PageIR, pending: PendingNode[]): void {
-  for (let i = 0; i < lines.length; i++) {
-    const l = lines[i];
+  for (const [i, l] of lines.entries()) {
     if (l.consumed || !l.bold) continue;
     const m = CAPTION_RE.exec(l.text);
     if (!m) continue;
 
     l.consumed = true;
-    const captionParts = [m[3]];
-    let j = i + 1;
-    while (j < lines.length && !lines[j].consumed && lines[j].bold && lines[j].x0 > LEFT + 25 && !CAPTION_RE.test(lines[j].text)) {
-      captionParts.push(lines[j].text);
-      lines[j].consumed = true;
-      j++;
+    const captionParts = [m[3] ?? ""];
+    for (let j = i + 1; j < lines.length; j++) {
+      const next = lines[j];
+      if (!next || next.consumed || !next.bold) break;
+      if (next.x0 <= LEFT + 25 || CAPTION_RE.test(next.text)) break;
+      captionParts.push(next.text);
+      next.consumed = true;
     }
     const caption = joinWrapped(captionParts);
 
@@ -465,13 +461,13 @@ const COL_GAP_MIN = 20;
  */
 function clusterRows(cellLines: Line[], ruleYs: number[] = []): { rows: string[][]; colWidths?: number[] } {
   const bands: [number, number][] = [];
-  for (let i = 0; i + 1 < ruleYs.length; i++) bands.push([ruleYs[i], ruleYs[i + 1]]);
+  for (let i = 0; i + 1 < ruleYs.length; i++) bands.push([ruleYs[i] ?? 0, ruleYs[i + 1] ?? 0]);
 
   if (bands.length >= 2) {
     // Colunas: início de coluna é um x0 distante > COL_GAP_MIN do anterior.
     const xs = [...new Set(cellLines.map((l) => l.x0))].sort((a, b) => a - b);
     const cols: number[] = [];
-    for (const x of xs) if (!cols.length || x - cols[cols.length - 1] > COL_GAP_MIN) cols.push(x);
+    for (const x of xs) if (!cols.length || x - (cols[cols.length - 1] ?? 0) > COL_GAP_MIN) cols.push(x);
 
     const rows: string[][] = [];
     for (const [top, bot] of bands) {
@@ -486,15 +482,15 @@ function clusterRows(cellLines: Line[], ruleYs: number[] = []): { rows: string[]
         for (const f of frags) {
           let ci = 0;
           for (let k = cols.length - 1; k >= 0; k--) {
-            if (f.x0 >= cols[k] - TOL_X) {
+            if (f.x0 >= (cols[k] ?? 0) - TOL_X) {
               ci = k;
               break;
             }
           }
-          perCol[ci].push(f.text);
+          perCol[ci]?.push(f.text);
         }
         perCol.forEach((frag, ci) => {
-          if (frag.length) cells[ci].push(frag.join(" ").replace(/\s+/g, " ").trim());
+          if (frag.length) cells[ci]?.push(frag.join(" ").replace(/\s+/g, " ").trim());
         });
       }
       rows.push(cells.map((c) => joinWrapped(c)));
@@ -504,7 +500,7 @@ function clusterRows(cellLines: Line[], ruleYs: number[] = []): { rows: string[]
       // borda direita observada), normalizada pela largura total da tabela.
       const right = Math.max(...cellLines.map((l) => l.x1));
       const edges = [...cols, right];
-      const spans = cols.map((_, i) => edges[i + 1] - edges[i]);
+      const spans = cols.map((_, i) => (edges[i + 1] ?? 0) - (edges[i] ?? 0));
       const total = spans.reduce((a, b) => a + b, 0);
       return { rows, colWidths: total > 0 ? spans.map((w) => w / total) : undefined };
     }
@@ -537,18 +533,21 @@ function extractAlgorithms(lines: Line[], page: PageIR, pending: PendingNode[]):
   const rules = page.vectors
     .filter((v) => v.orientation === "horizontal" && v.thickness >= 0.7 && v.thickness <= 0.85 && v.bbox.x0 < LEFT + 6)
     .sort((a, b) => a.bbox.y0 - b.bbox.y0);
-  if (rules.length < 2) return;
-  const top = rules[0].bbox.y0;
-  const bottom = rules[rules.length - 1].bbox.y1;
+  const firstRule = rules[0];
+  const lastRule = rules[rules.length - 1];
+  if (rules.length < 2 || !firstRule || !lastRule) return;
+  const top = firstRule.bbox.y0;
+  const bottom = lastRule.bbox.y1;
   const inside = lines.filter((x) => !x.consumed && x.y0 >= top - 14 && x.y0 <= bottom + 2);
-  if (!inside.length) return;
+  const firstInside = inside[0];
+  if (!firstInside) return;
   const capLine = inside.find((x) => /^Algoritmo \d+ ?:/.test(x.text));
   const node: import("./semantic.js").CodeNode = {
     kind: "code",
     variant: "algorithm",
     caption: capLine?.text.replace(/^Algoritmo \d+ ?: ?/, ""),
     lines: [],
-    page: inside[0].page,
+    page: firstInside.page,
   };
   for (const x of inside) {
     x.consumed = true;
@@ -622,24 +621,28 @@ function extractFrontMatter(ir: DocumentIR): FrontMatter {
     // Folha de rosto: parágrafo de natureza do trabalho + orientador.
     if (!fm.preamble) {
       const start = lines.findIndex((l) => SIG_PREAMBLE.test(l.text));
-      if (start >= 0) {
+      const anchor = lines[start];
+      if (anchor) {
         const parts: string[] = [];
         for (let i = start; i < lines.length; i++) {
-          const t = lines[i].text;
-          if (SIG_ADVISOR.test(t)) break;
-          if (Math.abs(lines[i].x0 - lines[start].x0) > 6) break;
-          parts.push(t);
+          const line = lines[i];
+          if (!line) break;
+          if (SIG_ADVISOR.test(line.text)) break;
+          if (Math.abs(line.x0 - anchor.x0) > 6) break;
+          parts.push(line.text);
         }
         fm.preamble = joinWrapped(parts);
       }
     }
     if (!fm.advisor) {
       const i = lines.findIndex((l) => SIG_ADVISOR.test(l.text));
-      if (i >= 0) {
-        const parts = [lines[i].text.replace(SIG_ADVISOR, "").trim()];
+      const anchor = lines[i];
+      if (anchor) {
+        const parts = [anchor.text.replace(SIG_ADVISOR, "").trim()];
         for (let k = i + 1; k < lines.length; k++) {
-          if (Math.abs(lines[k].x0 - lines[i].x0) > 6) break;
-          parts.push(lines[k].text);
+          const line = lines[k];
+          if (!line || Math.abs(line.x0 - anchor.x0) > 6) break;
+          parts.push(line.text);
         }
         fm.advisor = joinWrapped(parts);
       }
@@ -661,11 +664,11 @@ function collectBoard(lines: Line[], fm: FrontMatter): void {
   if (start < 0) return;
   const NAME = /^(Prof|Profa|Dr|Dra|Me|Ma)\b|^[A-ZÀ-Ú][a-zà-ú]+ [A-ZÀ-Ú]/;
   for (let i = start + 1; i < lines.length; i++) {
-    const t = lines[i].text;
+    const t = lines[i]?.text ?? "";
     if (!NAME.test(t) || /^(Universidade|Centro|Faculdade|Instituto)/.test(t)) continue;
     const member: FrontMatter["board"][number] = { name: t.replace(/\s*\(Orientador[a]?\)\s*$/, "").trim() };
     for (let k = i + 1; k < lines.length && k <= i + 2; k++) {
-      const v = lines[k].text;
+      const v = lines[k]?.text ?? "";
       if (/^(Centro|Faculdade|Instituto)/.test(v)) member.center = v;
       else if (/^Universidade/.test(v)) member.ies = v;
       else break;
@@ -760,15 +763,15 @@ export function classify(ir: DocumentIR): SemanticDoc {
       pending.sort((a, b) => a.y0 - b.y0);
     }
     const drain = (y: number) => {
-      while (pending.length && pending[0].y0 <= y) {
+      for (let head = pending[0]; head && head.y0 <= y; head = pending[0]) {
         flushAll();
-        doc.body.push(pending.shift()!.node);
+        pending.shift();
+        doc.body.push(head.node);
       }
     };
 
     let prevBaseline = -Infinity;
-    for (let li = 0; li < lines.length; li++) {
-      const l = lines[li];
+    for (const [li, l] of lines.entries()) {
       if (l.consumed) continue;
       if (mode === "body") drain(l.y0);
       const gapBefore = l.baseline - prevBaseline;
@@ -809,10 +812,11 @@ export function classify(ir: DocumentIR): SemanticDoc {
           let acc = canonTitle(heading.title.replace(/-$/, ""));
           const target = canonTitle(full);
           for (let k = li + 1; k < lines.length && acc.length < target.length; k++) {
-            if (lines[k].consumed) break;
-            const cand = acc + canonTitle(lines[k].text);
+            const next = lines[k];
+            if (!next || next.consumed) break;
+            const cand = acc + canonTitle(next.text);
             if (!target.startsWith(cand)) break;
-            lines[k].consumed = true;
+            next.consumed = true;
             acc = cand;
           }
           heading.title = full;
@@ -837,7 +841,10 @@ export function classify(ir: DocumentIR): SemanticDoc {
           pendingSection.paragraphs.push(l.text);
         else {
           const last = pendingSection.paragraphs.length - 1;
-          pendingSection.paragraphs[last] = joinWrapped([pendingSection.paragraphs[last], l.text]);
+          pendingSection.paragraphs[last] = joinWrapped([
+            pendingSection.paragraphs[last] ?? "",
+            l.text,
+          ]);
         }
         continue;
       }
@@ -858,7 +865,7 @@ export function classify(ir: DocumentIR): SemanticDoc {
       const codeCap = /^Código-fonte (\d+) [–—-] (.*)$/.exec(l.text);
       if (codeCap && l.bold) {
         flushAll();
-        pendingCodeCaption = codeCap[2];
+        pendingCodeCaption = codeCap[2] ?? null;
         continue;
       }
       // code listing lines: NR-Regu line number (≤8pt) + Type-3 tt spans
@@ -899,7 +906,10 @@ export function classify(ir: DocumentIR): SemanticDoc {
         continue;
       }
       if (l.listRole === "cont" && list && list.items.length) {
-        list.items[list.items.length - 1] = joinWrapped([list.items[list.items.length - 1], l.text]);
+        list.items[list.items.length - 1] = joinWrapped([
+          list.items[list.items.length - 1] ?? "",
+          l.text,
+        ]);
         continue;
       }
       flushList();

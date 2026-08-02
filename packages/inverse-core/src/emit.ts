@@ -1,7 +1,3 @@
-// Arquivo vendorado de uecetex-inverse (ab0eb48d3029b8ddce28dfd8f645afd06e9cb500) por
-// scripts/vendor-inverse-core.sh. NÃO EDITE AQUI: a mudança se perde na
-// próxima vendorização. Corrija na origem, que é onde ele é verificado.
-// @ts-nocheck
 /**
  * Stage 3 — semantic tree -> ueceTeX2-shaped LaTeX project.
  *
@@ -85,7 +81,7 @@ function emitTable(t: TableNode): string {
 
   const line = (cells: string[]) =>
     [...cells, ...Array(Math.max(0, ncols - cells.length)).fill("")].map(escapeLatex).join(" & ") + " \\\\";
-  const [head, ...rest] = t.rows.length ? t.rows : [[""]];
+  const [head = [""], ...rest] = t.rows.length ? t.rows : [[""]];
   return [
     `\\begin{${env}}[htb]`,
     `\\centering`,
@@ -445,8 +441,10 @@ export function emitFiles(sem: SemanticDoc, opts: EmitFilesOptions): EmitFilesRe
         excerpt: excerptOf(note.text),
       });
       for (let i = ch.parts.length - 1; i >= 0; i--) {
-        if (!ch.parts[i].startsWith("\\") && !ch.parts[i].startsWith("%")) {
-          ch.parts[i] +=
+        const part = ch.parts[i];
+        if (part && !part.startsWith("\\") && !part.startsWith("%")) {
+          ch.parts[i] =
+            part +
             `\\footnote{${escapeLatex(note.text)}}` +
             ` %% TODO(nota ${note.marker}): reancorar na palavra exata (p${note.page + 1})`;
           break;
@@ -480,8 +478,9 @@ export function emitFiles(sem: SemanticDoc, opts: EmitFilesOptions): EmitFilesRe
   for (const p of sem.posttextual) {
     const m = /^(APÊNDICE|ANEXO) [A-Z] ?[–—-] ?(.*)$/.exec(p.title);
     if (!m) continue;
-    const rel = `elementos-pos-textuais/${m[1] === "APÊNDICE" ? "apendices" : "anexos"}/${slug(m[2])}.tex`;
-    const body = [`\\chapter{${escapeLatex(titleCase(m[2]))}}`, "", ...p.paragraphs.map(escapeLatex)].join("\n") + "\n";
+    const title = m[2] ?? "";
+    const rel = `elementos-pos-textuais/${m[1] === "APÊNDICE" ? "apendices" : "anexos"}/${slug(title)}.tex`;
+    const body = [`\\chapter{${escapeLatex(titleCase(title))}}`, "", ...p.paragraphs.map(escapeLatex)].join("\n") + "\n";
     w(rel, body);
     (m[1] === "APÊNDICE" ? apInputs : anInputs).push(`\t\t\\input{${rel.replace(/\.tex$/, "")}}`);
   }
