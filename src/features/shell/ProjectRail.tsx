@@ -50,8 +50,6 @@ export interface ProjectRailProps {
   /** Opens the "Meu trabalho está certo?" checklist (3.2). */
   onOpenChecklist?: () => void;
   checklistActive?: boolean;
-  /** Number of checklist items currently failing — 0 hides the badge. */
-  checklistWarnCount?: number;
   /** Inclui ou tira do PDF a página opcional do arquivo (M2). */
   onToggleImprimir?: (macro: string, enabled: boolean) => void;
 }
@@ -95,7 +93,6 @@ export function ProjectRail({
   metadataPending = false,
   onOpenChecklist,
   checklistActive = false,
-  checklistWarnCount = 0,
   onToggleImprimir,
 }: ProjectRailProps) {
   const uploadInputRef = useRef<HTMLInputElement>(null);
@@ -168,16 +165,6 @@ export function ProjectRail({
         >
           <ListChecks className="size-3.5 shrink-0" />
           <span className="truncate">{strings.compliance.railEntry}</span>
-          {checklistWarnCount > 0 && (
-            <Tooltip content={strings.compliance.pendingHint}>
-              <span
-                className="ml-auto rounded-full bg-warning/20 px-1.5 py-0.5 text-[10px] text-warning"
-                data-testid="checklist-pending-count"
-              >
-                {checklistWarnCount}
-              </span>
-            </Tooltip>
-          )}
         </button>
       )}
       {SECTION_ORDER.map((section) => {

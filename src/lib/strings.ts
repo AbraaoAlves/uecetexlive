@@ -340,6 +340,7 @@ export const strings = {
     title: "Meu trabalho está certo?",
     railEntry: "Conformidade",
     pendingHint: "Confira se seu trabalho segue as normas da UECE",
+    pendingTabHint: "Pendências: {items}. Verificações com pendência: {checks}.",
     close: "Fechar",
     fixAction: "corrigir",
     nextItem: "próximo",

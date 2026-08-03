@@ -40,6 +40,7 @@ import {
   type ComplianceAction,
   type ComplianceReviewAction,
   computeComplianceChecklist,
+  pendingItemCount,
 } from "@/features/compliance/compliance-checklist";
 import { useComplianceTour } from "@/features/compliance/useComplianceTour";
 import {
@@ -635,7 +636,11 @@ function ShellInner() {
     [meta, bibText, derivedTexSources, texOrder, importUnclassified],
   );
   const complianceTour = useComplianceTour(complianceChecks);
+  const checklistPendingCount = pendingItemCount(complianceChecks);
   const checklistWarnCount = complianceChecks.filter((c) => c.status === "warn").length;
+  const checklistPendingHint = strings.compliance.pendingTabHint
+    .replace("{items}", String(checklistPendingCount))
+    .replace("{checks}", String(checklistWarnCount));
 
   const handleComplianceAction = useCallback(
     (action: ComplianceAction) => {
@@ -1369,7 +1374,17 @@ function ShellInner() {
                   data-testid="rail-tab-compliance"
                   className="flex-1 border-b-2 border-transparent px-2 text-xs text-ink-muted outline-none hover:text-ink focus-visible:ring-2 focus-visible:ring-accent data-[state=active]:border-accent data-[state=active]:text-ink"
                 >
-                  {strings.rail.complianceTab}
+                  <span>{strings.rail.complianceTab}</span>
+                  {checklistPendingCount > 0 && (
+                    <Tooltip content={checklistPendingHint}>
+                      <span
+                        className="ml-1 rounded-full bg-warning/20 px-1.5 py-0.5 text-[10px] text-warning"
+                        data-testid="checklist-pending-count"
+                      >
+                        {checklistPendingCount}
+                      </span>
+                    </Tooltip>
+                  )}
                 </Tabs.Trigger>
               </Tabs.List>
               <Tabs.Content
@@ -1401,7 +1416,6 @@ function ShellInner() {
                   metadataPending={metadataPending}
                   onOpenChecklist={() => setChecklistOpen(true)}
                   checklistActive={checklistOpen}
-                  checklistWarnCount={checklistWarnCount}
                 />
               </Tabs.Content>
               <Tabs.Content

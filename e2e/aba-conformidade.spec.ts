@@ -12,6 +12,11 @@ test("as abas do rail alternam arquivos e conformidade pelo teclado", async ({
 
   await expect(filesTab).toHaveAttribute("aria-selected", "true");
   await expect(page.getByTestId("project-files-panel")).toBeVisible();
+  const pendingCount = complianceTab.getByTestId("checklist-pending-count");
+  await expect(pendingCount).toBeVisible();
+  expect(Number(await pendingCount.textContent())).toBeGreaterThan(0);
+  await pendingCount.hover();
+  await expect(page.getByRole("tooltip")).toContainText("Verificações com pendência:");
 
   const filesPanelId = await filesTab.getAttribute("aria-controls");
   expect(filesPanelId).toBeTruthy();
