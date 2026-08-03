@@ -17,12 +17,18 @@ const FONTE_MACROS = new Set(["fonte", "Fonte"]);
 export interface FigureCheck {
   hasCaption: boolean;
   hasFonte: boolean;
+  /** 1-based line where the figure environment starts. */
+  line: number;
+  /** Zero-based ordinal of the figure in the file. */
+  index: number;
+  /** Visible caption text, when the caption is not empty. */
+  caption: string | null;
 }
 
-function containsMacro(nodes: Ast.Node[], names: Set<string>): boolean {
-  let found = false;
+function findMacro(nodes: Ast.Node[], names: Set<string>): Ast.Macro | null {
+  let found: Ast.Macro | null = null;
   walk(nodes, (macro) => {
-    if (names.has(macro.content)) found = true;
+    if (found === null && names.has(macro.content)) found = macro;
   });
   return found;
 }
@@ -40,7 +46,7 @@ function flattenText(nodes: Ast.Node[]): string {
       node.type === "root"
     ) {
       text += flattenText(node.content);
-    } else if (node.type === "macro") {
+    } else if (node.type === "macro" && node.content !== "label") {
       for (const arg of node.args ?? []) text += flattenText(arg.content);
     }
   }
@@ -49,28 +55,51 @@ function flattenText(nodes: Ast.Node[]): string {
 
 /** Reads a braced macro argument, including unknown macros parsed with sibling groups. */
 function macroArgumentText(
-  siblings: Ast.Node[],
-  macroIndex: number,
+  nodes: Ast.Node[],
+  macro: Ast.Macro,
   argumentIndex = 0,
 ): string | null {
-  const macro = siblings[macroIndex];
-  if (macro?.type !== "macro") return null;
-
   const parsedArguments = (macro.args ?? []).filter(
     (argument) => argument.openMark === "{",
   );
   const parsed = parsedArguments[argumentIndex];
   if (parsed) return flattenText(parsed.content);
 
-  let groupIndex = 0;
-  for (let index = macroIndex + 1; index < siblings.length; index += 1) {
-    const sibling = siblings[index];
-    if (sibling.type === "whitespace" || sibling.type === "comment") continue;
-    if (sibling.type !== "group") break;
-    if (groupIndex === argumentIndex) return flattenText(sibling.content);
-    groupIndex += 1;
-  }
-  return null;
+  const readSiblingGroup = (siblings: Ast.Node[]): string | null => {
+    const macroIndex = siblings.indexOf(macro);
+    if (macroIndex >= 0) {
+      let groupIndex = 0;
+      for (let index = macroIndex + 1; index < siblings.length; index += 1) {
+        const sibling = siblings[index];
+        if (sibling.type === "whitespace" || sibling.type === "comment") continue;
+        if (sibling.type !== "group") break;
+        if (groupIndex === argumentIndex) return flattenText(sibling.content);
+        groupIndex += 1;
+      }
+      return null;
+    }
+
+    for (const node of siblings) {
+      if (
+        node.type === "group" ||
+        node.type === "environment" ||
+        node.type === "mathenv" ||
+        node.type === "inlinemath" ||
+        node.type === "root"
+      ) {
+        const text = readSiblingGroup(node.content);
+        if (text !== null) return text;
+      } else if (node.type === "macro") {
+        for (const arg of node.args ?? []) {
+          const text = readSiblingGroup(arg.content);
+          if (text !== null) return text;
+        }
+      }
+    }
+    return null;
+  };
+
+  return readSiblingGroup(nodes);
 }
 
 function containsFonteLegend(nodes: Ast.Node[]): boolean {
@@ -79,7 +108,7 @@ function containsFonteLegend(nodes: Ast.Node[]): boolean {
     if (
       node.type === "macro" &&
       node.content === "legend" &&
-      /^fontes?\b/i.test(macroArgumentText(nodes, index) ?? "")
+      /^fontes?\b/i.test(macroArgumentText(nodes, node) ?? "")
     ) {
       return true;
     }
@@ -126,9 +155,16 @@ export function checkFigures(source: string): FigureCheck[] {
   }
   const figures: Ast.Environment[] = [];
   findFigureEnvironments(ast.content, figures);
-  return figures.map((env) => ({
-    hasCaption: containsMacro(env.content, CAPTION_MACROS),
-    hasFonte:
-      containsMacro(env.content, FONTE_MACROS) || containsFonteLegend(env.content),
-  }));
+  return figures.map((env, index) => {
+    const captionMacro = findMacro(env.content, CAPTION_MACROS);
+    const caption = captionMacro ? macroArgumentText(env.content, captionMacro) : null;
+    return {
+      hasCaption: captionMacro !== null,
+      hasFonte:
+        findMacro(env.content, FONTE_MACROS) !== null || containsFonteLegend(env.content),
+      line: env.position?.start.line ?? 1,
+      index,
+      caption: caption || null,
+    };
+  });
 }

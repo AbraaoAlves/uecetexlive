@@ -6,7 +6,7 @@ describe("checkFigures", () => {
   it("finds a template-authored figure with \\Caption + \\UECEfig{}{...}{\\Fonte{...}}", () => {
     const figures = checkFigures(fundamentacaoTeoricaTex);
     expect(figures.length).toBeGreaterThan(0);
-    expect(figures[0]).toEqual({ hasCaption: true, hasFonte: true });
+    expect(figures[0]).toMatchObject({ hasCaption: true, hasFonte: true });
   });
 
   it("flags a plain editor-generated figure (caption, no fonte) as missing fonte", () => {
@@ -17,7 +17,7 @@ describe("checkFigures", () => {
 \\includegraphics[width=8cm]{figuras/figura-1}
 \\end{figure}
 `;
-    expect(checkFigures(source)).toEqual([{ hasCaption: true, hasFonte: false }]);
+    expect(checkFigures(source)).toMatchObject([{ hasCaption: true, hasFonte: false }]);
   });
 
   it("flags a figure with neither caption nor fonte", () => {
@@ -26,7 +26,7 @@ describe("checkFigures", () => {
 \\includegraphics[width=8cm]{figuras/figura-1}
 \\end{figure}
 `;
-    expect(checkFigures(source)).toEqual([{ hasCaption: false, hasFonte: false }]);
+    expect(checkFigures(source)).toMatchObject([{ hasCaption: false, hasFonte: false }]);
   });
 
   it("finds \\Fonte nested inside another macro's argument", () => {
@@ -36,7 +36,7 @@ describe("checkFigures", () => {
 \\UECEfig{}{img}{\\Fonte{Elaborado pelo autor}}
 \\end{figure}
 `;
-    expect(checkFigures(source)).toEqual([{ hasCaption: true, hasFonte: true }]);
+    expect(checkFigures(source)).toMatchObject([{ hasCaption: true, hasFonte: true }]);
   });
 
   it("does not treat \\Nota alone as a source", () => {
@@ -46,7 +46,7 @@ describe("checkFigures", () => {
 \\UECEfig{}{img}{\\Nota{Explicação complementar}}
 \\end{figure}
 `;
-    expect(checkFigures(source)).toEqual([{ hasCaption: true, hasFonte: false }]);
+    expect(checkFigures(source)).toMatchObject([{ hasCaption: true, hasFonte: false }]);
   });
 
   it("treats a source-prefixed \\legend as a source", () => {
@@ -56,7 +56,7 @@ describe("checkFigures", () => {
 \\legend{Fonte: Acervo do autor}
 \\end{figure}
 `;
-    expect(checkFigures(source)).toEqual([{ hasCaption: true, hasFonte: true }]);
+    expect(checkFigures(source)).toMatchObject([{ hasCaption: true, hasFonte: true }]);
   });
 
   it("does not treat a note-prefixed \\legend as a source", () => {
@@ -66,7 +66,7 @@ describe("checkFigures", () => {
 \\legend{Nota: Explicação complementar}
 \\end{figure}
 `;
-    expect(checkFigures(source)).toEqual([{ hasCaption: true, hasFonte: false }]);
+    expect(checkFigures(source)).toMatchObject([{ hasCaption: true, hasFonte: false }]);
   });
 
   it("accepts the literal figure shape emitted by PDF import", () => {
@@ -78,7 +78,7 @@ describe("checkFigures", () => {
   \\legend{Fonte: Documento importado, p. 3}
 \\end{figure}
 `;
-    expect(checkFigures(source)).toEqual([{ hasCaption: true, hasFonte: true }]);
+    expect(checkFigures(source)).toMatchObject([{ hasCaption: true, hasFonte: true }]);
   });
 
   it("returns one entry per figure environment", () => {
@@ -91,9 +91,66 @@ describe("checkFigures", () => {
 \\Fonte{Autor}
 \\end{figure}
 `;
-    expect(checkFigures(source)).toEqual([
+    expect(checkFigures(source)).toMatchObject([
       { hasCaption: true, hasFonte: false },
       { hasCaption: true, hasFonte: true },
+    ]);
+  });
+
+  it("returns the line, ordinal and visible caption for each figure", () => {
+    const source = [
+      "Texto",
+      "\\begin{figure}",
+      "\\Caption{\\label{fig:primeira} Primeira figura}",
+      "\\Fonte{Autor}",
+      "\\end{figure}",
+      "Entre figuras",
+      "\\begin{figure}",
+      "\\Fonte{Autor}",
+      "\\end{figure}",
+      "\\begin{figure}",
+      "\\caption{Terceira figura}",
+      "\\end{figure}",
+    ].join("\n");
+
+    expect(checkFigures(source)).toEqual([
+      {
+        hasCaption: true,
+        hasFonte: true,
+        line: 2,
+        index: 0,
+        caption: "Primeira figura",
+      },
+      {
+        hasCaption: false,
+        hasFonte: true,
+        line: 7,
+        index: 1,
+        caption: null,
+      },
+      {
+        hasCaption: true,
+        hasFonte: false,
+        line: 10,
+        index: 2,
+        caption: "Terceira figura",
+      },
+    ]);
+  });
+
+  it.each([
+    "\\caption{}",
+    "\\caption{   }",
+  ])("keeps an empty caption present but returns null text for %s", (captionMacro) => {
+    const source = `\\begin{figure}\n${captionMacro}\n\\end{figure}`;
+    expect(checkFigures(source)).toEqual([
+      {
+        hasCaption: true,
+        hasFonte: false,
+        line: 1,
+        index: 0,
+        caption: null,
+      },
     ]);
   });
 
