@@ -60,6 +60,19 @@ export function pageBoundsOf(bounds: readonly [number, number, number, number]):
   return { width: R(x1 - x0), height: R(y1 - y0), top: R(y1) };
 }
 
+/** Limita o intervalo pedido às páginas existentes, preservando a ordem. */
+export function pageRangeOf(
+  pageCount: number,
+  requested?: readonly [number, number],
+): [number, number] {
+  if (pageCount === 0) return [0, -1];
+  const lastPage = pageCount - 1;
+  const [rawFrom, rawTo] = requested ?? [0, lastPage];
+  const from = Math.max(0, Math.min(rawFrom, lastPage));
+  const to = Math.max(from, Math.min(rawTo, lastPage));
+  return [from, to];
+}
+
 /** "OBUZLY+NimbusRomNo9L-Medi" -> "NimbusRomNo9L-Medi" */
 export function canonicalFontName(name: string): string {
   return name.replace(/^[A-Z]{6}\+/, "");
@@ -302,22 +315,25 @@ function extractImages(
   page.toStructuredText("preserve-images").walk({
     onImageBlock(bbox, _transform, image) {
       const pix = image.toPixmap();
-      const png = pix.asPNG();
-      const digest = sha256(png);
-      const file = `img-${digest.slice(0, 12)}.png`;
-      if (!seen.has(digest)) {
-        seen.set(digest, file);
-        assets.set(file, png);
+      try {
+        const png = pix.asPNG();
+        const digest = sha256(png);
+        const file = `img-${digest.slice(0, 12)}.png`;
+        if (!seen.has(digest)) {
+          seen.set(digest, file);
+          assets.set(file, png);
+        }
+        out.push({
+          kind: "imageBlock",
+          bbox: rectToBBox(bbox as never as [number, number, number, number]),
+          width: pix.getWidth(),
+          height: pix.getHeight(),
+          sha256: digest,
+          file,
+        });
+      } finally {
+        pix.destroy();
       }
-      out.push({
-        kind: "imageBlock",
-        bbox: rectToBBox(bbox as never as [number, number, number, number]),
-        width: pix.getWidth(),
-        height: pix.getHeight(),
-        sha256: digest,
-        file,
-      });
-      pix.destroy();
     },
   });
   out.sort(byReadingOrder);
@@ -541,50 +557,57 @@ export function extract(pdfBytes: Uint8Array, opts: ExtractOptions = {}): Extrac
     pdfBytes,
     "application/pdf",
   ) as mupdf.PDFDocument;
-  const pageCount = doc.countPages();
-  const [from, to] = opts.pageRange ?? [0, pageCount - 1];
+  try {
+    const pageCount = doc.countPages();
+    const [from, to] = pageRangeOf(pageCount, opts.pageRange);
 
-  const metadata: Record<string, string> = {};
-  for (const key of ["Title", "Author", "Subject", "Keywords", "Creator", "Producer"]) {
-    const v = doc.getMetaData(`info:${key}`);
-    if (v) metadata[key] = v;
+    const metadata: Record<string, string> = {};
+    for (const key of ["Title", "Author", "Subject", "Keywords", "Creator", "Producer"]) {
+      const v = doc.getMetaData(`info:${key}`);
+      if (v) metadata[key] = v;
+    }
+
+    const fontStats = new Map<string, FontUsage>();
+    const seenImages = new Map<string, string>();
+    const pages: PageIR[] = [];
+
+    for (let i = from; i <= to; i++) {
+      const page = doc.loadPage(i) as mupdf.PDFPage;
+      try {
+        const bounds = pageBoundsOf(
+          page.getBounds() as never as [number, number, number, number],
+        );
+        pages.push({
+          index: i,
+          width: bounds.width,
+          height: bounds.height,
+          blocks: extractTextBlocks(page, fontStats),
+          images: extractImages(page, assets, seenImages),
+          vectors: extractVectors(page, bounds.top),
+          links: extractLinks(doc, page),
+        });
+      } finally {
+        page.destroy();
+      }
+    }
+
+    const fonts = [...fontStats.values()].sort((a, b) => b.chars - a.chars);
+    for (const f of fonts) f.sizes.sort((a, b) => a - b);
+
+    return {
+      ir: {
+        sourceSha256: sha256(pdfBytes),
+        pageCount,
+        metadata,
+        outline: mapOutline(doc.loadOutline() as RawOutline[] | null, doc),
+        fonts,
+        pages,
+      },
+      assets,
+    };
+  } finally {
+    doc.destroy();
   }
-
-  const fontStats = new Map<string, FontUsage>();
-  const seenImages = new Map<string, string>();
-  const pages: PageIR[] = [];
-
-  for (let i = from; i <= to; i++) {
-    const page = doc.loadPage(i) as mupdf.PDFPage;
-    const bounds = pageBoundsOf(
-      page.getBounds() as never as [number, number, number, number],
-    );
-    pages.push({
-      index: i,
-      width: bounds.width,
-      height: bounds.height,
-      blocks: extractTextBlocks(page, fontStats),
-      images: extractImages(page, assets, seenImages),
-      vectors: extractVectors(page, bounds.top),
-      links: extractLinks(doc, page),
-    });
-    page.destroy();
-  }
-
-  const fonts = [...fontStats.values()].sort((a, b) => b.chars - a.chars);
-  for (const f of fonts) f.sizes.sort((a, b) => a - b);
-
-  return {
-    ir: {
-      sourceSha256: sha256(pdfBytes),
-      pageCount,
-      metadata,
-      outline: mapOutline(doc.loadOutline() as RawOutline[] | null, doc),
-      fonts,
-      pages,
-    },
-    assets,
-  };
 }
 
 /** Compatibilidade: só a IR, para quem não precisa das figuras. */
