@@ -294,6 +294,52 @@ describe("computeComplianceChecklist", () => {
     expect(withoutMarker.find((check) => check.id === "importPdf")?.count).toBe(0);
   });
 
+  it("labels import markers by kind, keeps unknown labels and stable ids", () => {
+    const input = baseInput({
+      texSources: {
+        "cap.tex": [
+          "%% TODO(matemática): reconstruir a equação",
+          "%% TODO(rótulo inventado): conferir trecho raro",
+        ].join("\n"),
+      },
+      texOrder: ["cap.tex"],
+      importUnclassified: [
+        {
+          kind: "citacao-nao-ligada",
+          excerpt: "Citação de projeto antigo",
+          page: 4,
+        },
+        { kind: "nao-classificado", excerpt: "Linha sem capítulo", page: 9 },
+      ],
+    });
+    const items = computeComplianceChecklist(input).find(
+      (check) => check.id === "importPdf",
+    )?.items;
+
+    expect(items?.map((item) => item.label)).toEqual([
+      "equação precisa ser refeita",
+      "rótulo inventado",
+      "citação não foi ligada às referências",
+      "trecho não entrou em nenhum capítulo",
+    ]);
+    expect(items?.slice(0, 2).every((item) => item.action?.kind === "openFile")).toBe(
+      true,
+    );
+    expect(items?.slice(2).every((item) => item.action === undefined)).toBe(true);
+
+    const shiftedItems = computeComplianceChecklist({
+      ...input,
+      texSources: {
+        "cap.tex": [
+          "Linha nova acima",
+          "%% TODO(matemática): reconstruir a equação",
+          "%% TODO(rótulo inventado): conferir trecho raro",
+        ].join("\n"),
+      },
+    }).find((check) => check.id === "importPdf")?.items;
+    expect(shiftedItems?.map((item) => item.id)).toEqual(items?.map((item) => item.id));
+  });
+
   it("every check carries an action to jump to the fix", () => {
     const checks = computeComplianceChecklist(baseInput({ meta: EMPTY_META }));
     for (const check of checks) {

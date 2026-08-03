@@ -585,7 +585,7 @@ function ShellInner() {
   // Relatório da última importação de PDF deste projeto — persistido para a
   // lista de pendências não sumir no recarregamento.
   const [importUnclassified, setImportUnclassified] = useState<
-    readonly { excerpt: string; page: number }[] | undefined
+    readonly { kind?: string; excerpt: string; page: number }[] | undefined
   >();
   const projectId = project?.id ?? null;
   // biome-ignore lint/correctness/useExhaustiveDependencies: reconciling a legacy report is a one-time migration per project; rerunning on each edit would resurrect a marker the student removed
@@ -603,7 +603,7 @@ function ShellInner() {
             ? (validated.staticPendencies ?? [])
             : staticPendenciesFromReport(validated.pendencies, markers);
         setImportUnclassified(
-          staticPendencies.map(({ excerpt, page }) => ({ excerpt, page })),
+          staticPendencies.map(({ kind, excerpt, page }) => ({ kind, excerpt, page })),
         );
         if (validated.schemaVersion === 0) {
           void saveImportReport(
@@ -978,7 +978,7 @@ function ShellInner() {
       console.error("não foi possível guardar o relatório da importação", err);
     });
     setImportUnclassified(
-      staticPendencies.map(({ excerpt, page }) => ({ excerpt, page })),
+      staticPendencies.map(({ kind, excerpt, page }) => ({ kind, excerpt, page })),
     );
     setGuideOpen(true);
   };

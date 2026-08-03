@@ -8,6 +8,7 @@ import { isParseFailure, parseBibFile } from "@papyru/bibliography";
 import { extractCitedKeys } from "@/features/bibliography/citation-usage";
 import { incompleteEntriesOf } from "@/features/bibliography/missing-fields";
 import { scanPendencyMarkers } from "@/features/import-pdf/pendency-markers";
+import { pendencyLabelFor } from "@/features/import-pdf/report-summary";
 import { checkFigures } from "@/features/project/figures-checklist";
 import type { MetadataField, WorkType } from "@/features/project/metadata";
 import { TEMPLATE_PLACEHOLDER_TITLE } from "@/features/project/metadata";
@@ -90,7 +91,7 @@ export interface ComplianceInput {
   texOrder?: readonly string[];
   citeCommands: readonly string[];
   /** From the persisted report — only entries without a marker in the project. */
-  importUnclassified?: readonly { excerpt: string; page: number }[];
+  importUnclassified?: readonly { kind?: string; excerpt: string; page: number }[];
 }
 
 /** Shipped template defaults — a field still equal to these was never touched. */
@@ -337,15 +338,19 @@ function checkUncitedEntries(
   };
 }
 
-export function computeComplianceChecklist(input: ComplianceInput): ComplianceCheck[] {
+function checkImportPdf(input: ComplianceInput): ComplianceCheck | null {
+  const idOccurrences = new Map<string, number>();
   const markerItems: ComplianceItem[] = scanPendencyMarkers(
     input.texSources,
     input.texOrder ?? [],
   ).map((marker) => {
     const kind = typeof marker.kind === "string" ? marker.kind : marker.kind.other;
+    const idBase = `importPdf:${marker.path}:${kind}:${marker.detail}`;
+    const occurrence = (idOccurrences.get(idBase) ?? 0) + 1;
+    idOccurrences.set(idBase, occurrence);
     return {
-      id: `importPdf:${marker.path}:${kind}:${marker.detail}`,
-      label: strings.compliance.importMarkerLabel,
+      id: occurrence === 1 ? idBase : `${idBase}:${occurrence}`,
+      label: typeof marker.kind === "object" ? marker.kind.other : pendencyLabelFor(kind),
       detail: marker.detail,
       action: {
         kind: "openFile",
@@ -361,14 +366,31 @@ export function computeComplianceChecklist(input: ComplianceInput): ComplianceCh
     };
   });
   const unclassifiedItems: ComplianceItem[] = (input.importUnclassified ?? []).map(
-    ({ excerpt, page }) => ({
-      id: `importPdf:nao-classificado:${excerpt}`,
-      label: strings.compliance.importUnclassifiedLabel,
-      detail: `${excerpt} — p. ${page}. ${strings.compliance.importUnclassifiedHelp}`,
-    }),
+    ({ kind = "nao-classificado", excerpt, page }) => {
+      const help =
+        kind === "nao-classificado"
+          ? strings.compliance.importUnclassifiedHelp
+          : strings.compliance.importLegacyHelp;
+      return {
+        id: `importPdf:${kind}:${excerpt}:${page}`,
+        label: pendencyLabelFor(kind),
+        detail: `${excerpt} — p. ${page}. ${help}`,
+      };
+    },
   );
   const importItems = [...markerItems, ...unclassifiedItems];
   const hasImportCheck = markerItems.length > 0 || input.importUnclassified !== undefined;
+  if (!hasImportCheck) return null;
+  return {
+    id: "importPdf",
+    status: importItems.length > 0 ? "warn" : "ok",
+    count: importItems.length,
+    items: importItems,
+  };
+}
+
+export function computeComplianceChecklist(input: ComplianceInput): ComplianceCheck[] {
+  const importCheck = checkImportPdf(input);
   return [
     checkPretextual(input.meta, input.workType),
     checkAbstract(input.meta),
@@ -376,15 +398,6 @@ export function computeComplianceChecklist(input: ComplianceInput): ComplianceCh
     checkFiguresAcrossProject(input.texSources),
     checkOrphanCitations(input.texSources, input.citeCommands, input.bibText),
     checkUncitedEntries(input.texSources, input.citeCommands, input.bibText),
-    ...(!hasImportCheck
-      ? []
-      : [
-          {
-            id: "importPdf" as const,
-            status: (importItems.length > 0 ? "warn" : "ok") as "ok" | "warn",
-            count: importItems.length,
-            items: importItems,
-          },
-        ]),
+    ...(importCheck ? [importCheck] : []),
   ];
 }

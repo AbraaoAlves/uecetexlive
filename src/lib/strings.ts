@@ -100,6 +100,36 @@ export const strings = {
     tryAnyway: "Tentar mesmo assim",
     errorResources:
       "Não foi possível ler este PDF neste navegador — provavelmente faltou memória. Feche outras abas e tente de novo; se persistir, um PDF menor costuma passar.",
+    pendencyLabels: {
+      equacao: {
+        one: "equação precisa ser refeita",
+        many: "equações precisam ser refeitas",
+      },
+      "equacao-inline": {
+        one: "equação inline precisa ser revisada",
+        many: "equações inline precisam ser revisadas",
+      },
+      algoritmo: {
+        one: "algoritmo precisa ser reconstruído",
+        many: "algoritmos precisam ser reconstruídos",
+      },
+      "nota-rodape": {
+        one: "nota de rodapé precisa voltar ao lugar certo",
+        many: "notas de rodapé precisam voltar ao lugar certo",
+      },
+      "citacao-nao-ligada": {
+        one: "citação não foi ligada às referências",
+        many: "citações não foram ligadas às referências",
+      },
+      "nao-classificado": {
+        one: "trecho não entrou em nenhum capítulo",
+        many: "trechos não entraram em nenhum capítulo",
+      },
+      "figura-sem-imagem": {
+        one: "figura ficou sem a imagem",
+        many: "figuras ficaram sem a imagem",
+      },
+    },
   },
   ficha: {
     missing: "Seu projeto ainda não tem uma ficha catalográfica.",
@@ -336,12 +366,11 @@ export const strings = {
     importPdfOk: "A importação do PDF não deixou nada pendente.",
     importPdfWarnOne: "1 trecho do PDF importado precisa da sua revisão.",
     importPdfWarnMany: "{n} trechos do PDF importado precisam da sua revisão.",
-    importMarkerLabel: "Revisão da importação",
     markerHint:
       "O aviso some quando você usa “já revisei” para retirar o marcador do texto.",
     markerReviewedAction: "já revisei",
-    importUnclassifiedLabel: "Trecho sem capítulo",
     importUnclassifiedHelp:
       "Reescreva este trecho no capítulo certo, consultando o PDF original.",
+    importLegacyHelp: "Revise este trecho consultando o PDF original.",
   },
 } as const;
