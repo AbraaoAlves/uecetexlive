@@ -451,6 +451,7 @@ export function emitFiles(sem: SemanticDoc, opts: EmitFilesOptions): EmitFilesRe
     }
     const cur = chapters[chapters.length - 1];
     if (!cur) continue;
+    let emitted = emitNode(n, figDir, citeIndex, citedKeys);
     if (n.kind === "table") tables++;
     if (n.kind === "list") listItems += n.items.length;
     if (n.kind === "code") codeBlocks++;
@@ -458,11 +459,13 @@ export function emitFiles(sem: SemanticDoc, opts: EmitFilesOptions): EmitFilesRe
       const unresolved = countUnresolved(n.text, citeIndex);
       literalCitations += unresolved;
       if (unresolved > 0) {
+        const excerpt = excerptOf(n.text);
         pendencias.push({
           kind: "citacao-nao-ligada",
           page: n.page + 1,
-          excerpt: excerptOf(n.text),
+          excerpt,
         });
+        emitted += `\n%% TODO(citação): ligar às referências — ${excerpt}`;
       }
       if (n.kind === "paragraph" && n.hasInlineMath) {
         pendencias.push({
@@ -472,7 +475,7 @@ export function emitFiles(sem: SemanticDoc, opts: EmitFilesOptions): EmitFilesRe
         });
       }
     }
-    cur.parts.push(emitNode(n, figDir, citeIndex, citedKeys));
+    cur.parts.push(emitted);
     cur.pages.add(n.page);
   }
 

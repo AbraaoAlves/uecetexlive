@@ -248,4 +248,60 @@ describe("tipo de trabalho e nomes de capítulo", () => {
     expect(chapters).toHaveLength(2);
     expect(new Set(chapters).size).toBe(2);
   });
+
+  test("citação não ligada deixa marcador no capítulo e continua no relatório", () => {
+    const text = "Segundo (Desconhecido, 2011), o método falha.";
+    const sem = {
+      metadata: {},
+      frontMatter: {
+        institutionLines: [],
+        preamble: "",
+        board: [],
+        has: {
+          catalogCard: false,
+          approvalSheet: false,
+          illustrationList: false,
+          tableList: false,
+          abbreviationList: false,
+          symbolList: false,
+        },
+      },
+      pretextual: [],
+      posttextual: [],
+      bibliography: [],
+      footnotes: [],
+      unclassified: [],
+      body: [
+        {
+          kind: "heading",
+          level: "chapter",
+          numbered: true,
+          title: "Introdução",
+          page: 3,
+        },
+        { kind: "paragraph", text, page: 3 },
+      ],
+    } as never;
+    const template = new Map<string, Uint8Array>([
+      [
+        "documento.tex",
+        new TextEncoder().encode(
+          "\\begin{document}\n\t\\input{elementos-textuais/x}\n\\end{document}\n",
+        ),
+      ],
+    ]);
+
+    const { files, report } = emitFiles(sem, { template });
+    const chapter = new TextDecoder().decode(
+      files.get("elementos-textuais/introducao.tex"),
+    );
+    expect(chapter).toContain(text);
+    expect(chapter).toContain(`%% TODO(citação): ligar às referências — ${text}`);
+    expect(report.pendencias).toContainEqual({
+      kind: "citacao-nao-ligada",
+      page: 4,
+      excerpt: text,
+    });
+    expect(report.citations.literal).toBe(1);
+  });
 });
