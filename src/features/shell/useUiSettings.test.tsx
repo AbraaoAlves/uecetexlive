@@ -88,4 +88,23 @@ describe("useUiSettings", () => {
       expect.objectContaining({ advancedMode: true, railCollapsed: true }),
     );
   });
+
+  it("makes a later recovery attempt without waiting for another change", async () => {
+    persistence.load.mockResolvedValue(UiSettingsSchema.parse({}));
+    persistence.save
+      .mockRejectedValueOnce(new Error("bloqueado"))
+      .mockRejectedValueOnce(new Error("ainda bloqueado"))
+      .mockResolvedValue(undefined);
+    const { result } = renderHook(() => useUiSettings());
+    await waitFor(() => expect(result.current.ready).toBe(true));
+
+    act(() => result.current.setUi({ welcomeSeen: true }));
+
+    await waitFor(() => expect(persistence.save).toHaveBeenCalledTimes(3), {
+      timeout: 2_000,
+    });
+    expect(persistence.save).toHaveBeenLastCalledWith(
+      expect.objectContaining({ welcomeSeen: true }),
+    );
+  });
 });

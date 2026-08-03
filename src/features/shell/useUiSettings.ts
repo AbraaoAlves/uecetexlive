@@ -18,6 +18,8 @@ export interface UseUiSettings {
   ready: boolean;
 }
 
+const PERSIST_RETRY_DELAYS_MS = [0, 100, 750] as const;
+
 export function useUiSettings(): UseUiSettings {
   const [ui, setUiState] = useState<UiSettings>(() => UiSettingsSchema.parse({}));
   const [ready, setReady] = useState(false);
@@ -36,15 +38,23 @@ export function useUiSettings(): UseUiSettings {
       saveChainRef.current = saveChainRef.current
         .catch(() => {})
         .then(async () => {
-          try {
-            await saveUiSettings(settings);
-          } catch {
+          let saved = false;
+          let lastError: unknown;
+          for (const delay of PERSIST_RETRY_DELAYS_MS) {
+            if (delay > 0) {
+              await new Promise((resolve) => window.setTimeout(resolve, delay));
+            }
             try {
               await saveUiSettings(settings);
+              saved = true;
+              break;
             } catch (error) {
-              console.error("não foi possível guardar as preferências", error);
-              return;
+              lastError = error;
             }
+          }
+          if (!saved) {
+            console.error("não foi possível guardar as preferências", lastError);
+            return;
           }
 
           const included = new Set(includedPatches);
