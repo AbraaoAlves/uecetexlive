@@ -70,15 +70,64 @@ function parseBody(body: string): TableSegment[] {
   return segments;
 }
 
+const TABULAR_BEGIN = "\\begin{tabular}";
+
+/**
+ * Index of the `}` that closes the group opened at `open`, or -1. A backslash
+ * escapes whatever follows it, so `\{`, `\}` and the row break `\\` never
+ * count as delimiters.
+ */
+function groupEnd(raw: string, open: number): number {
+  let depth = 0;
+  for (let index = open; index < raw.length; index++) {
+    const char = raw[index];
+    if (char === "\\") {
+      index++;
+      continue;
+    }
+    if (char === "{") depth++;
+    else if (char === "}") {
+      depth--;
+      if (depth === 0) return index;
+    }
+  }
+  return -1;
+}
+
+/**
+ * Localiza o `tabular` e lê o colspec **contando chaves**.
+ *
+ * A leitura anterior era uma regex que proibia chave dentro do colspec, e o
+ * importador de PDF escreve uma coluna `p{…\dimexpr…}` por coluna medida —
+ * então nenhuma tabela vinda de PDF casava, `parseTable` devolvia `null` e a
+ * tabela aparecia como código na tela em vez de grade. Parar no primeiro `}`
+ * também não serve: devolveria um colspec truncado.
+ */
+function findTabular(raw: string): { bodyStart: number; colspec: string } | null {
+  const begin = raw.indexOf(TABULAR_BEGIN);
+  if (begin === -1) return null;
+  let cursor = begin + TABULAR_BEGIN.length;
+  // Argumento opcional de posicionamento: `\begin{tabular}[t]{ll}`.
+  if (raw[cursor] === "[") {
+    const close = raw.indexOf("]", cursor);
+    if (close === -1) return null;
+    cursor = close + 1;
+  }
+  if (raw[cursor] !== "{") return null;
+  const close = groupEnd(raw, cursor);
+  if (close === -1) return null;
+  return { bodyStart: close + 1, colspec: raw.slice(cursor + 1, close) };
+}
+
 /**
  * Parse a `latexTable` rawSource into an editable model, or null when the
  * source has no single flat `tabular` (nested tabulars, missing env → keep
  * the read-only projection).
  */
 export function parseTable(raw: string): TableModel | null {
-  const begin = /\\begin\{tabular\}\{([^{}]*)\}/.exec(raw);
+  const begin = findTabular(raw);
   if (!begin) return null;
-  const bodyStart = begin.index + begin[0].length;
+  const bodyStart = begin.bodyStart;
   const endIdx = raw.indexOf("\\end{tabular}", bodyStart);
   if (endIdx === -1) return null;
   // Reject nested tabulars — the grid model only handles a single flat one.
@@ -88,7 +137,7 @@ export function parseTable(raw: string): TableModel | null {
   const model: TableModel = {
     pre: raw.slice(0, bodyStart),
     post: raw.slice(endIdx),
-    colspec: begin[1] ?? "",
+    colspec: begin.colspec,
     segments: parseBody(raw.slice(bodyStart, endIdx)),
   };
   // A tabular with no editable content row is not worth a grid.

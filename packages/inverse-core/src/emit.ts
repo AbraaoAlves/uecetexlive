@@ -79,7 +79,12 @@ function titleCase(t: string): string {
 function emitTable(t: TableNode): string {
   const ncols = Math.max(1, ...t.rows.map((r) => r.length));
   const isQuadro = t.label === "Quadro";
-  const env = isQuadro ? "quadro" : "tabela";
+  // `tabela` não é ambiente: nem o `lib/uecetex2.sty` nem o `abntex2.cls`
+  // definem esse nome. Medido em 03/08/2026 gerando o PDF do modelo com o
+  // bloco emitido: "! LaTeX Error: Environment tabela undefined" e nenhum PDF
+  // na saída. Uma Tabela numerada é `table` — que é justamente o ambiente que
+  // entra na lista de tabelas, onde ela deve estar.
+  const env = isQuadro ? "quadro" : "table";
   const macro = isQuadro ? "UECEqua" : "UECEtab";
   const prefix = isQuadro ? "qua" : "tab";
 

@@ -17,6 +17,29 @@ const SIMPLE = `\\begin{tabular}{cll}
 \t\\bottomrule
 \\end{tabular}`;
 
+/**
+ * A forma que o importador de PDF escreve: uma coluna `p{}` medida por coluna,
+ * ou seja, chave dentro do colspec. Fixture escrita à mão e anônima — nada de
+ * texto de trabalho real (regra 8 do contrato).
+ */
+const IMPORTED_QUADRO = `\\begin{quadro}[htb]
+\\centering
+\\Caption{\\label{qua:criterios} Critérios comparados}
+\\UECEqua{}{
+\\begin{tabular}{p{0.4800\\dimexpr\\textwidth-4\\tabcolsep\\relax}p{0.4800\\dimexpr\\textwidth-4\\tabcolsep\\relax}}
+\\hline
+Critério & Resultado \\\\
+\\hline
+Cobertura & Total \\\\
+\\hline
+Suporte & Parcial \\\\
+\\hline
+\\end{tabular}
+}{
+\\Fonte{Elaborado pelo autor}
+}
+\\end{quadro}`;
+
 const WRAPPED = `\\begin{table}[ht!]
 \t\\centering
 \t\\Caption{\\label{tab:x} Uma legenda}
@@ -90,6 +113,43 @@ describe("parseTable / serializeTable", () => {
     expect(parseTable("\\begin{table}\\centering plain\\end{table}")).toBeNull();
   });
 
+  it("parses a colspec with braces, as the PDF importer writes it", () => {
+    const model = parseTable(IMPORTED_QUADRO);
+
+    expect(model).not.toBeNull();
+    expect(tableGrid(model as never)).toEqual([
+      ["Critério", "Resultado"],
+      ["Cobertura", "Total"],
+      ["Suporte", "Parcial"],
+    ]);
+    expect(columnCount(model as never)).toBe(2);
+    // O colspec inteiro, não truncado no primeiro `}` de dentro do `p{}`.
+    expect((model as never as { colspec: string }).colspec).toBe(
+      "p{0.4800\\dimexpr\\textwidth-4\\tabcolsep\\relax}" +
+        "p{0.4800\\dimexpr\\textwidth-4\\tabcolsep\\relax}",
+    );
+    expect(serializeTable(model as never)).toBe(IMPORTED_QUADRO);
+  });
+
+  it.each([
+    ["@{}ll@{}", "\\begin{tabular}{@{}ll@{}}\nA & B \\\\\n\\end{tabular}"],
+    ["p{3cm}|l", "\\begin{tabular}{p{3cm}|l}\nA & B \\\\\n\\end{tabular}"],
+    [
+      ">{\\centering\\arraybackslash}p{2cm}l",
+      "\\begin{tabular}{>{\\centering\\arraybackslash}p{2cm}l}\nA & B \\\\\n\\end{tabular}",
+    ],
+    ["[t]{ll}", "\\begin{tabular}[t]{ll}\nA & B \\\\\n\\end{tabular}"],
+  ])("reads the colspec %s and round-trips it byte-exact", (_spec, source) => {
+    const model = parseTable(source);
+    expect(model).not.toBeNull();
+    expect(tableGrid(model as never)).toEqual([["A", "B"]]);
+    expect(serializeTable(model as never)).toBe(source);
+  });
+
+  it("returns null when the colspec group never closes", () => {
+    expect(parseTable("\\begin{tabular}{p{3cm\nA & B \\\\\n\\end{tabular}")).toBeNull();
+  });
+
   it("parses every real template UECEtab/tabular byte-exact", () => {
     // Pull each \begin{tabular}...\end{tabular} slice from the chapter and
     // confirm the model round-trips it unchanged.
@@ -100,6 +160,10 @@ describe("parseTable / serializeTable", () => {
       const model = parseTable(slice);
       expect(model, slice.slice(0, 40)).not.toBeNull();
       expect(serializeTable(model as never)).toBe(slice);
+      // Não basta não devolver `null`: cada tabela do modelo tem de virar
+      // grade de verdade, ou o aluno vê código onde devia ver células.
+      expect(tableGrid(model as never).length, slice.slice(0, 40)).toBeGreaterThan(0);
+      expect(columnCount(model as never), slice.slice(0, 40)).toBeGreaterThan(0);
     }
   });
 });

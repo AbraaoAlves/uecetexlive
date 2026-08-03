@@ -305,6 +305,72 @@ describe("tipo de trabalho e nomes de capítulo", () => {
     expect(report.citations.literal).toBe(1);
   });
 
+  test("Tabela sai num ambiente que existe; o Quadro continua quadro", () => {
+    const table = (label: "Tabela" | "Quadro") => ({
+      kind: "table",
+      label,
+      number: 1,
+      caption: `Legenda de ${label}`,
+      rows: [
+        ["A", "B"],
+        ["C", "D"],
+      ],
+      page: 3,
+    });
+    const sem = {
+      metadata: {},
+      frontMatter: {
+        institutionLines: [],
+        preamble: "",
+        board: [],
+        has: {
+          catalogCard: false,
+          approvalSheet: false,
+          illustrationList: false,
+          tableList: false,
+          abbreviationList: false,
+          symbolList: false,
+        },
+      },
+      pretextual: [],
+      posttextual: [],
+      bibliography: [],
+      footnotes: [],
+      unclassified: [],
+      body: [
+        {
+          kind: "heading",
+          level: "chapter",
+          numbered: true,
+          title: "Introdução",
+          page: 3,
+        },
+        table("Tabela"),
+        table("Quadro"),
+      ],
+    } as never;
+    const template = new Map<string, Uint8Array>([
+      [
+        "documento.tex",
+        new TextEncoder().encode(
+          "\\begin{document}\n\t\\input{elementos-textuais/x}\n\\end{document}\n",
+        ),
+      ],
+    ]);
+
+    const chapter = new TextDecoder().decode(
+      emitFiles(sem, { template }).files.get("elementos-textuais/introducao.tex"),
+    );
+
+    // `tabela` não é definido nem no lib/uecetex2.sty nem no abntex2.cls: o
+    // .tex emitido não compilava ("Environment tabela undefined", sem PDF).
+    expect(chapter).not.toContain("\\begin{tabela}");
+    expect(chapter).toContain("\\begin{table}[htb]");
+    expect(chapter).toContain("\\UECEtab{}{");
+    expect(chapter).toContain("\\begin{quadro}[htb]");
+    expect(chapter).toContain("\\UECEqua{}{");
+  });
+
   test("trecho com quebra de linha não escapa do comentário de pendência", () => {
     // O comentário do LaTeX acaba na quebra de linha: um `\n` vindo do PDF
     // jogaria a cauda do trecho para fora e ela viraria texto do documento.
