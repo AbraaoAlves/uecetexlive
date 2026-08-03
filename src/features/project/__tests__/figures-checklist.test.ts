@@ -29,11 +29,53 @@ describe("checkFigures", () => {
     expect(checkFigures(source)).toEqual([{ hasCaption: false, hasFonte: false }]);
   });
 
-  it("finds \\fonte/\\Nota nested inside another macro's argument", () => {
+  it("finds \\Fonte nested inside another macro's argument", () => {
     const source = `
 \\begin{figure}
 \\Caption{X}
-\\UECEfig{}{img}{\\Nota{Elaborado pelo autor}}
+\\UECEfig{}{img}{\\Fonte{Elaborado pelo autor}}
+\\end{figure}
+`;
+    expect(checkFigures(source)).toEqual([{ hasCaption: true, hasFonte: true }]);
+  });
+
+  it("does not treat \\Nota alone as a source", () => {
+    const source = `
+\\begin{figure}
+\\Caption{X}
+\\UECEfig{}{img}{\\Nota{Explicação complementar}}
+\\end{figure}
+`;
+    expect(checkFigures(source)).toEqual([{ hasCaption: true, hasFonte: false }]);
+  });
+
+  it("treats a source-prefixed \\legend as a source", () => {
+    const source = `
+\\begin{figure}
+\\caption{X}
+\\legend{Fonte: Acervo do autor}
+\\end{figure}
+`;
+    expect(checkFigures(source)).toEqual([{ hasCaption: true, hasFonte: true }]);
+  });
+
+  it("does not treat a note-prefixed \\legend as a source", () => {
+    const source = `
+\\begin{figure}
+\\caption{X}
+\\legend{Nota: Explicação complementar}
+\\end{figure}
+`;
+    expect(checkFigures(source)).toEqual([{ hasCaption: true, hasFonte: false }]);
+  });
+
+  it("accepts the literal figure shape emitted by PDF import", () => {
+    const source = `
+\\begin{figure}[htbp]
+  \\centering
+  \\fbox{\\parbox[c][0.22\\textheight][c]{0.82\\linewidth}{\\centering Imagem não recuperada\\\\\\small figura.png}}
+  \\caption{Figura importada}
+  \\legend{Fonte: Documento importado, p. 3}
 \\end{figure}
 `;
     expect(checkFigures(source)).toEqual([{ hasCaption: true, hasFonte: true }]);
