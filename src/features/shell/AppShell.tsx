@@ -15,6 +15,7 @@ import {
   projectFromFiles,
   UECETEX2_STRUCTURE,
 } from "@papyru/project-model";
+import * as Tabs from "@radix-ui/react-tabs";
 import {
   Compass,
   Download,
@@ -1344,8 +1345,38 @@ function ShellInner() {
           {/* Largura fixa por dentro para o conteúdo não se reorganizar
               enquanto o <aside> anima a abertura/fecho. */}
           <div className="flex h-full w-60 flex-col overflow-hidden">
-            <div className="min-h-0 flex-1 overflow-y-auto">
-              {
+            <Tabs.Root
+              value={ui.railTab}
+              onValueChange={(value) => {
+                if (value === "files" || value === "compliance")
+                  setUi({ railTab: value });
+              }}
+              className="flex min-h-0 flex-1 flex-col"
+            >
+              <Tabs.List
+                aria-label="Painel lateral"
+                className="flex h-9 shrink-0 border-b bg-surface px-1"
+              >
+                <Tabs.Trigger
+                  value="files"
+                  data-testid="rail-tab-files"
+                  className="flex-1 border-b-2 border-transparent px-2 text-xs text-ink-muted outline-none hover:text-ink focus-visible:ring-2 focus-visible:ring-accent data-[state=active]:border-accent data-[state=active]:text-ink"
+                >
+                  {strings.rail.filesTab}
+                </Tabs.Trigger>
+                <Tabs.Trigger
+                  value="compliance"
+                  data-testid="rail-tab-compliance"
+                  className="flex-1 border-b-2 border-transparent px-2 text-xs text-ink-muted outline-none hover:text-ink focus-visible:ring-2 focus-visible:ring-accent data-[state=active]:border-accent data-[state=active]:text-ink"
+                >
+                  {strings.rail.complianceTab}
+                </Tabs.Trigger>
+              </Tabs.List>
+              <Tabs.Content
+                value="files"
+                data-testid="project-files-panel"
+                className="min-h-0 flex-1 overflow-y-auto outline-none"
+              >
                 <ProjectRail
                   files={railFiles}
                   onToggleImprimir={toggleImprimir}
@@ -1372,8 +1403,15 @@ function ShellInner() {
                   checklistActive={checklistOpen}
                   checklistWarnCount={checklistWarnCount}
                 />
-              }
-            </div>
+              </Tabs.Content>
+              <Tabs.Content
+                value="compliance"
+                data-testid="compliance-rail-panel"
+                className="min-h-0 flex-1 outline-none"
+              >
+                <span className="sr-only">{strings.rail.complianceTab}</span>
+              </Tabs.Content>
+            </Tabs.Root>
           </div>
         </aside>
         <main className="flex min-w-0 flex-1 flex-col" data-testid="editor-pane">

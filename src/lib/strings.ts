@@ -47,6 +47,7 @@ export const strings = {
   },
   rail: {
     filesTab: "Arquivos",
+    complianceTab: "Conformidade",
     preTextual: "Pré-textuais",
     chapters: "Capítulos",
     postTextual: "Pós-textuais",
