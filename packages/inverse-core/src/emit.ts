@@ -391,8 +391,14 @@ const OWNED_DIRS = [
   "elementos-pos-textuais/anexos",
 ];
 
-const excerptOf = (text: string) =>
-  text.length <= 80 ? text : `${text.slice(0, 77)}...`;
+const excerptOf = (text: string) => {
+  // O trecho entra num comentário `%% TODO(...)`, que acaba na quebra de linha:
+  // um `\n` vindo do PDF jogaria a cauda para fora do comentário, e ela viraria
+  // texto do documento. Achatar antes de cortar também evita resumo com
+  // tabulação no meio.
+  const flat = text.replace(/\s+/g, " ").trim();
+  return flat.length <= 80 ? flat : `${flat.slice(0, 77)}...`;
+};
 
 /**
  * Estágio 3, puro: árvore semântica + esqueleto do modelo → projeto em

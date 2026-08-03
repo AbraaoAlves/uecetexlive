@@ -2,11 +2,36 @@ import { describe, expect, it } from "vitest";
 import fundamentacaoTeoricaTex from "../../../../public/templates/uecetex2/files/elementos-textuais/fundamentacao-teorica.tex?raw";
 import { checkFigures } from "../figures-checklist";
 
+// Todo `.tex` do modelo distribuído, não só os capítulos que hoje têm figura:
+// a régua de conformidade não pode acusar o material que o próprio aplicativo
+// entrega, e um capítulo novo com figura entra nesta prova sozinho.
+const TEMPLATE_TEX = import.meta.glob(
+  "../../../../public/templates/uecetex2/files/**/*.tex",
+  { query: "?raw", import: "default", eager: true },
+) as Record<string, string>;
+
 describe("checkFigures", () => {
   it("finds a template-authored figure with \\Caption + \\UECEfig{}{...}{\\Fonte{...}}", () => {
     const figures = checkFigures(fundamentacaoTeoricaTex);
     expect(figures.length).toBeGreaterThan(0);
     expect(figures[0]).toMatchObject({ hasCaption: true, hasFonte: true });
+  });
+
+  it("does not flag any figure shipped with the template", () => {
+    const offenders: string[] = [];
+    let seen = 0;
+    for (const [path, source] of Object.entries(TEMPLATE_TEX)) {
+      for (const figure of checkFigures(source)) {
+        seen++;
+        if (figure.hasCaption && figure.hasFonte) continue;
+        offenders.push(
+          `${path}#${figure.index + 1} (legenda: ${figure.hasCaption}, fonte: ${figure.hasFonte})`,
+        );
+      }
+    }
+
+    expect(seen).toBeGreaterThan(0);
+    expect(offenders).toEqual([]);
   });
 
   it("flags a plain editor-generated figure (caption, no fonte) as missing fonte", () => {

@@ -10,6 +10,7 @@ import { incompleteEntriesOf } from "@/features/bibliography/missing-fields";
 import { scanPendencyMarkers } from "@/features/import-pdf/pendency-markers";
 import { pendencyLabelFor } from "@/features/import-pdf/report-summary";
 import { checkFigures } from "@/features/project/figures-checklist";
+import { orderedTexPaths } from "@/features/project/include-graph";
 import type { MetadataField, WorkType } from "@/features/project/metadata";
 import { TEMPLATE_PLACEHOLDER_TITLE } from "@/features/project/metadata";
 import { strings } from "@/lib/strings";
@@ -192,7 +193,10 @@ function checkReferences(bibText: string | null): ComplianceCheck {
   };
 }
 
-function checkFiguresAcrossProject(texSources: Record<string, string>): ComplianceCheck {
+function checkFiguresAcrossProject(
+  texSources: Record<string, string>,
+  texOrder: readonly string[],
+): ComplianceCheck {
   type FigureReason = "sem-legenda" | "sem-fonte" | "sem-legenda-e-fonte";
   const reasonOrder: Record<FigureReason, number> = {
     "sem-legenda-e-fonte": 0,
@@ -206,7 +210,13 @@ function checkFiguresAcrossProject(texSources: Record<string, string>): Complian
     line: number;
   }> = [];
 
-  for (const [fileOrder, [path, source]] of Object.entries(texSources).entries()) {
+  // Ordem de leitura, não ordem do mapa de arquivos: a lista de figuras e a de
+  // pendências de importação percorrem o mesmo trabalho e têm de percorrê-lo na
+  // mesma sequência. Arquivo fora do grafo de `\input` entra depois, em ordem
+  // alfabética — nunca fica de fora.
+  for (const [fileOrder, path] of orderedTexPaths(texSources, texOrder).entries()) {
+    const source = texSources[path];
+    if (source === undefined) continue;
     for (const fig of checkFigures(source)) {
       if (fig.hasCaption && fig.hasFonte) continue;
 
@@ -338,53 +348,87 @@ function checkUncitedEntries(
   };
 }
 
+/**
+ * O trecho do marcador é texto do trabalho — tamanho e conteúdo imprevisíveis —
+ * e vai parar em `id` e `data-testid` do DOM. Entra resumido: o digest
+ * identifica o mesmo trecho sem carregá-lo.
+ *
+ * FNV-1a de 32 bits, escrito à mão porque precisa ser estável entre execuções
+ * (nada de hash interno do motor) e curto o bastante para um id.
+ */
+function digestOf(text: string): string {
+  let hash = 0x811c9dc5;
+  for (let index = 0; index < text.length; index++) {
+    hash ^= text.charCodeAt(index);
+    hash = Math.imul(hash, 0x01000193);
+  }
+  return (hash >>> 0).toString(36);
+}
+
 function checkImportPdf(input: ComplianceInput): ComplianceCheck | null {
-  const idOccurrences = new Map<string, number>();
-  const uniqueId = (idBase: string): string => {
-    const occurrence = (idOccurrences.get(idBase) ?? 0) + 1;
-    idOccurrences.set(idBase, occurrence);
-    return occurrence === 1 ? idBase : `${idBase}:${occurrence}`;
-  };
-  const markerItems: ComplianceItem[] = scanPendencyMarkers(
-    input.texSources,
-    input.texOrder ?? [],
-  ).map((marker) => {
-    const kind = typeof marker.kind === "string" ? marker.kind : marker.kind.other;
-    const idBase = `importPdf:${marker.path}:${kind}:${marker.detail}`;
-    return {
-      id: uniqueId(idBase),
-      label: typeof marker.kind === "object" ? marker.kind.other : pendencyLabelFor(kind),
-      detail: marker.detail,
-      action: {
-        kind: "openFile",
-        path: marker.path,
-        line: marker.line,
-        mode: "source",
-      },
-      reviewAction: {
-        kind: "removePendencyMarker",
-        path: marker.path,
-        line: marker.line,
-      },
-    };
-  });
-  const unclassifiedItems: ComplianceItem[] = (input.importUnclassified ?? []).map(
+  // O relatório persistido da importação é o que diz que este projeto veio de
+  // um PDF. Sem ele, um `%% TODO(...)` digitado à mão num projeto do modelo
+  // abriria uma revisão de importação que nunca aconteceu.
+  if (input.importUnclassified === undefined) return null;
+
+  const scanned = scanPendencyMarkers(input.texSources, input.texOrder ?? []).map(
+    (marker) => {
+      const kind = typeof marker.kind === "string" ? marker.kind : marker.kind.other;
+      return {
+        marker,
+        kind,
+        idBase: `importPdf:marcador:${marker.path}:${kind}:${digestOf(marker.detail)}`,
+      };
+    },
+  );
+  // Marcadores gêmeos (mesmo arquivo, mesmo tipo, mesmo trecho) só se distinguem
+  // pela linha. Numerá-los por ordem de aparição faria o sobrevivente herdar o
+  // id do removido, e a lista o mostraria como já revisado sem que ninguém o
+  // tivesse visto. Havendo empate, **todos** os empatados levam a linha no id: o
+  // sobrevivente pode mudar de id — volta a "não visitado", que é seguro —, mas
+  // nunca assume o id de outro.
+  const twinIdBases = new Set(
+    scanned
+      .map(({ idBase }) => idBase)
+      .filter((idBase, index, all) => all.indexOf(idBase) !== index),
+  );
+  const markerItems: ComplianceItem[] = scanned.map(({ marker, kind, idBase }) => ({
+    id: twinIdBases.has(idBase) ? `${idBase}:l${marker.line}` : idBase,
+    label: typeof marker.kind === "object" ? marker.kind.other : pendencyLabelFor(kind),
+    detail: marker.detail,
+    action: {
+      kind: "openFile",
+      path: marker.path,
+      line: marker.line,
+      mode: "source",
+    },
+    reviewAction: {
+      kind: "removePendencyMarker",
+      path: marker.path,
+      line: marker.line,
+    },
+  }));
+
+  // Estes vêm do relatório e só mudam numa nova importação; dois trechos
+  // idênticos não têm como se distinguir, e aí a ordem de aparição basta.
+  const excerptOccurrences = new Map<string, number>();
+  const unclassifiedItems: ComplianceItem[] = input.importUnclassified.map(
     ({ kind = "nao-classificado", excerpt, page }) => {
       const help =
         kind === "nao-classificado"
           ? strings.compliance.importUnclassifiedHelp
           : strings.compliance.importLegacyHelp;
-      const idBase = `importPdf:${kind}:${excerpt}:${page}`;
+      const idBase = `importPdf:trecho:${kind}:${digestOf(excerpt)}:p${page}`;
+      const occurrence = (excerptOccurrences.get(idBase) ?? 0) + 1;
+      excerptOccurrences.set(idBase, occurrence);
       return {
-        id: uniqueId(idBase),
+        id: occurrence === 1 ? idBase : `${idBase}:${occurrence}`,
         label: pendencyLabelFor(kind),
         detail: `${excerpt} — p. ${page}. ${help}`,
       };
     },
   );
   const importItems = [...markerItems, ...unclassifiedItems];
-  const hasImportCheck = markerItems.length > 0 || input.importUnclassified !== undefined;
-  if (!hasImportCheck) return null;
   return {
     id: "importPdf",
     status: importItems.length > 0 ? "warn" : "ok",
@@ -399,7 +443,7 @@ export function computeComplianceChecklist(input: ComplianceInput): ComplianceCh
     checkPretextual(input.meta, input.workType),
     checkAbstract(input.meta),
     checkReferences(input.bibText),
-    checkFiguresAcrossProject(input.texSources),
+    checkFiguresAcrossProject(input.texSources, input.texOrder ?? []),
     checkOrphanCitations(input.texSources, input.citeCommands, input.bibText),
     checkUncitedEntries(input.texSources, input.citeCommands, input.bibText),
     ...(importCheck ? [importCheck] : []),

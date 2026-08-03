@@ -181,9 +181,12 @@ describe("computeComplianceChecklist", () => {
     });
   });
 
-  it("enumerates figures by severity, then file and line", () => {
+  it("enumerates figures by severity, then reading order and line", () => {
     const checks = computeComplianceChecklist(
       baseInput({
+        // b.tex vem antes no grafo de `\input`, embora venha depois no alfabeto:
+        // a lista tem de seguir a ordem em que o aluno lê o trabalho.
+        texOrder: ["b.tex", "a.tex"],
         texSources: {
           "b.tex": [
             "\\begin{figure}",
@@ -236,6 +239,22 @@ describe("computeComplianceChecklist", () => {
         action: { kind: "openFile", path: "a.tex", line: 5, mode: "source" },
       },
     ]);
+  });
+
+  it("keeps figures from files outside the include graph, after the ones inside", () => {
+    const figure = ["\\begin{figure}", "\\end{figure}"].join("\n");
+    const checks = computeComplianceChecklist(
+      baseInput({
+        texSources: { "zz-solto.tex": figure, "aa-solto.tex": figure, "cap.tex": figure },
+        texOrder: ["cap.tex"],
+      }),
+    );
+
+    // Nenhum arquivo fica de fora; o que o grafo não alcança entra depois, em
+    // ordem alfabética — posição definida, não a ordem em que o mapa foi montado.
+    expect(
+      checks.find((check) => check.id === "figures")?.items?.map((item) => item.id),
+    ).toEqual(["cap.tex:0", "aa-solto.tex:0", "zz-solto.tex:0"]);
   });
 
   it("flags a citation with no matching bib entry as an orphan", () => {
@@ -338,6 +357,65 @@ describe("computeComplianceChecklist", () => {
       },
     }).find((check) => check.id === "importPdf")?.items;
     expect(shiftedItems?.map((item) => item.id)).toEqual(items?.map((item) => item.id));
+  });
+
+  it("ignores a hand-written marker in a project that never came from a PDF", () => {
+    const texSources = {
+      "cap.tex": "Texto\n%% TODO(matemática): reconstruir a equação",
+    };
+
+    // Sem relatório de importação não há procedência: o marcador é só um
+    // comentário que o aluno escreveu, e a revisão de importação não existe.
+    expect(
+      computeComplianceChecklist(baseInput({ texSources, texOrder: ["cap.tex"] })).find(
+        (check) => check.id === "importPdf",
+      ),
+    ).toBeUndefined();
+    expect(
+      computeComplianceChecklist(
+        baseInput({ texSources, texOrder: ["cap.tex"], importUnclassified: [] }),
+      ).find((check) => check.id === "importPdf")?.count,
+    ).toBe(1);
+  });
+
+  it("keeps import item ids short even with a long marker excerpt", () => {
+    const excerpt = "trecho muito longo ".repeat(40);
+    const items = computeComplianceChecklist(
+      baseInput({
+        texSources: { "cap.tex": `%% TODO(matemática): ${excerpt}` },
+        texOrder: ["cap.tex"],
+        importUnclassified: [{ excerpt, page: 3 }],
+      }),
+    ).find((check) => check.id === "importPdf")?.items;
+
+    expect(items).toHaveLength(2);
+    for (const item of items ?? []) {
+      expect(item.id.length).toBeLessThan(80);
+      expect(item.id).not.toContain("trecho muito longo");
+    }
+  });
+
+  it("never hands a removed marker's id to its surviving twin", () => {
+    const twin = "%% TODO(matemática): reconstruir a equação";
+    const idsOf = (source: string) =>
+      computeComplianceChecklist(
+        baseInput({
+          texSources: { "cap.tex": source },
+          texOrder: ["cap.tex"],
+          importUnclassified: [],
+        }),
+      )
+        .find((check) => check.id === "importPdf")
+        ?.items?.map((item) => item.id) ?? [];
+
+    const both = idsOf([twin, "Texto no meio", twin].join("\n"));
+    expect(new Set(both).size).toBe(2);
+
+    // Apagado o primeiro, o sobrevivente pode mudar de id — volta a "não
+    // visitado", que é seguro —, mas não pode assumir o id do que sumiu.
+    const survivor = idsOf(["Texto no meio", twin].join("\n"));
+    expect(survivor).toHaveLength(1);
+    expect(survivor[0]).not.toBe(both[0]);
   });
 
   it("keeps identical unclassified import entries as distinct items", () => {

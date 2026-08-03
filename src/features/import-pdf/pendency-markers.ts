@@ -1,3 +1,5 @@
+import { orderedTexPaths } from "@/features/project/include-graph";
+
 export type KnownPendencyKind =
   | "equacao-inline"
   | "equacao"
@@ -62,20 +64,8 @@ export function scanPendencyMarkers(
   texSources: Record<string, string>,
   order: readonly string[],
 ): PendencyMarker[] {
-  const seen = new Set<string>();
-  const paths: string[] = [];
-  for (const path of order) {
-    if (seen.has(path) || texSources[path] === undefined) continue;
-    seen.add(path);
-    paths.push(path);
-  }
-  const extras = Object.keys(texSources)
-    .filter((path) => !seen.has(path))
-    .sort((left, right) => left.localeCompare(right));
-  paths.push(...extras);
-
   const markers: PendencyMarker[] = [];
-  for (const path of paths) {
+  for (const path of orderedTexPaths(texSources, order)) {
     const source = texSources[path];
     if (source === undefined) continue;
     for (const [index, line] of sourceLines(source).entries()) {

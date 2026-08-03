@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { dismissWelcome } from "./helpers";
+import { dismissWelcome, seedImportReport } from "./helpers";
 
 const FIGURE_GOTO =
   "compliance-goto-figures-elementos-textuais/fundamentacao-teorica.tex:0";
@@ -49,6 +49,7 @@ test("uma figura irregular leva à linha certa no modo fonte em todo clique", as
 test("já revisei remove só o marcador vivo e fecha a pendência", async ({ page }) => {
   await page.goto("/");
   await dismissWelcome(page);
+  await seedImportReport(page);
 
   await page.getByTestId("rail-file-elementos-textuais/introducao.tex").click();
   await page.getByTestId("view-toggle").click();
@@ -76,6 +77,7 @@ test("já revisei remove só o marcador vivo e fecha a pendência", async ({ pag
 test("próximo percorre três avisos importados sem repetir", async ({ page }) => {
   await page.goto("/");
   await dismissWelcome(page);
+  await seedImportReport(page);
 
   await page.getByTestId("rail-file-elementos-textuais/introducao.tex").click();
   await page.getByTestId("view-toggle").click();

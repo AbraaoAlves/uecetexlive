@@ -109,6 +109,30 @@ function scanSource(source: string): FileScan {
   return scan;
 }
 
+/**
+ * Ordem de leitura do trabalho: primeiro o que o grafo de `\input` alcança,
+ * depois o que sobrou, em ordem alfabética. É a mesma régua para toda lista
+ * que percorre o trabalho — sem ela, dois percursos numeram os capítulos de
+ * jeitos diferentes e o aluno é levado às correções fora da ordem em que lê.
+ */
+export function orderedTexPaths(
+  texSources: Record<string, string>,
+  order: readonly string[],
+): string[] {
+  const seen = new Set<string>();
+  const paths: string[] = [];
+  for (const path of order) {
+    if (seen.has(path) || texSources[path] === undefined) continue;
+    seen.add(path);
+    paths.push(path);
+  }
+  const extras = Object.keys(texSources)
+    .filter((path) => !seen.has(path))
+    .sort((left, right) => left.localeCompare(right));
+  paths.push(...extras);
+  return paths;
+}
+
 export function buildIncludeGraph(
   files: Record<string, string>,
   entry: string,

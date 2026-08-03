@@ -305,6 +305,68 @@ describe("tipo de trabalho e nomes de capítulo", () => {
     expect(report.citations.literal).toBe(1);
   });
 
+  test("trecho com quebra de linha não escapa do comentário de pendência", () => {
+    // O comentário do LaTeX acaba na quebra de linha: um `\n` vindo do PDF
+    // jogaria a cauda do trecho para fora e ela viraria texto do documento.
+    const text = "Segundo (Desconhecido, 2011),\no método\tfalha.";
+    const sem = {
+      metadata: {},
+      frontMatter: {
+        institutionLines: [],
+        preamble: "",
+        board: [],
+        has: {
+          catalogCard: false,
+          approvalSheet: false,
+          illustrationList: false,
+          tableList: false,
+          abbreviationList: false,
+          symbolList: false,
+        },
+      },
+      pretextual: [],
+      posttextual: [],
+      bibliography: [],
+      footnotes: [],
+      unclassified: [],
+      body: [
+        {
+          kind: "heading",
+          level: "chapter",
+          numbered: true,
+          title: "Introdução",
+          page: 3,
+        },
+        { kind: "paragraph", text, page: 3 },
+      ],
+    } as never;
+    const template = new Map<string, Uint8Array>([
+      [
+        "documento.tex",
+        new TextEncoder().encode(
+          "\\begin{document}\n\t\\input{elementos-textuais/x}\n\\end{document}\n",
+        ),
+      ],
+    ]);
+
+    const { files, report } = emitFiles(sem, { template });
+    const chapter = new TextDecoder().decode(
+      files.get("elementos-textuais/introducao.tex"),
+    );
+    const markerLine = chapter
+      .split("\n")
+      .find((line) => line.startsWith("%% TODO(citação)"));
+
+    expect(markerLine).toBe(
+      "%% TODO(citação): ligar às referências — Segundo (Desconhecido, 2011), o método falha.",
+    );
+    expect(report.pendencias).toContainEqual({
+      kind: "citacao-nao-ligada",
+      page: 4,
+      excerpt: "Segundo (Desconhecido, 2011), o método falha.",
+    });
+  });
+
   test("imagem sem bytes vira marcador em vez de include quebrado", () => {
     const sem = {
       metadata: {},
