@@ -1,7 +1,8 @@
 import { expect, test } from "@playwright/test";
 import { dismissWelcome } from "./helpers";
 
-const FIGURE_ITEM = "compliance-item-fix-elementos-textuais/fundamentacao-teorica.tex:0";
+const FIGURE_GOTO =
+  "compliance-goto-figures-elementos-textuais/fundamentacao-teorica.tex:0";
 
 async function selectedText(page: import("@playwright/test").Page): Promise<string> {
   return page.evaluate(() => window.getSelection()?.toString() ?? "");
@@ -27,8 +28,9 @@ test("uma figura irregular leva à linha certa no modo fonte em todo clique", as
   await page.getByTestId("view-toggle").click();
 
   await page.getByTestId("rail-checklist").click();
-  await expect(page.getByTestId(FIGURE_ITEM)).toBeVisible();
-  await page.getByTestId(FIGURE_ITEM).click();
+  const figureGoto = page.getByTestId(FIGURE_GOTO);
+  await expect(figureGoto).toBeVisible();
+  await figureGoto.click();
 
   const sourceInput = page.getByTestId("source-editor-input");
   await expect(page.getByTestId("source-editor")).toBeVisible();
@@ -39,8 +41,7 @@ test("uma figura irregular leva à linha certa no modo fonte em todo clique", as
   await sourceInput.press("ControlOrMeta+End");
   expect(await selectedText(page)).not.toContain("\\begin{figure}[ht!]");
 
-  await page.getByTestId("rail-checklist").click();
-  await page.getByTestId(FIGURE_ITEM).click();
+  await figureGoto.click();
   await expect(sourceInput).toBeFocused();
   expect(await selectedText(page)).toContain("\\begin{figure}[ht!]");
 });
@@ -66,7 +67,6 @@ test("já revisei remove só o marcador vivo e fecha a pendência", async ({ pag
   await reviewedButton.click();
   await expect(reviewedButton).not.toBeVisible();
 
-  await page.getByTestId("compliance-close").click();
   const source = page.getByTestId("source-editor-value");
   await expect(source).toHaveValue(/Texto preservado antes do aviso\./);
   await expect(source).toHaveValue(/Texto preservado depois do aviso\./);
@@ -92,11 +92,12 @@ test("próximo percorre três avisos importados sem repetir", async ({ page }) =
     "%% TODO(algoritmo): segundo aviso",
     "%% TODO(citação): terceiro aviso",
   ];
-  for (const marker of expected) {
-    await page.getByTestId("rail-checklist").click();
-    const next = page.getByTestId("compliance-next-importPdf");
-    await expect(next).toBeVisible();
-    await next.click();
+  await page.getByTestId("rail-checklist").click();
+  const markerGotos = page.locator('[data-testid^="compliance-goto-importPdf-"]');
+  for (const [index, marker] of expected.entries()) {
+    const goto = markerGotos.nth(index);
+    await expect(goto).toBeVisible();
+    await goto.click();
     await expect(sourceInput).toBeFocused();
     expect(await selectedText(page)).toContain(marker);
   }
