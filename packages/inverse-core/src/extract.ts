@@ -50,6 +50,16 @@ import type {
 
 const R = (n: number): number => Math.round(n * 100) / 100;
 
+/** Normaliza os limites PDF para as dimensões e o topo do espaço do usuário. */
+export function pageBoundsOf(bounds: readonly [number, number, number, number]): {
+  width: number;
+  height: number;
+  top: number;
+} {
+  const [x0, y0, x1, y1] = bounds;
+  return { width: R(x1 - x0), height: R(y1 - y0), top: R(y1) };
+}
+
 /** "OBUZLY+NimbusRomNo9L-Medi" -> "NimbusRomNo9L-Medi" */
 export function canonicalFontName(name: string): string {
   return name.replace(/^[A-Z]{6}\+/, "");
@@ -338,6 +348,7 @@ function apply(m: Matrix, x: number, y: number): [number, number] {
 function pageContentStream(page: mupdf.PDFPage): string {
   const c = page.getObject().get("Contents");
   const dec = new TextDecoder("latin1");
+  if (!c || c.isNull()) return "";
   if (c.isArray()) {
     const parts: string[] = [];
     for (let i = 0; i < c.length; i++)
@@ -545,14 +556,16 @@ export function extract(pdfBytes: Uint8Array, opts: ExtractOptions = {}): Extrac
 
   for (let i = from; i <= to; i++) {
     const page = doc.loadPage(i) as mupdf.PDFPage;
-    const [, , w, h] = page.getBounds() as never as [number, number, number, number];
+    const bounds = pageBoundsOf(
+      page.getBounds() as never as [number, number, number, number],
+    );
     pages.push({
       index: i,
-      width: R(w),
-      height: R(h),
+      width: bounds.width,
+      height: bounds.height,
       blocks: extractTextBlocks(page, fontStats),
       images: extractImages(page, assets, seenImages),
-      vectors: extractVectors(page, R(h)),
+      vectors: extractVectors(page, bounds.top),
       links: extractLinks(doc, page),
     });
     page.destroy();

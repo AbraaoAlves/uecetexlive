@@ -364,7 +364,52 @@ describe("tipo de trabalho e nomes de capítulo", () => {
     });
   });
 
-  test("cada nota de rodapé é anexada uma única vez", () => {
+  test("mantém sequências de cifrão literais ao atualizar a capa", () => {
+    const sem = {
+      metadata: { title: "$&" },
+      frontMatter: {
+        institutionLines: [],
+        board: [],
+        has: {
+          catalogCard: false,
+          approvalSheet: false,
+          illustrationList: false,
+          tableList: false,
+          abbreviationList: false,
+          symbolList: false,
+        },
+      },
+      pretextual: [],
+      posttextual: [],
+      bibliography: [],
+      footnotes: [],
+      unclassified: [],
+      body: [
+        {
+          kind: "heading",
+          level: "chapter",
+          numbered: true,
+          title: "Resultados",
+          page: 1,
+        },
+      ],
+    } as never;
+    const template = new Map<string, Uint8Array>([
+      [
+        "documento.tex",
+        new TextEncoder().encode(
+          "\\titulo{Modelo}\\n\\begin{document}\\n\\t\\input{elementos-textuais/x}\\n\\end{document}\\n",
+        ),
+      ],
+    ]);
+
+    const { files } = emitFiles(sem, { template });
+    const doc = new TextDecoder().decode(files.get("documento.tex"));
+    expect(doc).toContain("\\titulo{\\$\\&}");
+    expect(doc).not.toContain("\\titulo{\\titulo{Modelo}}");
+  });
+
+  test("cada nota de rodapé é anexada uma única vez e registra as inatingíveis", () => {
     const sem = {
       metadata: {},
       frontMatter: {
@@ -382,7 +427,10 @@ describe("tipo de trabalho e nomes de capítulo", () => {
       pretextual: [],
       posttextual: [],
       bibliography: [],
-      footnotes: [{ marker: "1", text: "Nota compartilhada", page: 4 }],
+      footnotes: [
+        { marker: "1", text: "Nota compartilhada", page: 4 },
+        { marker: "2", text: "Nota fora dos capítulos", page: 9 },
+      ],
       unclassified: [],
       body: [
         {
@@ -418,8 +466,9 @@ describe("tipo de trabalho e nomes de capítulo", () => {
       .map(([, bytes]) => new TextDecoder().decode(bytes))
       .join("\n");
     expect(emitted.match(/\\footnote\{/g)).toHaveLength(1);
-    expect(report.pendencias.filter((item) => item.kind === "nota-rodape")).toHaveLength(
-      1,
-    );
+    expect(report.pendencias.filter((item) => item.kind === "nota-rodape")).toEqual([
+      { kind: "nota-rodape", page: 5, excerpt: "Nota compartilhada" },
+      { kind: "nota-rodape", page: 10, excerpt: "Nota fora dos capítulos" },
+    ]);
   });
 });

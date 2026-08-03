@@ -513,6 +513,16 @@ export function emitFiles(sem: SemanticDoc, opts: EmitFilesOptions): EmitFilesRe
       }
     }
   }
+  // A página da nota pode estar fora dos capítulos que conseguimos reconstruir.
+  // Nesse caso não há um ponto seguro para anexá-la, mas a pendência deixa a
+  // perda explícita no relatório em vez de a esconder.
+  for (const note of pendingNotes) {
+    pendencias.push({
+      kind: "nota-rodape",
+      page: note.page + 1,
+      excerpt: excerptOf(note.text),
+    });
+  }
   // \nocite só para o que ficou sem citação no texto: sem isso a bibliografia
   // não listaria as entradas que o autor citou mas não conseguimos ligar.
   const uncited = bibKeys(sem.bibliography).filter((k) => !citedKeys.has(k));
@@ -565,7 +575,10 @@ export function emitFiles(sem: SemanticDoc, opts: EmitFilesOptions): EmitFilesRe
   const textualInputs = chapters
     .map((c) => `\t\\input{elementos-textuais/${c.slugName}}`)
     .join("\n");
-  doc = doc.replace(/(\t\\input\{elementos-textuais\/[^}]+\}\n?)+/, `${textualInputs}\n`);
+  doc = doc.replace(
+    /(\t\\input\{elementos-textuais\/[^}]+\}\n?)+/,
+    () => `${textualInputs}\n`,
+  );
 
   // Apêndices e anexos: substitui os \input do template pelos emitidos —
   // e REMOVE os do template quando não há substituto. O passo 1 já apagou os
@@ -610,7 +623,7 @@ export function emitFiles(sem: SemanticDoc, opts: EmitFilesOptions): EmitFilesRe
 
 /** Troca um bloco de \input pelos emitidos; sem substitutos, apaga o bloco. */
 function replaceOrDrop(doc: string, block: RegExp, lines: string[]): string {
-  return doc.replace(block, lines.length ? `${lines.join("\n")}\n` : "");
+  return doc.replace(block, () => (lines.length ? `${lines.join("\n")}\n` : ""));
 }
 
 /**
@@ -662,7 +675,7 @@ function patchFrontMatter(doc: string, sem: SemanticDoc): string {
   // e um regex solto substituía o comentário e deixava o valor de verdade.
   const set = (cmd: string, value: string) => {
     const re = new RegExp(`^\\\\${cmd}\\{[^}]*\\}`, "m");
-    if (re.test(doc)) doc = doc.replace(re, `\\${cmd}{${value}}`);
+    if (re.test(doc)) doc = doc.replace(re, () => `\\${cmd}{${value}}`);
   };
 
   if (sem.metadata.title) set("titulo", escapeLatex(sem.metadata.title));
