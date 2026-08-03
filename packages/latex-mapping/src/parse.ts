@@ -589,6 +589,31 @@ function promoteFigure(env: Ast.Environment, slice: string, ctx: InlineCtx): PMN
     }
   }
 
+  let fonte: string | null = null;
+  const fonteMacro = findMacro(env.content, "Fonte");
+  if (fonteMacro) {
+    const fonteStart = offsetOf(fonteMacro, "start");
+    if (fonteStart !== null) {
+      fonte =
+        sliceArgs(ctx.source, fonteStart + "\\Fonte".length, false)?.mandatory ?? null;
+    }
+  }
+  if (fonte === null) {
+    const legendMacro = findMacro(env.content, "legend");
+    if (legendMacro) {
+      const legendStart = offsetOf(legendMacro, "start");
+      if (legendStart !== null) {
+        const legend = sliceArgs(
+          ctx.source,
+          legendStart + "\\legend".length,
+          false,
+        )?.mandatory;
+        const match = legend?.match(/^\s*Fonte:\s*(.*?)\s*$/i);
+        fonte = match?.[1] ?? null;
+      }
+    }
+  }
+
   return {
     type: "latexFigure",
     attrs: {
@@ -597,6 +622,7 @@ function promoteFigure(env: Ast.Environment, slice: string, ctx: InlineCtx): PMN
       options,
       caption,
       label,
+      fonte,
       rawSource: slice,
     },
   };

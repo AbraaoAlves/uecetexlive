@@ -303,6 +303,7 @@ describe("figures (§4.2)", () => {
       src: "figuras/figura-3",
       options: "scale=0.6",
       label: "fig-grafico-1",
+      fonte: "\\citeonline{ibge23}",
     });
   });
 
@@ -319,10 +320,36 @@ describe("figures (§4.2)", () => {
         caption: "Nova figura",
         label: "fig:nova",
         placement: "htb",
+        fonte: "Elaborado pelo autor",
       },
     });
     expect(serializeDoc(generated)).toBe(
-      "\\begin{figure}[htb]\n\t\\centering\n\t\\caption{\\label{fig:nova}Nova figura}\n\t\\includegraphics[width=0.8\\textwidth]{figuras/nova.png}\n\\end{figure}",
+      "\\begin{figure}[htb]\n\t\\centering\n\t\\Caption{\\label{fig:nova}Nova figura}\n\t\\UECEfig{}{\n\t\t\\fbox{\\includegraphics[width=0.8\\textwidth]{figuras/nova.png}}\n\t}{\n\t\t\\Fonte{Elaborado pelo autor}\n\t}\n\\end{figure}",
+    );
+  });
+
+  it("preserves the UECE source after changing a figure caption", () => {
+    const ueceFigure = [
+      "\\begin{figure}[ht!]",
+      "\\centering",
+      "\\Caption{\\label{fig:exemplo-1} Exemplo de figura}",
+      "\\UECEfig{}{",
+      "\\fbox{\\includegraphics[width=8cm]{figuras/figura-1}}",
+      "}{",
+      "\\Fonte{Elaborado pelo autor}",
+      "}",
+      "\\end{figure}",
+    ].join("\n");
+    const figure = first(ueceFigure);
+    expect(figure.attrs).toMatchObject({ fonte: "Elaborado pelo autor" });
+
+    const edited = doc({
+      ...figure,
+      attrs: { ...figure.attrs, caption: "Legenda atualizada", rawSource: null },
+    });
+
+    expect(serializeDoc(edited)).toBe(
+      "\\begin{figure}[ht!]\n\t\\centering\n\t\\Caption{\\label{fig:exemplo-1}Legenda atualizada}\n\t\\UECEfig{}{\n\t\t\\fbox{\\includegraphics[width=8cm]{figuras/figura-1}}\n\t}{\n\t\t\\Fonte{Elaborado pelo autor}\n\t}\n\\end{figure}",
     );
   });
 });

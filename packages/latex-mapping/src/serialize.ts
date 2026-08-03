@@ -153,12 +153,18 @@ export function serializeBlock(
       const src = (node.attrs?.src as string) ?? "";
       const caption = (node.attrs?.caption as string) ?? "";
       const label = node.attrs?.label as string | null;
+      const fonte = node.attrs?.fonte as string | null;
       const captionInner = `${label ? `\\label{${label}}` : ""}${escapeText(caption)}`;
+      const graphics = `\\includegraphics${options ? `[${options}]` : ""}{${src}}`;
       return [
         `\\begin{figure}[${placement}]`,
         `\t\\centering`,
-        `\t\\caption{${captionInner}}`,
-        `\t\\includegraphics${options ? `[${options}]` : ""}{${src}}`,
+        `\t\\Caption{${captionInner}}`,
+        `\t\\UECEfig{}{`,
+        `\t\t\\fbox{${graphics}}`,
+        `\t}{`,
+        ...(fonte === null ? [] : [`\t\t\\Fonte{${fonte}}`]),
+        `\t}`,
         `\\end{figure}`,
       ].join("\n");
     }
