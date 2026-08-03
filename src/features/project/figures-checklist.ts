@@ -25,12 +25,16 @@ export interface FigureCheck {
   caption: string | null;
 }
 
-function findMacro(nodes: Ast.Node[], names: Set<string>): Ast.Macro | null {
-  let found: Ast.Macro | null = null;
+function findMacros(nodes: Ast.Node[], names: Set<string>): Ast.Macro[] {
+  const found: Ast.Macro[] = [];
   walk(nodes, (macro) => {
-    if (found === null && names.has(macro.content)) found = macro;
+    if (names.has(macro.content)) found.push(macro);
   });
   return found;
+}
+
+function findMacro(nodes: Ast.Node[], names: Set<string>): Ast.Macro | null {
+  return findMacros(nodes, names)[0] ?? null;
 }
 
 function flattenText(nodes: Ast.Node[]): string {
@@ -103,6 +107,19 @@ function macroArgumentText(
   return readSiblingGroup(nodes);
 }
 
+/**
+ * Uma `\Fonte{}` vazia não indica fonte nenhuma: o PDF sai com a linha
+ * "Fonte:" em branco e o aluno ouviria da conformidade que a figura está
+ * certa. Quando o argumento não é legível (forma inesperada, argumento
+ * opcional), vale a presença — errar para o lado de não acusar quem tem fonte.
+ */
+function hasFonteMacro(nodes: Ast.Node[]): boolean {
+  return findMacros(nodes, FONTE_MACROS).some((macro) => {
+    const text = macroArgumentText(nodes, macro);
+    return text === null || text.trim() !== "";
+  });
+}
+
 function containsFonteLegend(nodes: Ast.Node[]): boolean {
   for (const node of nodes) {
     if (
@@ -160,8 +177,7 @@ export function checkFigures(source: string): FigureCheck[] {
     const caption = captionMacro ? macroArgumentText(env.content, captionMacro) : null;
     return {
       hasCaption: captionMacro !== null,
-      hasFonte:
-        findMacro(env.content, FONTE_MACROS) !== null || containsFonteLegend(env.content),
+      hasFonte: hasFonteMacro(env.content) || containsFonteLegend(env.content),
       line: env.position?.start.line ?? 1,
       index,
       caption: caption || null,

@@ -49,6 +49,30 @@ describe("checkFigures", () => {
     expect(checkFigures(source)).toMatchObject([{ hasCaption: true, hasFonte: false }]);
   });
 
+  it.each([
+    "\\Fonte{}",
+    "\\Fonte{   }",
+    "\\UECEfig{}{img}{\\Fonte{}}",
+  ])("does not treat an empty %s as a source", (fonteMacro) => {
+    const source = `
+\\begin{figure}
+\\caption{X}
+${fonteMacro}
+\\end{figure}
+`;
+    expect(checkFigures(source)).toMatchObject([{ hasCaption: true, hasFonte: false }]);
+  });
+
+  it("keeps \\Fonte with an optional label as a source", () => {
+    const source = `
+\\begin{figure}
+\\caption{X}
+\\Fonte[Nota]{Elaborado pelo autor}
+\\end{figure}
+`;
+    expect(checkFigures(source)).toMatchObject([{ hasCaption: true, hasFonte: true }]);
+  });
+
   it("treats a source-prefixed \\legend as a source", () => {
     const source = `
 \\begin{figure}

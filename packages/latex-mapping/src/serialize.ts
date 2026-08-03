@@ -163,7 +163,9 @@ export function serializeBlock(
         `\t\\UECEfig{}{`,
         `\t\t\\fbox{${graphics}}`,
         `\t}{`,
-        ...(fonte === null ? [] : [`\t\t\\Fonte{${fonte}}`]),
+        // Fonte apagada some da saída: `\Fonte{}` imprime a linha "Fonte:"
+        // vazia no PDF e ainda passa pela régua de conformidade.
+        ...(fonte === null || fonte.trim() === "" ? [] : [`\t\t\\Fonte{${fonte}}`]),
         `\t}`,
         `\\end{figure}`,
       ].join("\n");

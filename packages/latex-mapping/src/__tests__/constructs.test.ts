@@ -328,6 +328,26 @@ describe("figures (§4.2)", () => {
     );
   });
 
+  it.each([
+    "",
+    "   ",
+  ])("omits \\Fonte entirely when the field was cleared (%j)", (fonte) => {
+    const generated = doc({
+      type: "latexFigure",
+      attrs: {
+        src: "figuras/nova.png",
+        options: null,
+        caption: "Nova figura",
+        label: null,
+        placement: "htb",
+        fonte,
+      },
+    });
+    // Uma \Fonte vazia sai como linha "Fonte:" em branco no PDF e ainda faz
+    // a conformidade dar a figura por correta.
+    expect(serializeDoc(generated)).not.toContain("\\Fonte");
+  });
+
   it("preserves the UECE source after changing a figure caption", () => {
     const ueceFigure = [
       "\\begin{figure}[ht!]",
