@@ -89,6 +89,23 @@ describe("scanPendencyMarkers", () => {
       },
     ]);
   });
+
+  it("treats inherited property names as unknown labels", () => {
+    const markers = scanPendencyMarkers(
+      {
+        "cap.tex": [
+          "%% TODO(constructor): manter como rótulo livre",
+          "%% TODO(__proto__): manter como rótulo livre",
+        ].join("\n"),
+      },
+      ["cap.tex"],
+    );
+
+    expect(markers.map((marker) => marker.kind)).toEqual([
+      { other: "constructor" },
+      { other: "__proto__" },
+    ]);
+  });
 });
 
 describe("removePendencyMarkerAtLine", () => {
@@ -107,5 +124,20 @@ describe("removePendencyMarkerAtLine", () => {
     const source = "Antes\n%% TODO(figura): recuperar imagem\nDepois";
     expect(removePendencyMarkerAtLine(source, 3)).toBe(source);
     expect(removePendencyMarkerAtLine(source, 99)).toBe(source);
+  });
+
+  it("preserves malformed text before a complete marker", () => {
+    const source =
+      "Texto %% TODO(sem dois pontos) permanece %% TODO(figura): recuperar imagem\nDepois";
+
+    expect(removePendencyMarkerAtLine(source, 1)).toBe(
+      "Texto %% TODO(sem dois pontos) permanece \nDepois",
+    );
+  });
+
+  it("removes a later CR-only marker without touching neighboring lines", () => {
+    const source = "Antes\r%% TODO(figura): recuperar imagem\rDepois";
+
+    expect(removePendencyMarkerAtLine(source, 2)).toBe("Antes\rDepois");
   });
 });

@@ -23,11 +23,33 @@ const KIND_BY_LABEL: Record<string, KnownPendencyKind> = {
   algoritmo: "algoritmo",
   citação: "citacao-nao-ligada",
 };
+const PENDENCY_MARKER = /%% TODO\(([^)]+)\):[ \t]*(.*)$/;
+const LINE_BREAK = /\r\n|\r|\n/g;
+
+interface SourceLine {
+  start: number;
+  contentEnd: number;
+  end: number;
+}
+
+function sourceLines(source: string): SourceLine[] {
+  const lines: SourceLine[] = [];
+  let start = 0;
+  for (const match of source.matchAll(LINE_BREAK)) {
+    const contentEnd = match.index ?? start;
+    const end = contentEnd + match[0].length;
+    lines.push({ start, contentEnd, end });
+    start = end;
+  }
+  lines.push({ start, contentEnd: source.length, end: source.length });
+  return lines;
+}
 
 function pendencyKind(label: string): PendencyKind {
   const normalized = label.trim().toLocaleLowerCase("pt-BR");
-  const known = KIND_BY_LABEL[normalized];
-  if (known) return known;
+  if (Object.hasOwn(KIND_BY_LABEL, normalized)) {
+    return KIND_BY_LABEL[normalized] as KnownPendencyKind;
+  }
   if (/^nota\s+(?:\d+|n)$/i.test(normalized)) return "nota-rodape";
   return { other: label.trim() };
 }
@@ -56,9 +78,8 @@ export function scanPendencyMarkers(
   for (const path of paths) {
     const source = texSources[path];
     if (source === undefined) continue;
-    const lines = source.split(/\r\n?|\n/);
-    for (let index = 0; index < lines.length; index += 1) {
-      const match = lines[index]?.match(/%% TODO\(([^)]+)\):[ \t]*(.*)$/);
+    for (const [index, line] of sourceLines(source).entries()) {
+      const match = source.slice(line.start, line.contentEnd).match(PENDENCY_MARKER);
       if (!match?.[1]) continue;
       markers.push({
         kind: pendencyKind(match[1]),
@@ -75,25 +96,17 @@ export function scanPendencyMarkers(
 export function removePendencyMarkerAtLine(source: string, line: number): string {
   if (!Number.isInteger(line) || line < 1) return source;
 
-  let lineStart = 0;
-  for (let current = 1; current < line; current += 1) {
-    const newline = source.indexOf("\n", lineStart);
-    if (newline < 0) return source;
-    lineStart = newline + 1;
-  }
+  const target = sourceLines(source)[line - 1];
+  if (!target) return source;
 
-  const newline = source.indexOf("\n", lineStart);
-  const physicalEnd = newline < 0 ? source.length : newline + 1;
-  let contentEnd = newline < 0 ? source.length : newline;
-  if (contentEnd > lineStart && source[contentEnd - 1] === "\r") contentEnd -= 1;
-
-  const content = source.slice(lineStart, contentEnd);
-  const markerOffset = content.indexOf("%% TODO(");
-  if (markerOffset < 0) return source;
+  const content = source.slice(target.start, target.contentEnd);
+  const markerMatch = content.match(PENDENCY_MARKER);
+  if (!markerMatch || markerMatch.index === undefined) return source;
+  const markerOffset = markerMatch.index;
   const prefix = content.slice(0, markerOffset);
 
   if (prefix.trim() === "") {
-    return source.slice(0, lineStart) + source.slice(physicalEnd);
+    return source.slice(0, target.start) + source.slice(target.end);
   }
-  return source.slice(0, lineStart + markerOffset) + source.slice(contentEnd);
+  return source.slice(0, target.start + markerOffset) + source.slice(target.contentEnd);
 }
