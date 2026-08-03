@@ -155,6 +155,17 @@ describe("computeComplianceChecklist", () => {
       if (check.items) expect(check.count, check.id).toBe(check.items.length);
     }
   });
+
+  // Sem .bib não há para onde levar o aluno: um "corrigir" que não faz nada é
+  // pior do que nenhum atalho.
+  it("não oferece atalho de referências num projeto sem .bib", () => {
+    const checks = computeComplianceChecklist(
+      baseInput({ bibText: null, texSources: { "cap.tex": "\\citeonline{naoexiste}" } }),
+    );
+    const orphans = checks.find((c) => c.id === "orphanCitations");
+    expect(orphans?.status).toBe("warn");
+    expect(orphans?.action).toBeUndefined();
+  });
 });
 
 /**
@@ -186,6 +197,13 @@ describe("effectiveItems / pendingItemCount", () => {
 
   it("has nothing to offer for a check that is ok", () => {
     expect(effectiveItems(check({ status: "ok", count: 0 }))).toHaveLength(0);
+  });
+
+  // Quando quem enumera erra o count, quem manda é a lista: o badge conta o
+  // que o aluno vai realmente percorrer, não um número declarado à parte.
+  it("segue os items, não o count, quando os dois discordam", () => {
+    const inconsistent = check({ count: 5, items: [{ id: "a", label: "A" }] });
+    expect(pendingItemCount([inconsistent])).toBe(1);
   });
 
   it("counts items, not checks", () => {

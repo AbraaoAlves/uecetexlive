@@ -219,7 +219,10 @@ function checkOrphanCitations(
     id: "orphanCitations",
     status: orphans.length === 0 ? "ok" : "warn",
     count: orphans.length,
-    action: { kind: "openReferences" },
+    // Sem .bib no projeto não há para onde levar o aluno — oferecer "corrigir"
+    // que não faz nada é pior do que não oferecer. Criar o arquivo do zero é
+    // outro pedido.
+    action: bibText === null ? undefined : { kind: "openReferences" },
   };
 }
 

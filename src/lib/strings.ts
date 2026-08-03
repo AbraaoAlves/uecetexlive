@@ -28,6 +28,8 @@ export const strings = {
     menuHint:
       "Menu: importar ZIP, exportar PDF ou projeto, importar .bbl, restaurar modelo.",
     viewToggleHint: "Alternar entre fonte LaTeX e editor visual (Ctrl/Cmd+E).",
+    bibViewToggleHint:
+      "Alternar entre a fonte BibTeX e a lista de referências (Ctrl/Cmd+E).",
     idleWarmup: "Preparando motor completo:",
     idleWarmupHint:
       "Baixando o motor do modo Completo em segundo plano (~150 MB, uma única vez) — você já pode escrever e usar o Rascunho normalmente.",
@@ -287,6 +289,8 @@ export const strings = {
     insertCitation: "Inserir citação no texto",
     copyCitation: "copiar citação",
     copiedCitation: "copiado!",
+    copiedAnnouncement: "Citação copiada para a área de transferência.",
+    copyFailed: "Não foi possível copiar — selecione o texto e copie à mão.",
   },
   sobre: {
     title: "Sobre o UeceTexLive",

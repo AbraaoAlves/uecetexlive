@@ -16,7 +16,7 @@ import {
   updateEntry,
 } from "@papyru/bibliography";
 import { ABNT_CITATION_PROFILE } from "@papyru/latex-mapping";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { strings } from "@/lib/strings";
 import { cn } from "@/lib/utils";
 import { AddReferenceDialog, type EditingReference } from "./AddReferenceDialog";
@@ -38,6 +38,10 @@ export interface ReferencesPanelProps {
   onInsertCitation?: (key: string) => void;
   /** Every .tex file's current text, for the "used N times" warning before removing (B2). */
   texSources?: Record<string, string>;
+  /** Chave a destacar: rola até a linha dela e põe o foco no botão de editar. */
+  focusKey?: string | null;
+  /** Muda para repetir o mesmo destaque (ver NavRequest.nonce no AppShell). */
+  focusNonce?: number;
 }
 
 type SortMode = "file" | "author" | "year";
@@ -70,6 +74,8 @@ export function ReferencesPanel({
   onSearchQueryConsumed,
   onInsertCitation,
   texSources = {},
+  focusKey,
+  focusNonce,
 }: ReferencesPanelProps) {
   const [sort, setSort] = useState<SortMode>("file");
   const [addOpen, setAddOpen] = useState(false);
@@ -78,7 +84,7 @@ export function ReferencesPanel({
   const [searchOpen, setSearchOpen] = useState(false);
   const [addedToastKey, setAddedToastKey] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
-  const [copiedKey, setCopiedKey] = useState<string | null>(null);
+  const [copyState, setCopyState] = useState<{ key: string; ok: boolean } | null>(null);
   const [editing, setEditing] = useState<EditingReference | null>(null);
   const [editError, setEditError] = useState<string | null>(null);
   const [removeTarget, setRemoveTarget] = useState<{
@@ -90,6 +96,22 @@ export function ReferencesPanel({
   useEffect(() => {
     if (initialSearchQuery) setSearchOpen(true);
   }, [initialSearchQuery]);
+
+  // "Ir para esta referência": rolar não basta, porque a linha é um <li> e não
+  // recebe foco — quem navega por teclado ou leitor de tela ficaria onde
+  // estava. O foco vai para o botão de editar, que é a ação que a pessoa veio
+  // fazer; se ele não existir (.bib somente leitura), vai para a própria linha.
+  const rowRefs = useRef(new Map<string, HTMLLIElement>());
+  // biome-ignore lint/correctness/useExhaustiveDependencies: focusNonce é o sinal de repetição — pedir a mesma chave duas vezes tem de destacar duas vezes
+  useEffect(() => {
+    if (!focusKey) return;
+    const row = rowRefs.current.get(focusKey);
+    if (!row) return;
+    row.scrollIntoView({ block: "center" });
+    const target =
+      row.querySelector<HTMLElement>(`[data-testid="reference-edit-${focusKey}"]`) ?? row;
+    target.focus();
+  }, [focusKey, focusNonce]);
 
   const existingDois = useMemo(() => {
     if (bibText === null) return new Set<string>();
@@ -220,6 +242,15 @@ export function ReferencesPanel({
       className="mx-auto flex min-h-0 w-full max-w-3xl flex-1 flex-col"
       data-testid="references-panel"
     >
+      {/* Trocar o rótulo do botão não é anunciado por leitor de tela; esta
+          região é o que faz "copiado" (ou a falha) chegar a quem não vê. */}
+      <output className="sr-only" aria-live="polite" data-testid="references-copy-status">
+        {copyState === null
+          ? ""
+          : copyState.ok
+            ? strings.references.copiedAnnouncement
+            : strings.references.copyFailed}
+      </output>
       {onWriteBib && (
         <div className="flex gap-1.5 border-b p-2">
           <button
@@ -358,6 +389,11 @@ export function ReferencesPanel({
                 {sortedRows.map((row) => (
                   <li
                     key={row.key}
+                    ref={(el) => {
+                      if (el) rowRefs.current.set(row.key, el);
+                      else rowRefs.current.delete(row.key);
+                    }}
+                    tabIndex={-1}
                     className="border-b px-3 py-2 text-sm"
                     data-testid={`reference-${row.key}`}
                   >
@@ -414,16 +450,14 @@ export function ReferencesPanel({
                             data-testid={`reference-copy-${row.key}`}
                             className="text-accent underline hover:no-underline"
                             onClick={() => {
+                              const command = `\\${citeCommand}{${row.key}}`;
                               void navigator.clipboard
-                                ?.writeText(`\\${citeCommand}{${row.key}}`)
-                                .then(() => setCopiedKey(row.key))
-                                .catch(() => {
-                                  // área de transferência indisponível — o
-                                  // rótulo simplesmente não muda
-                                });
+                                ?.writeText(command)
+                                .then(() => setCopyState({ key: row.key, ok: true }))
+                                .catch(() => setCopyState({ key: row.key, ok: false }));
                             }}
                           >
-                            {copiedKey === row.key
+                            {copyState?.key === row.key && copyState.ok
                               ? strings.references.copiedCitation
                               : strings.references.copyCitation}
                           </button>

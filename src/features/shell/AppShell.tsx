@@ -99,6 +99,7 @@ import {
   type RailSection,
   railSectionOf,
   textToBytes,
+  type VisualMode,
   visualModeFor,
 } from "@/features/project/vfs";
 import { strings } from "@/lib/strings";
@@ -184,6 +185,8 @@ interface NavRequest {
   path: string;
   /** 1-based. */
   line?: number;
+  /** Chave de referência a destacar, quando o destino é um `.bib`. */
+  focusKey?: string;
   mode?: "source" | "visual";
   nonce: number;
 }
@@ -230,7 +233,13 @@ function ShellInner() {
   const [checklistOpen, setChecklistOpen] = useState(false);
   const [newChapterOpen, setNewChapterOpen] = useState(false);
   const [previewTab, setPreviewTab] = useState<"pdf" | "log">("pdf");
-  const [sourceView, setSourceView] = useState(false);
+  // Um "estou no fonte" por tipo de edição visual, não um só: quem pede a
+  // fonte BibTeX de um .bib não está pedindo o LaTeX cru do próximo capítulo.
+  // Dentro do mesmo tipo o modo continua atravessando a troca de arquivo.
+  const [sourceViewByMode, setSourceViewByMode] = useState<Record<VisualMode, boolean>>({
+    prose: false,
+    bib: false,
+  });
   // Uma requisição só para "abrir tal arquivo, em tal modo, na tal linha".
   // Separar em setSourceView + openFile deixa as duas atualizações se
   // atropelarem; o nonce é o que faz pedir a mesma linha duas vezes valer
@@ -240,11 +249,18 @@ function ShellInner() {
   const navigateTo = useCallback(
     (request: Omit<NavRequest, "nonce">) => {
       openFile(request.path);
-      if (request.mode) setSourceView(request.mode === "source");
+      if (request.mode) {
+        // O modo vale para o tipo do arquivo de *destino*, não o do que está
+        // aberto agora — este ainda é o anterior neste ponto.
+        const target = project?.files.find((f) => f.path === request.path) ?? null;
+        const mode = visualModeFor(target);
+        const wantsSource = request.mode === "source";
+        if (mode) setSourceViewByMode((prev) => ({ ...prev, [mode]: wantsSource }));
+      }
       navNonce.current += 1;
       setNav({ ...request, nonce: navNonce.current });
     },
-    [openFile],
+    [openFile, project],
   );
   const [menuOpen, setMenuOpen] = useState(false);
   const [importState, setImportState] = useState<
@@ -590,27 +606,35 @@ function ShellInner() {
       if (action.kind === "openMetadata") {
         setMetadataOpen(true);
       } else if (action.kind === "openReferences") {
-        // ADR-08: referências vivem na área de edição. Sem .bib no projeto não
-        // há destino — os itens desse caso já saem sem ação, então aqui é só
-        // uma guarda contra o botão agregado do check.
-        if (!bibPath) return;
-        navigateTo({ path: bibPath, mode: "visual" });
+        // ADR-08: referências vivem na área de edição. A guarda é o arquivo,
+        // não o caminho: o \bibliography{} pode apontar para um .bib que não
+        // existe, e aí navegar abriria um editor vazio.
+        if (!bibFile) return;
+        navigateTo({
+          path: bibFile.path,
+          mode: "visual",
+          ...(action.intent === "focus" && action.key ? { focusKey: action.key } : {}),
+        });
         if (action.key && action.intent === "search") setPendingSearchQuery(action.key);
       } else if (action.kind === "openFile") {
         navigateTo({ path: action.path, line: action.line, mode: action.mode });
       }
     },
-    [bibPath, navigateTo],
+    [bibFile, navigateTo],
   );
 
-  /** "Citation undefined" nos diagnósticos: abre a lista com a chave buscada. */
+  /**
+   * "Citation undefined" nos diagnósticos: abre a lista com a chave buscada.
+   * Sem arquivo de referências não há destino — nesse caso o diagnóstico não
+   * recebe o callback e não mostra o atalho.
+   */
   const onSearchCitation = useCallback(
     (key: string) => {
-      if (!bibPath) return;
-      navigateTo({ path: bibPath, mode: "visual" });
+      if (!bibFile) return;
+      navigateTo({ path: bibFile.path, mode: "visual" });
       setPendingSearchQuery(key);
     },
-    [bibPath, navigateTo],
+    [bibFile, navigateTo],
   );
 
   const applyWorkMetadata = useCallback(
@@ -697,6 +721,13 @@ function ShellInner() {
   // continua no fonte ao mudar de capítulo (e2e/metadata.spec.ts depende
   // disso). Quem precisa de um modo específico pede na própria navegação.
   const visualMode = visualModeFor(currentFile);
+  const sourceView = visualMode !== null && sourceViewByMode[visualMode];
+  const visualModeRef = useRef(visualMode);
+  visualModeRef.current = visualMode;
+  const toggleSourceView = useCallback(() => {
+    const mode = visualModeRef.current;
+    if (mode) setSourceViewByMode((prev) => ({ ...prev, [mode]: !prev[mode] }));
+  }, []);
   const wysiwygCapable = visualMode === "prose";
   const showWysiwyg = wysiwygCapable && !sourceView;
   const showBibVisual = visualMode === "bib" && !sourceView;
@@ -760,7 +791,7 @@ function ShellInner() {
       if (!(e.metaKey || e.ctrlKey)) return;
       if (e.key === "e") {
         e.preventDefault();
-        setSourceView((v) => !v);
+        toggleSourceView();
       } else if (e.key === "b") {
         // Inside an editable surface Mod+B belongs to the editor (Tiptap bold).
         const target = e.target as HTMLElement | null;
@@ -778,7 +809,7 @@ function ShellInner() {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [compile, toggleRail]);
+  }, [compile, toggleRail, toggleSourceView]);
 
   const download = (name: string, bytes: Uint8Array, mime: string) => {
     const copy = new Uint8Array(bytes);
@@ -1291,12 +1322,18 @@ function ShellInner() {
                   {bibSummary}
                 </span>
               )}
-              <Tooltip content={strings.topbar.viewToggleHint}>
+              <Tooltip
+                content={
+                  visualMode === "bib"
+                    ? strings.topbar.bibViewToggleHint
+                    : strings.topbar.viewToggleHint
+                }
+              >
                 <button
                   type="button"
                   data-testid="view-toggle"
                   className="rounded px-2 py-0.5 text-ink-muted hover:bg-accent-soft"
-                  onClick={() => setSourceView((v) => !v)}
+                  onClick={toggleSourceView}
                 >
                   {visualMode === "bib"
                     ? showBibVisual
@@ -1327,6 +1364,8 @@ function ShellInner() {
                 initialSearchQuery={pendingSearchQuery}
                 onSearchQueryConsumed={() => setPendingSearchQuery(null)}
                 texSources={texSources}
+                focusKey={nav?.path === currentFile.path ? nav.focusKey : undefined}
+                focusNonce={nav?.path === currentFile.path ? nav.nonce : undefined}
               />
             ) : showWysiwyg ? (
               <Suspense
@@ -1403,7 +1442,11 @@ function ShellInner() {
               <div className="flex h-full flex-col">
                 <DiagnosticsList
                   diagnostics={compileState.result?.diagnostics ?? []}
-                  ctx={{ bibPath, openFile, onSearchCitation }}
+                  ctx={{
+                    bibPath,
+                    openFile,
+                    onSearchCitation: bibFile ? onSearchCitation : undefined,
+                  }}
                 />
                 <div className="min-h-0 flex-1">
                   <LogPane
