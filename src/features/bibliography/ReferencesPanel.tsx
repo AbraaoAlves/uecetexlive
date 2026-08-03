@@ -16,7 +16,7 @@ import {
   updateEntry,
 } from "@papyru/bibliography";
 import { ABNT_CITATION_PROFILE } from "@papyru/latex-mapping";
-import { Fragment, useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { strings } from "@/lib/strings";
 import { cn } from "@/lib/utils";
 import { AddReferenceDialog, type EditingReference } from "./AddReferenceDialog";
@@ -92,6 +92,7 @@ export function ReferencesPanel({
     usageCount: number;
   } | null>(null);
   const [removeError, setRemoveError] = useState<string | null>(null);
+  const [focusAnnouncement, setFocusAnnouncement] = useState("");
 
   useEffect(() => {
     if (initialSearchQuery) setSearchOpen(true);
@@ -102,16 +103,20 @@ export function ReferencesPanel({
   // estava. O foco vai para o botão de editar, que é a ação que a pessoa veio
   // fazer; se ele não existir (.bib somente leitura), vai para a própria linha.
   const rowRefs = useRef(new Map<string, HTMLLIElement>());
-  // biome-ignore lint/correctness/useExhaustiveDependencies: focusNonce é o sinal de repetição — pedir a mesma chave duas vezes tem de destacar duas vezes
-  useEffect(() => {
-    if (!focusKey) return;
-    const row = rowRefs.current.get(focusKey);
+  const focusReference = useCallback((key: string) => {
+    const row = rowRefs.current.get(key);
     if (!row) return;
     row.scrollIntoView({ block: "center" });
     const target =
-      row.querySelector<HTMLElement>(`[data-testid="reference-edit-${focusKey}"]`) ?? row;
+      row.querySelector<HTMLElement>(`[data-testid="reference-edit-${key}"]`) ?? row;
     target.focus();
-  }, [focusKey, focusNonce]);
+    setFocusAnnouncement(strings.references.focusedAnnouncement.replace("{key}", key));
+  }, []);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: focusNonce é o sinal de repetição — pedir a mesma chave duas vezes tem de destacar duas vezes
+  useEffect(() => {
+    if (!focusKey) return;
+    focusReference(focusKey);
+  }, [focusKey, focusNonce, focusReference]);
 
   const existingDois = useMemo(() => {
     if (bibText === null) return new Set<string>();
@@ -257,6 +262,13 @@ export function ReferencesPanel({
             ? strings.references.copiedAnnouncement
             : strings.references.copyFailed}
       </output>
+      <output
+        className="sr-only"
+        aria-live="polite"
+        data-testid="references-focus-status"
+      >
+        {focusAnnouncement}
+      </output>
       {onWriteBib && (
         <div className="flex gap-1.5 border-b p-2">
           <button
@@ -372,15 +384,28 @@ export function ReferencesPanel({
 
           {incompleteCount > 0 && (
             <div
-              className="border-b bg-warning/10 px-3 py-1.5 text-warning text-xs"
+              className="flex items-center justify-between gap-2 border-b bg-warning/10 px-3 py-1.5 text-warning text-xs"
               data-testid="references-incomplete-aggregate"
             >
-              {incompleteCount === 1
-                ? strings.references.incompleteAggregateOne
-                : strings.references.incompleteAggregateMany.replace(
-                    "{n}",
-                    String(incompleteCount),
-                  )}
+              <span>
+                {incompleteCount === 1
+                  ? strings.references.incompleteAggregateOne
+                  : strings.references.incompleteAggregateMany.replace(
+                      "{n}",
+                      String(incompleteCount),
+                    )}
+              </span>
+              <button
+                type="button"
+                data-testid="references-incomplete-first"
+                className="shrink-0 underline hover:no-underline"
+                onClick={() => {
+                  const firstIncomplete = sortedRows[0];
+                  if (firstIncomplete) focusReference(firstIncomplete.key);
+                }}
+              >
+                {strings.references.goToFirstIncomplete}
+              </button>
             </div>
           )}
 

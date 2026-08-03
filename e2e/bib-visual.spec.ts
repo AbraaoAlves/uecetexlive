@@ -93,3 +93,21 @@ test("o painel de referências cabe na área de edição, com o rail aberto ou n
   await page.getByTestId("rail-toggle").click();
   expect(await fits()).toBe(true);
 });
+
+test("o resumo de incompletas leva o foco à primeira entrada do grupo", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await dismissWelcome(page);
+  await page.getByTestId("rail-file-elementos-pos-textuais/referencias.bib").click();
+
+  const firstIncomplete = page.locator(
+    '[data-testid="references-group-incomplete"] + [data-testid^="reference-"]',
+  );
+  const editButton = firstIncomplete.locator('[data-testid^="reference-edit-"]');
+
+  await page.getByTestId("references-incomplete-first").click();
+  await expect(firstIncomplete).toBeInViewport();
+  await expect(editButton).toBeFocused();
+  await expect(page.getByTestId("references-focus-status")).not.toHaveText("");
+});

@@ -255,6 +255,8 @@ export const strings = {
     incompleteAggregateMany: "{n} referências incompletas",
     incompleteGroupLabel: "Faltam dados nestas",
     completeGroupLabel: "Completas",
+    goToFirstIncomplete: "ir para a primeira",
+    focusedAnnouncement: "Referência {key} pronta para edição.",
     summaryOne: "1 referência",
     summaryMany: "{n} referências",
     summaryIncomplete: "{n} incompletas",
