@@ -272,6 +272,28 @@ describe("computeComplianceChecklist", () => {
     expect(item?.detail).toContain("Reescreva este trecho no capítulo certo");
   });
 
+  it("drops the import count when a live marker is removed", () => {
+    const withMarker = computeComplianceChecklist(
+      baseInput({
+        texSources: {
+          "cap.tex": "Texto\n%% TODO(matemática): reconstruir a equação",
+        },
+        texOrder: ["cap.tex"],
+        importUnclassified: [],
+      }),
+    );
+    const withoutMarker = computeComplianceChecklist(
+      baseInput({
+        texSources: { "cap.tex": "Texto\nEquação reconstruída" },
+        texOrder: ["cap.tex"],
+        importUnclassified: [],
+      }),
+    );
+
+    expect(withMarker.find((check) => check.id === "importPdf")?.count).toBe(1);
+    expect(withoutMarker.find((check) => check.id === "importPdf")?.count).toBe(0);
+  });
+
   it("every check carries an action to jump to the fix", () => {
     const checks = computeComplianceChecklist(baseInput({ meta: EMPTY_META }));
     for (const check of checks) {

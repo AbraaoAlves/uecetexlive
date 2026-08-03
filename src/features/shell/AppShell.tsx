@@ -43,6 +43,12 @@ import {
   type ImportPdfState,
 } from "@/features/import-pdf/ImportPdfDialog";
 import { MAX_PDF_BYTES, rejectPdf } from "@/features/import-pdf/pdf-file";
+import { scanPendencyMarkers } from "@/features/import-pdf/pendency-markers";
+import {
+  makePersistedImportReport,
+  staticPendenciesFromReport,
+  validateImportReport,
+} from "@/features/import-pdf/persisted-report";
 import {
   type ImportPdfOutcome,
   LowConfidenceError,
@@ -353,6 +359,10 @@ function ShellInner() {
     () => (entryPath ? buildIncludeGraph(derivedTexSources, entryPath) : EMPTY_GRAPH),
     [derivedTexSources, entryPath],
   );
+  const texOrder = useMemo(
+    () => graph.inputs.flatMap((input) => (input.resolved ? [input.resolved] : [])),
+    [graph],
+  );
   // Same normalization as @papyru/editor's useEditorResources: \bibliography{X}
   // may omit the .bib extension.
   const bibPath = graph.bibliography
@@ -570,15 +580,33 @@ function ShellInner() {
   // so it can key on the debounced source map like the include graph does.
   // Relatório da última importação de PDF deste projeto — persistido para a
   // lista de pendências não sumir no recarregamento.
-  const [importPendencies, setImportPendencies] = useState<number | undefined>();
+  const [importUnclassified, setImportUnclassified] = useState<
+    readonly { excerpt: string; page: number }[] | undefined
+  >();
   const projectId = project?.id ?? null;
+  // biome-ignore lint/correctness/useExhaustiveDependencies: reconciling a legacy report is a one-time migration per project; rerunning on each edit would resurrect a marker the student removed
   useEffect(() => {
     if (!projectId) return;
     let cancelled = false;
+    setImportUnclassified(undefined);
     loadImportReport(projectId)
       .then((report: unknown) => {
-        const pendencias = (report as { pendencias?: unknown[] } | undefined)?.pendencias;
-        if (!cancelled) setImportPendencies(pendencias?.length);
+        const validated = validateImportReport(report);
+        if (cancelled || !validated) return;
+        const markers = scanPendencyMarkers(derivedTexSources, texOrder);
+        const staticPendencies =
+          validated.schemaVersion === 1
+            ? (validated.staticPendencies ?? [])
+            : staticPendenciesFromReport(validated.pendencies, markers);
+        setImportUnclassified(
+          staticPendencies.map(({ excerpt, page }) => ({ excerpt, page })),
+        );
+        if (validated.schemaVersion === 0) {
+          void saveImportReport(
+            projectId,
+            makePersistedImportReport(report, staticPendencies),
+          ).catch(() => {});
+        }
       })
       .catch(() => {});
     return () => {
@@ -593,10 +621,11 @@ function ShellInner() {
         workType: workTypeOf(meta),
         bibText,
         texSources: derivedTexSources,
+        texOrder,
         citeCommands: ABNT_CITATION_PROFILE.citeCommands,
-        importPendencies,
+        importUnclassified,
       }),
-    [meta, bibText, derivedTexSources, importPendencies],
+    [meta, bibText, derivedTexSources, texOrder, importUnclassified],
   );
   const checklistWarnCount = complianceChecks.filter((c) => c.status === "warn").length;
 
@@ -896,7 +925,7 @@ function ShellInner() {
    * pendências acusaria um trabalho que não existe mais.
    */
   const clearImportReport = useCallback(async () => {
-    setImportPendencies(undefined);
+    setImportUnclassified(undefined);
     await saveImportReport("uecetex2", undefined).catch(() => {});
   }, []);
 
@@ -911,12 +940,31 @@ function ShellInner() {
     openFile("documento.tex");
     setPdfImport(null);
     pdfImportResult.current = null;
-    await saveImportReport(imported.id, outcome.report).catch((err) => {
+    const importedTexSources: Record<string, string> = {};
+    for (const file of imported.files) {
+      if (file.kind === "tex") importedTexSources[file.path] = bytesToText(file.bytes);
+    }
+    const importedGraph = buildIncludeGraph(importedTexSources, imported.entry);
+    const importedOrder = importedGraph.inputs.flatMap((input) =>
+      input.resolved ? [input.resolved] : [],
+    );
+    const importedMarkers = scanPendencyMarkers(importedTexSources, importedOrder);
+    const validatedReport = validateImportReport(outcome.report);
+    const staticPendencies = staticPendenciesFromReport(
+      validatedReport?.pendencies ?? [],
+      importedMarkers,
+    );
+    await saveImportReport(
+      imported.id,
+      makePersistedImportReport(outcome.report, staticPendencies),
+    ).catch((err) => {
       // O projeto já está criado; perder o relatório não desfaz isso, mas
       // engolir o erro esconderia por que a lista de pendências não apareceu.
       console.error("não foi possível guardar o relatório da importação", err);
     });
-    setImportPendencies(outcome.report.pendencias.length);
+    setImportUnclassified(
+      staticPendencies.map(({ excerpt, page }) => ({ excerpt, page })),
+    );
     setGuideOpen(true);
   };
 

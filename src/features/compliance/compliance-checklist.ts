@@ -7,6 +7,7 @@
 import { isParseFailure, parseBibFile } from "@papyru/bibliography";
 import { extractCitedKeys } from "@/features/bibliography/citation-usage";
 import { incompleteEntriesOf } from "@/features/bibliography/missing-fields";
+import { scanPendencyMarkers } from "@/features/import-pdf/pendency-markers";
 import { checkFigures } from "@/features/project/figures-checklist";
 import type { MetadataField, WorkType } from "@/features/project/metadata";
 import { TEMPLATE_PLACEHOLDER_TITLE } from "@/features/project/metadata";
@@ -77,14 +78,10 @@ export interface ComplianceInput {
   workType: WorkType | null;
   bibText: string | null;
   texSources: Record<string, string>;
+  /** Reading order from the include graph; files outside it follow alphabetically. */
+  texOrder?: readonly string[];
   citeCommands: readonly string[];
-  /**
-   * Pendências da importação de PDF, se o projeto veio por esse caminho.
-   * Ficam aqui porque é a lista que o aluno consulta para saber o que ainda
-   * tem de refazer — e ela precisa sobreviver ao recarregamento.
-   */
-  importPendencies?: number;
-  /** Trechos do PDF que não chegaram a nenhum arquivo do projeto. */
+  /** From the persisted report — only entries without a marker in the project. */
   importUnclassified?: readonly { excerpt: string; page: number }[];
 }
 
@@ -333,14 +330,32 @@ function checkUncitedEntries(
 }
 
 export function computeComplianceChecklist(input: ComplianceInput): ComplianceCheck[] {
-  const unclassifiedItems: ComplianceItem[] | undefined = input.importUnclassified?.map(
+  const markerItems: ComplianceItem[] = scanPendencyMarkers(
+    input.texSources,
+    input.texOrder ?? [],
+  ).map((marker) => {
+    const kind = typeof marker.kind === "string" ? marker.kind : marker.kind.other;
+    return {
+      id: `importPdf:${marker.path}:${kind}:${marker.detail}`,
+      label: strings.compliance.importMarkerLabel,
+      detail: marker.detail,
+      action: {
+        kind: "openFile",
+        path: marker.path,
+        line: marker.line,
+        mode: "source",
+      },
+    };
+  });
+  const unclassifiedItems: ComplianceItem[] = (input.importUnclassified ?? []).map(
     ({ excerpt, page }) => ({
       id: `importPdf:nao-classificado:${excerpt}`,
       label: strings.compliance.importUnclassifiedLabel,
       detail: `${excerpt} — p. ${page}. ${strings.compliance.importUnclassifiedHelp}`,
     }),
   );
-  const importCount = unclassifiedItems?.length ?? input.importPendencies;
+  const importItems = [...markerItems, ...unclassifiedItems];
+  const hasImportCheck = markerItems.length > 0 || input.importUnclassified !== undefined;
   return [
     checkPretextual(input.meta, input.workType),
     checkAbstract(input.meta),
@@ -348,14 +363,14 @@ export function computeComplianceChecklist(input: ComplianceInput): ComplianceCh
     checkFiguresAcrossProject(input.texSources),
     checkOrphanCitations(input.texSources, input.citeCommands, input.bibText),
     checkUncitedEntries(input.texSources, input.citeCommands, input.bibText),
-    ...(importCount === undefined
+    ...(!hasImportCheck
       ? []
       : [
           {
             id: "importPdf" as const,
-            status: (importCount > 0 ? "warn" : "ok") as "ok" | "warn",
-            count: importCount,
-            ...(unclassifiedItems ? { items: unclassifiedItems } : {}),
+            status: (importItems.length > 0 ? "warn" : "ok") as "ok" | "warn",
+            count: importItems.length,
+            items: importItems,
           },
         ]),
   ];
