@@ -57,12 +57,13 @@ describe("ReferencesPanel", () => {
     expect(screen.getByTestId("references-empty")).toBeTruthy();
   });
 
-  it("toggles to the raw source view", () => {
+  // O "ver código" saiu do painel: quem quer o BibTeX cru usa o botão
+  // "Fonte BibTeX" da barra do editor, que abre o CodeMirror editável — dois
+  // modos-fonte, um deles só de leitura, era um a mais.
+  it("não tem mais um segundo modo-fonte por dentro", () => {
     render(<ReferencesPanel bibText={SAMPLE} />);
-    fireEvent.click(screen.getByTestId("references-toggle-code"));
-    expect(screen.getByTestId("references-raw").textContent).toContain(
-      "@book{freire1970,",
-    );
+    expect(screen.queryByTestId("references-toggle-code")).toBeNull();
+    expect(screen.queryByTestId("references-raw")).toBeNull();
   });
 
   it("hides edit/remove actions when onWriteBib is not provided (read-only)", () => {

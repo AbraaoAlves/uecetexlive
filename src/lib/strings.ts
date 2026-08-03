@@ -45,7 +45,6 @@ export const strings = {
   },
   rail: {
     filesTab: "Arquivos",
-    referencesTab: "Referências",
     preTextual: "Pré-textuais",
     chapters: "Capítulos",
     postTextual: "Pós-textuais",
@@ -70,7 +69,7 @@ export const strings = {
       "Não foi possível enviar (use PNG, JPG, PDF ou código-fonte de até 10 MB):",
     unsavedChanges: "Alterações não salvas",
     bibFileHint:
-      "Este arquivo guarda suas referências bibliográficas. Edite pela aba “Referências”, ao lado de “Arquivos”.",
+      "Este arquivo guarda suas referências bibliográficas. Clique para abri-lo — ele tem uma edição visual, com busca e formulário por referência.",
     toggleInclude: "Aparece no PDF — desmarque para tirar",
     toggleExcluded: "Fora do PDF — marque para incluir",
   },
@@ -113,6 +112,8 @@ export const strings = {
       "LaTeX bruto — o UeceTexLive preserva este trecho exatamente como está",
     sourceView: "Fonte LaTeX",
     wysiwygView: "Editor visual",
+    bibSourceView: "Fonte BibTeX",
+    bibVisualView: "Referências",
     placeholder: "Escreva, ou digite / para inserir…",
     wordSingular: "palavra",
     wordsPlural: "palavras",
@@ -209,8 +210,6 @@ export const strings = {
     sortFile: "ordem do arquivo",
     sortAuthor: "autor",
     sortYear: "ano",
-    viewCode: "ver código",
-    viewList: "ver lista",
     unreadableCard: "Não consegui ler esta referência",
     unreadableHint:
       "O texto abaixo foi mantido exatamente como estava — nada foi apagado.",
@@ -252,6 +251,10 @@ export const strings = {
     incompleteAction: "completar",
     incompleteAggregateOne: "1 referência incompleta",
     incompleteAggregateMany: "{n} referências incompletas",
+    summaryOne: "1 referência",
+    summaryMany: "{n} referências",
+    summaryIncomplete: "{n} incompletas",
+    summaryIncompleteOne: "1 incompleta",
     typeDescriptions: {
       article: "Publicado em periódico científico",
       inproceedings: "Publicado nos anais de um evento/congresso",
@@ -282,6 +285,8 @@ export const strings = {
     addedToastCopy: "copiar",
     addedToastCopied: "copiado!",
     insertCitation: "Inserir citação no texto",
+    copyCitation: "copiar citação",
+    copiedCitation: "copiado!",
   },
   sobre: {
     title: "Sobre o UeceTexLive",

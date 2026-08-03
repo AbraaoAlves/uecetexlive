@@ -4,7 +4,11 @@
  * Optimistic set + fire-and-forget persist; defaults render until hydration.
  */
 
-import { type UiSettings, UiSettingsSchema } from "@papyru/project-model";
+import {
+  migrateUiSettings,
+  type UiSettings,
+  UiSettingsSchema,
+} from "@papyru/project-model";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { loadUiSettings, saveUiSettings } from "@/features/persistence/db";
 
@@ -25,8 +29,12 @@ export function useUiSettings(): UseUiSettings {
     loadUiSettings()
       .then((loaded) => {
         if (cancelled) return;
-        setUiState(loaded);
+        const migrated = migrateUiSettings(loaded);
+        setUiState(migrated);
         setReady(true);
+        // Grava só quando a migração de fato mudou algo — assim o valor
+        // legado não fica esperando o próximo setUi para sair do disco.
+        if (migrated !== loaded) void saveUiSettings(migrated).catch(() => {});
       })
       .catch(() => {
         // IndexedDB unavailable — keep in-memory defaults for the session.

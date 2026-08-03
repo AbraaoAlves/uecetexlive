@@ -26,8 +26,27 @@ export type CheckId =
 
 export type ComplianceAction =
   | { kind: "openMetadata" }
-  | { kind: "openReferences" }
-  | { kind: "openFile"; path: string };
+  /**
+   * intent "focus": the key exists in the .bib — scroll to it and edit.
+   * intent "search": the key was cited but has no entry, so there is no row to
+   * focus; the useful destination is the search box pre-filled with it.
+   */
+  | { kind: "openReferences"; key?: string; intent?: "focus" | "search" }
+  /** line is 1-based; mode says which editor to land in (default: keep current). */
+  | { kind: "openFile"; path: string; line?: number; mode?: "source" | "visual" };
+
+/** One concrete thing to fix, inside a check that knows how to enumerate. */
+export interface ComplianceItem {
+  /** Stable across recomputes — React key, and how "next item" avoids repeats. */
+  id: string;
+  label: string;
+  /** What's missing ("sem legenda", "p. 34") — shown under the label. */
+  detail?: string;
+  /** Tells apart reasons within one check (2.2: no caption × no source). */
+  reason?: string;
+  /** Absent = nowhere to navigate (an unclassified PDF excerpt has no home). */
+  action?: ComplianceAction;
+}
 
 export interface ComplianceCheck {
   id: CheckId;
@@ -35,6 +54,25 @@ export interface ComplianceCheck {
   /** How many things are wrong (missing fields, bad figures, orphan keys…) — drives singular/plural copy. */
   count: number;
   action?: ComplianceAction;
+  /** Present only where the check can name its offenders one by one. */
+  items?: readonly ComplianceItem[];
+}
+
+/**
+ * Checks that can't enumerate (pré-textuais, resumo) still have to take their
+ * turn in the badge and in "corrigir o próximo" — so they stand in for
+ * themselves with a single item carrying the check's own action. The stand-in
+ * is for counting and walking, not for display: `label` is the check id, and a
+ * check with no `items` renders its own PT copy instead of a row.
+ */
+export function effectiveItems(check: ComplianceCheck): readonly ComplianceItem[] {
+  if (check.status === "ok") return [];
+  if (check.items) return check.items;
+  return [{ id: check.id, label: check.id, action: check.action }];
+}
+
+export function pendingItemCount(checks: readonly ComplianceCheck[]): number {
+  return checks.reduce((total, check) => total + effectiveItems(check).length, 0);
 }
 
 export interface ComplianceInput {

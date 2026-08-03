@@ -32,6 +32,11 @@ o React só orquestra.
 
 ## ADR-03 — Painel Referências como aba do rail
 
+> **Superseded by [ADR-08](#adr-08--referências-como-modo-de-visualização-do-bib).**
+> A aba resolvia "onde colocar a UI de referências" quando o rail era o único
+> espaço livre. Ela não escalava: um formulário de referência em 384px é
+> apertado, e a vaga rendia mais para a conformidade.
+
 **Decisão.** A UI de referências é uma aba (Arquivos / Referências) dentro
 do rail lateral existente, não um painel ou rota separada. A aba ativa
 persiste em `UiSettings.railTab` (`packages/project-model/src/schema.ts`).
@@ -66,10 +71,44 @@ continue valendo para o texto do usuário.
 
 ## ADR-07 — Largura do rail na aba Referências
 
+> **Superseded by [ADR-08](#adr-08--referências-como-modo-de-visualização-do-bib).**
+> A largura variável existia só para caber o formulário de referência na aba.
+> Sem a aba, o rail volta a ter uma largura só.
+
 **Decisão.** O `<aside>` inteiro alarga (`w-60` → `w-96`) quando
 `railTab === "references"`, reusando a mesma `transition-[width]` do
 collapse; a div interna de largura fixa muda junto, ou o form fica cortado
 (ver comentário em `AppShell.tsx`).
+
+## ADR-08 — Referências como modo de visualização do `.bib`
+
+**Contexto.** A edição de referências morava numa aba do rail (ADR-03), com
+largura própria (ADR-07). Duas coisas não fechavam: um formulário de
+referência em 384px é apertado, e a lista ficava longe do arquivo que ela
+edita — o aluno via `referencias.bib` na árvore, clicava, e caía no BibTeX
+cru, sem relação visível com a aba ao lado.
+
+Ao mesmo tempo, os `.tex` de prosa já tinham a resposta pronta: um botão na
+barra do editor alterna "Fonte LaTeX" e "Editor visual" sobre o **mesmo
+arquivo**.
+
+**Decisão.** Todo arquivo `.bib` ganha modo de visualização "Referências" na
+área de edição, no mesmo botão `view-toggle`, com os rótulos "Fonte BibTeX"
+e "Referências". A aba Referências sai do rail; a vaga vai para a
+Conformidade (ADR-09). Consequências:
+
+- o `bibText` passa a vir do arquivo **aberto**, não do `\bibliography{}`
+  descoberto pelo grafo de includes — um projeto com dois `.bib` edita cada
+  um no seu lugar;
+- `UiSettings.railTab` mantém `"references"` no enum e migra para `"files"`
+  na leitura (`migrateUiSettings`). Tirar o valor do enum faria o
+  `safeParse` falhar e devolver **todos** os defaults, apagando tema, modo
+  avançado e as linhas-base do lembrete de backup junto com a aba;
+- "Inserir citação no texto" sai da lista, porque sem um editor de texto
+  montado ao lado não há cursor onde inserir. Quem escreve insere pelo menu
+  "/" de dentro do editor visual; quem está na lista copia a citação;
+- o "ver código" interno da lista sai: com o `view-toggle` abrindo o
+  CodeMirror editável, um segundo modo-fonte somente leitura só confundiria.
 
 ## Decisões de escopo do produto (SKIP)
 

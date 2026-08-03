@@ -38,6 +38,14 @@ export interface SourceEditorProps {
   onChange: (text: string) => void;
   /** 1-based line to select/scroll to (compile-error mapping, §4.7). */
   focusLine?: number | null;
+  /**
+   * Bump to replay the same focusLine. Without it, asking twice for the line
+   * you are already on does nothing — and "ir para" on a compliance item the
+   * reader has scrolled away from has to work every time it is clicked.
+   */
+  focusNonce?: number;
+  /** Fires once per applied focus request, so the caller can drop it. */
+  onFocusApplied?: (line: number) => void;
 }
 
 /** Marks doc replacements the component makes itself (file switch / external
@@ -179,6 +187,8 @@ export function SourceEditor({
   readOnly,
   onChange,
   focusLine,
+  focusNonce,
+  onFocusApplied,
 }: SourceEditorProps) {
   const strings = useEditorStrings();
   const stringsRef = useRef(strings);
@@ -258,7 +268,13 @@ export function SourceEditor({
     });
   }, [readOnly]);
 
+  // Held in a ref so an inline callback doesn't re-run the focus effect on
+  // every render — the effect must fire on focusLine/focusNonce, nothing else.
+  const onFocusAppliedRef = useRef(onFocusApplied);
+  onFocusAppliedRef.current = onFocusApplied;
+
   // Compile-error mapping (§4.7): select + scroll to a 1-based line.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: focusNonce is the replay signal — asking for the same line twice must jump twice
   useEffect(() => {
     const view = viewRef.current;
     if (!view || !focusLine) return;
@@ -268,7 +284,8 @@ export function SourceEditor({
       effects: EditorView.scrollIntoView(line.from, { y: "center" }),
     });
     view.focus();
-  }, [focusLine]);
+    onFocusAppliedRef.current?.(line.number);
+  }, [focusLine, focusNonce]);
 
   return (
     <div

@@ -25,3 +25,19 @@ export const isAdvancedOnly = (path: string): boolean =>
 
 export const isSimpleModeVisible = (path: string): boolean =>
   genericIsSimpleModeVisible(UECETEX2_STRUCTURE, path);
+
+/**
+ * Qual edição visual este arquivo tem, se tiver alguma. "prose" é o editor
+ * WYSIWYG dos capítulos; "bib" é a lista de referências, que vale para
+ * qualquer .bib do projeto — cada um edita o seu.
+ */
+export type VisualMode = "prose" | "bib";
+
+export function visualModeFor(
+  file: { path: string; kind: string } | null | undefined,
+): VisualMode | null {
+  if (!file) return null;
+  if (file.kind === "bib") return "bib";
+  if (file.kind === "tex" && isWysiwygEligible(file.path)) return "prose";
+  return null;
+}

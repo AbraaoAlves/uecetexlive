@@ -79,8 +79,15 @@ export const UiSettingsSchema = z.object({
   dismissedTemplateCommit: z.string().nullable().default(null),
   /** Color theme; "system" follows the OS preference. */
   theme: z.enum(["system", "light", "dark"]).default("system"),
-  /** Which tab the rail shows (ADR-03/5.10 — Referências reuses the existing rail, not a separate panel). */
-  railTab: z.enum(["files", "references"]).default("files"),
+  /**
+   * Which tab the rail shows. "references" is legacy (ADR-03, superseded by
+   * ADR-08): references moved to the editor area, and the rail slot became
+   * Conformidade. The value stays in the enum on purpose — loadUiSettings
+   * falls back to *all* defaults when the parse fails, so dropping it would
+   * silently reset theme, advanced mode and the backup baselines too.
+   * migrateUiSettings maps it forward on read.
+   */
+  railTab: z.enum(["files", "references", "compliance"]).default("files"),
   /** Lifetime app-boot count (3.5 — backup reminder cadence). Never decreases. */
   sessionCount: z.number().int().nonnegative().default(0),
   /** Lifetime milliseconds the app was open+visible (3.5). Never decreases. */
@@ -90,6 +97,18 @@ export const UiSettingsSchema = z.object({
   backupReminderBaselineEditMs: z.number().nonnegative().default(0),
 });
 export type UiSettings = z.infer<typeof UiSettingsSchema>;
+
+/**
+ * Carrega valores legados para a forma de hoje. Aceitar o valor antigo no
+ * schema não basta: quem tinha a aba Referências aberta abriria numa aba que
+ * não existe mais. Função pura para poder ser testada sem IndexedDB.
+ */
+export function migrateUiSettings(settings: UiSettings): UiSettings {
+  // ADR-08: as referências saíram do rail e viraram modo de visualização do
+  // .bib; quem estava naquela aba volta para a árvore de arquivos.
+  if (settings.railTab === "references") return { ...settings, railTab: "files" };
+  return settings;
+}
 
 /** Shape written by scripts/vendor-uecetex2.sh (§5.5). */
 export const TemplateManifestSchema = z.object({

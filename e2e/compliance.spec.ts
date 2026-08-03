@@ -43,16 +43,19 @@ test("checklist reflects the fresh seed's real gaps and updates as they're fixed
   await expect(pretextual).not.toContainText("Faltam preencher 6 dados");
 });
 
-test("'corrigir' on referências closes the checklist and switches to the Referências tab", async ({
-  page,
-}) => {
+// ADR-08: as referências deixaram o painel lateral e viraram modo de
+// visualização do .bib, então "corrigir" abre o arquivo na área de edição.
+test("'corrigir' nas referências abre o .bib na edição visual", async ({ page }) => {
   await page.goto("/");
   await dismissWelcome(page);
 
   await page.getByTestId("rail-checklist").click();
   await page.getByTestId("compliance-fix-references").click();
   await expect(page.getByTestId("compliance-checklist")).not.toBeVisible();
-  await expect(page.getByTestId("references-panel")).toBeVisible();
+
+  const editorPane = page.getByTestId("editor-pane");
+  await expect(editorPane.getByTestId("references-panel")).toBeVisible();
+  await expect(page.getByTestId("view-toggle")).toHaveText("Fonte BibTeX");
 });
 
 test("Escape and the close button dismiss the checklist", async ({ page }) => {

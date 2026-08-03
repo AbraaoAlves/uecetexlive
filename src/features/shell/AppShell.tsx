@@ -26,6 +26,10 @@ import {
   RotateCcw,
 } from "lucide-react";
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  entryCountOf,
+  incompleteEntriesOf,
+} from "@/features/bibliography/missing-fields";
 import { ReferencesPanel } from "@/features/bibliography/ReferencesPanel";
 import { useCompile } from "@/features/compiler/useCompile";
 import { useIdleWarmup } from "@/features/compiler/useIdleWarmup";
@@ -95,6 +99,7 @@ import {
   type RailSection,
   railSectionOf,
   textToBytes,
+  visualModeFor,
 } from "@/features/project/vfs";
 import { strings } from "@/lib/strings";
 import { useDebouncedValue } from "@/lib/use-debounced-value";
@@ -125,11 +130,6 @@ const EditorSurface = lazy(() =>
     default: m.EditorSurface,
   })),
 );
-
-/** Minimal shape of the global Tiptap handle EditorSurface exposes (window.__uecetexEditor). */
-interface TiptapEditorHandle {
-  commands: { insertContent: (content: Record<string, unknown>) => void };
-}
 
 /** Settle window for keystroke-heavy derivations (graph, total word count). */
 const DERIVED_MS = 300;
@@ -176,6 +176,19 @@ const UECETEX2_IMPORT_OPTS = {
 const FICHA_PATH = "elementos-pre-textuais/ficha-catalografica.pdf";
 
 /**
+ * "Leve o aluno até aqui": arquivo, modo e linha num pedido só. O `nonce`
+ * existe porque repetir o mesmo destino tem de repetir o salto — sem ele,
+ * clicar duas vezes no mesmo item da conformidade não faz nada na segunda.
+ */
+interface NavRequest {
+  path: string;
+  /** 1-based. */
+  line?: number;
+  mode?: "source" | "visual";
+  nonce: number;
+}
+
+/**
  * Three-pane shell (§6.1): rail 240px / editor flex / preview 45%.
  */
 export function AppShell() {
@@ -203,7 +216,6 @@ function ShellInner() {
   const { ui, setUi, ready: uiReady } = useUiSettings();
   const advanced = ui.advancedMode;
   const railCollapsed = ui.railCollapsed;
-  const railTab = ui.railTab;
   useTheme(ui.theme, uiReady);
   const { latestCommit: templateUpdateCommit } = useTemplateUpdateNotice(
     project?.templateCommit,
@@ -219,6 +231,21 @@ function ShellInner() {
   const [newChapterOpen, setNewChapterOpen] = useState(false);
   const [previewTab, setPreviewTab] = useState<"pdf" | "log">("pdf");
   const [sourceView, setSourceView] = useState(false);
+  // Uma requisição só para "abrir tal arquivo, em tal modo, na tal linha".
+  // Separar em setSourceView + openFile deixa as duas atualizações se
+  // atropelarem; o nonce é o que faz pedir a mesma linha duas vezes valer
+  // duas vezes.
+  const [nav, setNav] = useState<NavRequest | null>(null);
+  const navNonce = useRef(0);
+  const navigateTo = useCallback(
+    (request: Omit<NavRequest, "nonce">) => {
+      openFile(request.path);
+      if (request.mode) setSourceView(request.mode === "source");
+      navNonce.current += 1;
+      setNav({ ...request, nonce: navNonce.current });
+    },
+    [openFile],
+  );
   const [menuOpen, setMenuOpen] = useState(false);
   const [importState, setImportState] = useState<
     (ImportDialogState & { payload?: unknown }) | null
@@ -232,16 +259,10 @@ function ShellInner() {
   const { state: compileState, compile, setEngine } = useCompile();
   const idleWarmup = useIdleWarmup();
   // B5: "Citation undefined" (1.5) hands the missing key here to pre-run a
-  // search in the Referências tab — cleared once ReferencesPanel consumes it
-  // so re-rendering doesn't keep re-triggering the same search.
+  // search in the lista de referências — cleared once ReferencesPanel consumes
+  // it so re-rendering doesn't keep re-triggering the same search.
+  // (onSearchCitation vive mais abaixo: depende do bibPath.)
   const [pendingSearchQuery, setPendingSearchQuery] = useState<string | null>(null);
-  const onSearchCitation = useCallback(
-    (key: string) => {
-      setUi({ railTab: "references" });
-      setPendingSearchQuery(key);
-    },
-    [setUi],
-  );
 
   // 1.2 AC: a visitor sees a PDF without having to find "Gerar PDF" first
   // ("nunca encara tela vazia") — compile once as soon as the project is
@@ -569,12 +590,27 @@ function ShellInner() {
       if (action.kind === "openMetadata") {
         setMetadataOpen(true);
       } else if (action.kind === "openReferences") {
-        setUi({ railTab: "references" });
+        // ADR-08: referências vivem na área de edição. Sem .bib no projeto não
+        // há destino — os itens desse caso já saem sem ação, então aqui é só
+        // uma guarda contra o botão agregado do check.
+        if (!bibPath) return;
+        navigateTo({ path: bibPath, mode: "visual" });
+        if (action.key && action.intent === "search") setPendingSearchQuery(action.key);
       } else if (action.kind === "openFile") {
-        openFile(action.path);
+        navigateTo({ path: action.path, line: action.line, mode: action.mode });
       }
     },
-    [setUi, openFile],
+    [bibPath, navigateTo],
+  );
+
+  /** "Citation undefined" nos diagnósticos: abre a lista com a chave buscada. */
+  const onSearchCitation = useCallback(
+    (key: string) => {
+      if (!bibPath) return;
+      navigateTo({ path: bibPath, mode: "visual" });
+      setPendingSearchQuery(key);
+    },
+    [bibPath, navigateTo],
   );
 
   const applyWorkMetadata = useCallback(
@@ -655,25 +691,39 @@ function ShellInner() {
     [project, fichaFile, updateFileBytes, createFile],
   );
 
-  const wysiwygCapable =
-    currentFile !== null &&
-    currentFile.kind === "tex" &&
-    isWysiwygEligible(currentFile.path);
+  // Dois tipos de arquivo têm edição visual, e o mesmo botão alterna os dois:
+  // prosa (Tiptap) e .bib (lista de referências). O `sourceView` é um booleano
+  // só, e de propósito atravessa a troca de arquivo — quem abriu o fonte
+  // continua no fonte ao mudar de capítulo (e2e/metadata.spec.ts depende
+  // disso). Quem precisa de um modo específico pede na própria navegação.
+  const visualMode = visualModeFor(currentFile);
+  const wysiwygCapable = visualMode === "prose";
   const showWysiwyg = wysiwygCapable && !sourceView;
-  // B5(b): "Inserir citação no texto" from the Referências row. Only safe
-  // when the WYSIWYG surface for a .tex file is actually mounted — otherwise
-  // window.__uecetexEditor is stale (a different/no-longer-open file) and
-  // inserting into it would silently corrupt the wrong document.
-  const insertCitationAtCursor = showWysiwyg
-    ? (key: string) => {
-        const editor = (window as unknown as { __uecetexEditor?: TiptapEditorHandle })
-          .__uecetexEditor;
-        editor?.commands.insertContent({
-          type: "citation",
-          attrs: { cmd: ABNT_CITATION_PROFILE.citeCommands[0], keys: [key], opt: null },
-        });
-      }
-    : undefined;
+  const showBibVisual = visualMode === "bib" && !sourceView;
+  // ADR-08 / D1: a lista de referências deixou de conviver com o editor de
+  // texto, então "Inserir citação no texto" saiu dela — não há como saber onde
+  // está o cursor de um editor que não está montado. Quem escreve insere pelo
+  // menu "/" de dentro do editor visual; quem está na lista copia a citação.
+
+  // Resumo da barra quando o arquivo aberto é um .bib: mesma régua da lista e
+  // do checklist (missing-fields.ts), para os três nunca discordarem.
+  const currentBibText =
+    visualMode === "bib" && currentFile ? bytesToText(currentFile.bytes) : null;
+  const bibSummary = useMemo(() => {
+    if (currentBibText === null) return "";
+    const total = entryCountOf(currentBibText);
+    const incomplete = incompleteEntriesOf(currentBibText).length;
+    const totalLabel = (
+      total === 1 ? strings.references.summaryOne : strings.references.summaryMany
+    ).replace("{n}", total.toLocaleString("pt-BR"));
+    if (incomplete === 0) return totalLabel;
+    const incompleteLabel = (
+      incomplete === 1
+        ? strings.references.summaryIncompleteOne
+        : strings.references.summaryIncomplete
+    ).replace("{n}", incomplete.toLocaleString("pt-BR"));
+    return `${totalLabel} · ${incompleteLabel}`;
+  }, [currentBibText]);
 
   // Word count (QA Fase 1): current prose file + whole work. The current-file
   // memo keys on the source *string*, so it holds while typing elsewhere.
@@ -1179,55 +1229,17 @@ function ShellInner() {
         <aside
           className={cn(
             "shrink-0 overflow-hidden border-r bg-surface transition-[width] duration-200 motion-reduce:transition-none",
-            railCollapsed ? "w-0 border-r-0" : railTab === "references" ? "w-96" : "w-60",
+            railCollapsed ? "w-0 border-r-0" : "w-60",
           )}
           data-testid="project-rail"
           aria-hidden={railCollapsed}
           inert={railCollapsed || undefined}
         >
-          {/* Inner width mirrors the <aside> above: rail content keeps its
-              layout while animating, but must widen too (ADR-07) or the
-              Referências form gets clipped at the old 240px. */}
-          <div
-            className={cn(
-              "flex h-full flex-col overflow-hidden",
-              railTab === "references" ? "w-96" : "w-60",
-            )}
-          >
-            <div className="flex shrink-0 border-b text-xs" role="tablist">
-              <button
-                type="button"
-                role="tab"
-                aria-selected={railTab === "files"}
-                data-testid="rail-tab-files"
-                onClick={() => setUi({ railTab: "files" })}
-                className={cn(
-                  "flex-1 px-3 py-2",
-                  railTab === "files"
-                    ? "border-accent border-b-2 font-medium text-foreground"
-                    : "text-ink-muted hover:text-foreground",
-                )}
-              >
-                {strings.rail.filesTab}
-              </button>
-              <button
-                type="button"
-                role="tab"
-                aria-selected={railTab === "references"}
-                data-testid="rail-tab-references"
-                onClick={() => setUi({ railTab: "references" })}
-                className={cn(
-                  "flex-1 px-3 py-2",
-                  railTab === "references"
-                    ? "border-accent border-b-2 font-medium text-foreground"
-                    : "text-ink-muted hover:text-foreground",
-                )}
-              >
-                {strings.rail.referencesTab}
-              </button>
-            </div>
+          {/* Largura fixa por dentro para o conteúdo não se reorganizar
+              enquanto o <aside> anima a abertura/fecho. */}
+          <div className="flex h-full w-60 flex-col overflow-hidden">
             <div className="min-h-0 flex-1 overflow-y-auto">
-              {railTab === "files" ? (
+              {
                 <ProjectRail
                   files={railFiles}
                   onToggleImprimir={toggleImprimir}
@@ -1254,35 +1266,31 @@ function ShellInner() {
                   checklistActive={checklistOpen}
                   checklistWarnCount={checklistWarnCount}
                 />
-              ) : (
-                <ReferencesPanel
-                  bibText={bibText}
-                  onWriteBib={
-                    bibPath ? (next) => updateFileText(bibPath, next) : undefined
-                  }
-                  initialSearchQuery={pendingSearchQuery}
-                  onSearchQueryConsumed={() => setPendingSearchQuery(null)}
-                  onInsertCitation={insertCitationAtCursor}
-                  texSources={texSources}
-                />
-              )}
+              }
             </div>
           </div>
         </aside>
         <main className="flex min-w-0 flex-1 flex-col" data-testid="editor-pane">
-          {wysiwygCapable && (
+          {visualMode !== null && (
             <div
               // h-9 mirrors the preview pane's tab row — the borders must meet.
               className="flex h-9 shrink-0 items-center justify-between gap-1 border-b bg-surface px-2 text-xs"
+              data-mode={visualMode}
             >
-              <span className="truncate text-ink-subtle" data-testid="word-count">
-                {currentWords.toLocaleString("pt-BR")}{" "}
-                {currentWords === 1
-                  ? strings.editor.wordSingular
-                  : strings.editor.wordsPlural}
-                {" · "}
-                {totalWords.toLocaleString("pt-BR")} {strings.editor.wordsInWork}
-              </span>
+              {visualMode === "prose" ? (
+                <span className="truncate text-ink-subtle" data-testid="word-count">
+                  {currentWords.toLocaleString("pt-BR")}{" "}
+                  {currentWords === 1
+                    ? strings.editor.wordSingular
+                    : strings.editor.wordsPlural}
+                  {" · "}
+                  {totalWords.toLocaleString("pt-BR")} {strings.editor.wordsInWork}
+                </span>
+              ) : (
+                <span className="truncate text-ink-subtle" data-testid="bib-summary">
+                  {bibSummary}
+                </span>
+              )}
               <Tooltip content={strings.topbar.viewToggleHint}>
                 <button
                   type="button"
@@ -1290,7 +1298,13 @@ function ShellInner() {
                   className="rounded px-2 py-0.5 text-ink-muted hover:bg-accent-soft"
                   onClick={() => setSourceView((v) => !v)}
                 >
-                  {showWysiwyg ? strings.editor.sourceView : strings.editor.wysiwygView}
+                  {visualMode === "bib"
+                    ? showBibVisual
+                      ? strings.editor.bibSourceView
+                      : strings.editor.bibVisualView
+                    : showWysiwyg
+                      ? strings.editor.sourceView
+                      : strings.editor.wysiwygView}
                 </button>
               </Tooltip>
             </div>
@@ -1301,6 +1315,18 @@ function ShellInner() {
                 path={currentFile.path}
                 bytes={currentFile.bytes}
                 kind={currentFile.kind}
+              />
+            ) : showBibVisual ? (
+              // key por caminho: o painel guarda busca, edição e diálogos em
+              // estado interno — sem isso, trocar de .bib reaproveitaria a
+              // instância e um diálogo aberto gravaria no arquivo errado.
+              <ReferencesPanel
+                key={currentFile.path}
+                bibText={bytesToText(currentFile.bytes)}
+                onWriteBib={(next) => updateFileText(currentFile.path, next)}
+                initialSearchQuery={pendingSearchQuery}
+                onSearchQueryConsumed={() => setPendingSearchQuery(null)}
+                texSources={texSources}
               />
             ) : showWysiwyg ? (
               <Suspense
@@ -1323,6 +1349,9 @@ function ShellInner() {
                 text={bytesToText(currentFile.bytes)}
                 readOnly={isAdvancedOnly(currentFile.path) && !advanced}
                 onChange={(text) => updateFileText(currentFile.path, text)}
+                focusLine={nav?.path === currentFile.path ? nav.line : undefined}
+                focusNonce={nav?.path === currentFile.path ? nav.nonce : undefined}
+                onFocusApplied={() => setNav(null)}
               />
             )
           ) : (

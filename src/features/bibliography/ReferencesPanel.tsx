@@ -3,14 +3,12 @@ import {
   type BibliographyEntry,
   type Chunk,
   candidateToNewEntryInput,
-  ENTRY_FIELD_SPECS,
   ENTRY_TYPE_LABELS_PT,
   type EntryPatch,
   type EntryTypeTag,
   entryTypeName,
   isKnownEntryType,
   isParseFailure,
-  missingRequiredFields,
   type NewEntryInput,
   parseBibFile,
   type ReferenceCandidate,
@@ -25,6 +23,7 @@ import { AddReferenceDialog, type EditingReference } from "./AddReferenceDialog"
 import { countCitationUsages } from "./citation-usage";
 import { EntryTypeIcon } from "./entry-type-icon";
 import { formatAuthorsList } from "./format-authors";
+import { missingFieldLabelsFor } from "./missing-fields";
 import { ReferenceSearch } from "./ReferenceSearch";
 
 export interface ReferencesPanelProps {
@@ -57,14 +56,6 @@ function entryTypeLabelPt(type: EntryTypeTag): string {
   return isKnownEntryType(type) ? ENTRY_TYPE_LABELS_PT[type] : entryTypeName(type);
 }
 
-function missingFieldLabelsFor(entry: BibliographyEntry): string[] {
-  if (!isKnownEntryType(entry.entryType)) return [];
-  const specs = ENTRY_FIELD_SPECS[entry.entryType];
-  return missingRequiredFields(entry.entryType, entry.fields).map(
-    (name) => specs.find((s) => s.name === name)?.labelPt ?? name,
-  );
-}
-
 const SORT_OPTIONS: { mode: SortMode; label: "sortFile" | "sortAuthor" | "sortYear" }[] =
   [
     { mode: "file", label: "sortFile" },
@@ -81,13 +72,13 @@ export function ReferencesPanel({
   texSources = {},
 }: ReferencesPanelProps) {
   const [sort, setSort] = useState<SortMode>("file");
-  const [showRaw, setShowRaw] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
   const [addInitialTitle, setAddInitialTitle] = useState("");
   const [addError, setAddError] = useState<string | null>(null);
   const [searchOpen, setSearchOpen] = useState(false);
   const [addedToastKey, setAddedToastKey] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const [editing, setEditing] = useState<EditingReference | null>(null);
   const [editError, setEditError] = useState<string | null>(null);
   const [removeTarget, setRemoveTarget] = useState<{
@@ -221,7 +212,14 @@ export function ReferencesPanel({
   }
 
   return (
-    <div className="flex h-full flex-col" data-testid="references-panel">
+    // min-h-0/flex-1 em vez de h-full: o painel é filho de uma coluna flex que
+    // já tem a barra de 36px em cima — com h-full ele estouraria essa altura.
+    // max-w-3xl mantém a linha legível quando ele ocupa a área de edição
+    // inteira (com o rail recolhido em 1366px isso passa de 700px).
+    <div
+      className="mx-auto flex min-h-0 w-full max-w-3xl flex-1 flex-col"
+      data-testid="references-panel"
+    >
       {onWriteBib && (
         <div className="flex gap-1.5 border-b p-2">
           <button
@@ -308,7 +306,7 @@ export function ReferencesPanel({
         </>
       ) : (
         <>
-          <div className="flex items-center justify-between gap-2 border-b px-3 py-2 text-xs">
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b px-3 py-2 text-xs">
             <div
               className="flex items-center gap-1"
               role="radiogroup"
@@ -333,17 +331,9 @@ export function ReferencesPanel({
                 </button>
               ))}
             </div>
-            <button
-              type="button"
-              data-testid="references-toggle-code"
-              className="text-accent underline hover:no-underline"
-              onClick={() => setShowRaw((v) => !v)}
-            >
-              {showRaw ? strings.references.viewList : strings.references.viewCode}
-            </button>
           </div>
 
-          {incompleteCount > 0 && !showRaw && (
+          {incompleteCount > 0 && (
             <div
               className="border-b bg-warning/10 px-3 py-1.5 text-warning text-xs"
               data-testid="references-incomplete-aggregate"
@@ -357,14 +347,7 @@ export function ReferencesPanel({
             </div>
           )}
 
-          {showRaw ? (
-            <pre
-              className="min-h-0 flex-1 overflow-auto whitespace-pre-wrap p-3 font-mono text-[11px] leading-relaxed text-ink-muted"
-              data-testid="references-raw"
-            >
-              {bibText}
-            </pre>
-          ) : (
+          {
             <div className="min-h-0 flex-1 overflow-y-auto">
               {rows.length === 0 && failures.length === 0 && (
                 <div className="p-4 text-ink-muted text-sm">
@@ -411,7 +394,7 @@ export function ReferencesPanel({
                         · <span>{row.yearLabel}</span>
                       </span>
                       <span className="flex shrink-0 items-center gap-2 text-xs">
-                        {onInsertCitation && (
+                        {onInsertCitation ? (
                           <button
                             type="button"
                             data-testid={`reference-insert-${row.key}`}
@@ -419,6 +402,30 @@ export function ReferencesPanel({
                             onClick={() => onInsertCitation(row.key)}
                           >
                             {strings.references.insertCitation}
+                          </button>
+                        ) : (
+                          // Sem um editor de texto montado ao lado não dá para
+                          // saber onde está o cursor — inserir chutaria o
+                          // arquivo. Copiar não depende de saber isso, e o
+                          // caminho de inserir de verdade é o menu "/" de
+                          // dentro do editor visual.
+                          <button
+                            type="button"
+                            data-testid={`reference-copy-${row.key}`}
+                            className="text-accent underline hover:no-underline"
+                            onClick={() => {
+                              void navigator.clipboard
+                                ?.writeText(`\\${citeCommand}{${row.key}}`)
+                                .then(() => setCopiedKey(row.key))
+                                .catch(() => {
+                                  // área de transferência indisponível — o
+                                  // rótulo simplesmente não muda
+                                });
+                            }}
+                          >
+                            {copiedKey === row.key
+                              ? strings.references.copiedCitation
+                              : strings.references.copyCitation}
                           </button>
                         )}
                         {onWriteBib && isKnownEntryType(row.entry.entryType) && (
@@ -453,7 +460,7 @@ export function ReferencesPanel({
                 <FailureCard key={i} chunk={chunk} />
               ))}
             </div>
-          )}
+          }
         </>
       )}
       {addOpen && (

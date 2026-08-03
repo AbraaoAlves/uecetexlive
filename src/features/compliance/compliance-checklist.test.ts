@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 import type { MetadataField } from "@/features/project/metadata";
-import { type ComplianceInput, computeComplianceChecklist } from "./compliance-checklist";
+import {
+  type ComplianceCheck,
+  type ComplianceInput,
+  computeComplianceChecklist,
+  effectiveItems,
+  pendingItemCount,
+} from "./compliance-checklist";
 
 const CITE_COMMANDS = ["citeonline", "Citeonline"];
 
@@ -137,5 +143,66 @@ describe("computeComplianceChecklist", () => {
         expect(check.action, check.id).toBeDefined();
       }
     }
+  });
+
+  // Whoever enumerates must keep count in sync with items, or the rail badge
+  // and the per-check header disagree about the same check.
+  it("keeps count equal to items.length wherever a check enumerates", () => {
+    const checks = computeComplianceChecklist(
+      baseInput({ bibText: INCOMPLETE_BIB, meta: EMPTY_META }),
+    );
+    for (const check of checks) {
+      if (check.items) expect(check.count, check.id).toBe(check.items.length);
+    }
+  });
+});
+
+/**
+ * Not every check can name its offenders (pré-textuais and resumo don't), so
+ * anything that walks "one item at a time" — the badge, "corrigir o próximo" —
+ * needs a shape that covers both kinds without special-casing.
+ */
+describe("effectiveItems / pendingItemCount", () => {
+  function check(over: Partial<ComplianceCheck>): ComplianceCheck {
+    return { id: "references", status: "warn", count: 1, ...over };
+  }
+
+  it("stands in for a warning check that cannot enumerate", () => {
+    const items = effectiveItems(
+      check({ id: "pretextual", count: 5, action: { kind: "openMetadata" } }),
+    );
+    expect(items).toHaveLength(1);
+    expect(items[0]?.action).toEqual({ kind: "openMetadata" });
+    expect(items[0]?.id).toBe("pretextual");
+  });
+
+  it("passes the real items through when the check enumerates", () => {
+    const real = [
+      { id: "a", label: "A" },
+      { id: "b", label: "B" },
+    ];
+    expect(effectiveItems(check({ count: 2, items: real }))).toEqual(real);
+  });
+
+  it("has nothing to offer for a check that is ok", () => {
+    expect(effectiveItems(check({ status: "ok", count: 0 }))).toHaveLength(0);
+  });
+
+  it("counts items, not checks", () => {
+    const checks: ComplianceCheck[] = [
+      check({ id: "pretextual", count: 5, action: { kind: "openMetadata" } }),
+      check({
+        id: "references",
+        count: 3,
+        items: [
+          { id: "a", label: "A" },
+          { id: "b", label: "B" },
+          { id: "c", label: "C" },
+        ],
+      }),
+      check({ id: "figures", status: "ok", count: 0 }),
+    ];
+    // 1 (pré-textuais, não enumera) + 3 (referências) + 0 (em ordem)
+    expect(pendingItemCount(checks)).toBe(4);
   });
 });

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   CompileSettingsSchema,
+  migrateUiSettings,
   ProjectFileSchema,
   ProjectSchema,
   TemplateManifestSchema,
@@ -98,6 +99,49 @@ describe("UiSettingsSchema", () => {
 
   it("rejects legacy blobs with wrong types (falls back to defaults upstream)", () => {
     expect(UiSettingsSchema.safeParse({ advancedMode: "yes" }).success).toBe(false);
+  });
+
+  // O schema tem de continuar aceitando "references": um safeParse que falha
+  // devolve os defaults inteiros lá em cima, o que apagaria tema, modo
+  // avançado e as linhas-base do lembrete de backup junto com a aba.
+  it("ainda aceita a aba legada, para não zerar o resto das preferências", () => {
+    const parsed = UiSettingsSchema.safeParse({
+      railTab: "references",
+      theme: "dark",
+      advancedMode: true,
+      sessionCount: 12,
+    });
+    expect(parsed.success).toBe(true);
+  });
+
+  it("aceita a aba de conformidade", () => {
+    expect(UiSettingsSchema.parse({ railTab: "compliance" }).railTab).toBe("compliance");
+  });
+});
+
+describe("migrateUiSettings", () => {
+  it("leva quem estava na aba Referências para a árvore de arquivos", () => {
+    const loaded = UiSettingsSchema.parse({
+      railTab: "references",
+      theme: "dark",
+      advancedMode: true,
+      sessionCount: 12,
+      backupReminderBaselineSession: 7,
+    });
+    const migrated = migrateUiSettings(loaded);
+    expect(migrated.railTab).toBe("files");
+    // ...sem levar junto nada mais.
+    expect(migrated.theme).toBe("dark");
+    expect(migrated.advancedMode).toBe(true);
+    expect(migrated.sessionCount).toBe(12);
+    expect(migrated.backupReminderBaselineSession).toBe(7);
+  });
+
+  it("não mexe em quem já está numa aba atual", () => {
+    const files = UiSettingsSchema.parse({ railTab: "files" });
+    expect(migrateUiSettings(files)).toBe(files);
+    const compliance = UiSettingsSchema.parse({ railTab: "compliance" });
+    expect(migrateUiSettings(compliance)).toBe(compliance);
   });
 });
 
