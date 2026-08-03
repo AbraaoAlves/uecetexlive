@@ -1366,7 +1366,7 @@ function ShellInner() {
               className="flex min-h-0 flex-1 flex-col"
             >
               <Tabs.List
-                aria-label="Painel lateral"
+                aria-label={strings.rail.sidebarLabel}
                 className="flex h-9 shrink-0 border-b bg-surface px-1"
               >
                 <Tabs.Trigger
@@ -1430,7 +1430,7 @@ function ShellInner() {
                 className="min-h-0 flex-1 overflow-hidden outline-none"
               >
                 <ComplianceRail
-                  checks={complianceChecks}
+                  checks={orderedComplianceChecks}
                   onAction={handleComplianceAction}
                   onItemAction={handleComplianceItemAction}
                   onReviewAction={handleComplianceReviewAction}

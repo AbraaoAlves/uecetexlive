@@ -63,6 +63,22 @@ describe("ComplianceRail", () => {
     expect(screen.queryByTestId("compliance-item-references-silva2026")).toBeNull();
   });
 
+  it("mostra os grupos na ordem em que os recebe", () => {
+    // A ordem de correção é aplicada por quem monta a lista — a mesma que
+    // alimenta o "corrigir o próximo". O rail não pode ter uma opinião própria.
+    const checks: ComplianceCheck[] = [
+      { id: "figures", status: "warn", count: 1, action: { kind: "openMetadata" } },
+      { id: "pretextual", status: "warn", count: 1, action: { kind: "openMetadata" } },
+    ];
+
+    render(<ComplianceRail checks={checks} onAction={vi.fn()} />);
+
+    const rendered = Array.from(
+      screen.getByTestId("compliance-rail").querySelectorAll("[data-status]"),
+    ).map((node) => node.getAttribute("data-testid"));
+    expect(rendered).toEqual(["compliance-check-figures", "compliance-check-pretextual"]);
+  });
+
   it("oferece a próxima correção enquanto há pendências", () => {
     const onNext = vi.fn();
     const checks: ComplianceCheck[] = [

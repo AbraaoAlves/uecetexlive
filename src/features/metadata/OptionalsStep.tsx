@@ -5,6 +5,7 @@
  * Elemento que não existe no documento não aparece — a mesma disciplina do
  * campo desabilitado do assistente: nunca criar uma linha que não está lá.
  */
+import { strings } from "@/lib/strings";
 import {
   AUTOMATIC_LISTS,
   LANGUAGE_ELEMENT,
@@ -60,19 +61,19 @@ export function OptionalsStep({ toggles, onToggle }: OptionalsStepProps) {
   return (
     <div data-testid="wizard-fs-optionals">
       <Group
-        title="Páginas do seu trabalho"
+        title={strings.metadata.optionalPagesGroup}
         elements={OPTIONAL_PAGES}
         toggles={toggles}
         onToggle={onToggle}
       />
       <Group
-        title="Listas montadas automaticamente"
+        title={strings.metadata.automaticListsGroup}
         elements={AUTOMATIC_LISTS}
         toggles={toggles}
         onToggle={onToggle}
       />
       <Group
-        title="Idioma"
+        title={strings.metadata.languageGroup}
         elements={[LANGUAGE_ELEMENT]}
         toggles={toggles}
         onToggle={onToggle}

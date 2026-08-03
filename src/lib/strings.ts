@@ -46,6 +46,7 @@ export const strings = {
       "Modo rascunho: citações, glossário e índice não são resolvidos. Use o modo Completo para o PDF final.",
   },
   rail: {
+    sidebarLabel: "Painel lateral",
     filesTab: "Arquivos",
     complianceTab: "Conformidade",
     preTextual: "Pré-textuais",
@@ -206,6 +207,9 @@ export const strings = {
       "Comece preenchendo os dados do seu trabalho — título, tipo (TCC, dissertação…), autor e orientador. A capa e a folha de rosto são montadas automaticamente no padrão da UECE.",
     welcomeFill: "Preencher dados",
     welcomeLater: "Depois",
+    optionalPagesGroup: "Páginas do seu trabalho",
+    automaticListsGroup: "Listas montadas automaticamente",
+    languageGroup: "Idioma",
   },
   preview: {
     empty: "Gere o PDF para ver aqui.",

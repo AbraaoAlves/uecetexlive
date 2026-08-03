@@ -2,15 +2,20 @@ import { useState } from "react";
 import { strings } from "@/lib/strings";
 import { ComplianceList, type ComplianceListProps } from "./ComplianceList";
 import { pendingItemCount } from "./compliance-checklist";
-import { orderComplianceChecks } from "./compliance-order";
 
 export interface ComplianceRailProps extends ComplianceListProps {
   onNext?: () => void;
 }
 
+/**
+ * Recebe a lista **já na ordem de correção** (`orderComplianceChecks`) e a
+ * mostra como veio. A ordem é decisão de produto e quem a aplica é quem monta a
+ * lista — a mesma que alimenta o "corrigir o próximo". Reordenar aqui de novo
+ * criaria duas fontes para uma decisão só, e elas discordariam no primeiro dia
+ * em que uma das duas mudasse.
+ */
 export function ComplianceRail({ checks, onNext, ...props }: ComplianceRailProps) {
   const pendingCount = pendingItemCount(checks);
-  const orderedChecks = orderComplianceChecks(checks);
   const [showOkChecks, setShowOkChecks] = useState(false);
   const allClear = pendingCount === 0;
   const summary = allClear
@@ -52,7 +57,7 @@ export function ComplianceRail({ checks, onNext, ...props }: ComplianceRailProps
       </header>
       {(!allClear || showOkChecks) && (
         <div className="min-h-0 flex-1 overflow-y-auto px-3 py-3">
-          <ComplianceList checks={orderedChecks} {...props} />
+          <ComplianceList checks={checks} {...props} />
         </div>
       )}
     </section>
