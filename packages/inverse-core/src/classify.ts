@@ -446,12 +446,22 @@ function extractFloats(lines: Line[], page: PageIR, pending: PendingNode[]): voi
     }
     const caption = joinWrapped(captionParts);
 
-    // Float body spans from the caption down to the "Fonte:" line.
+    // Float body spans from the caption down to the "Fonte:" line, but never
+    // crosses the next float when the current one has no source indication.
+    const nextCaption = lines.find(
+      (x) => x.y0 > l.y0 && x.bold && CAPTION_RE.test(x.text),
+    );
+    const yLimit = nextCaption?.y0 ?? Infinity;
     const fonteLine = lines.find(
-      (x) => !x.consumed && x.y0 > l.y0 && isReducedSize(x) && /^Fonte ?:/.test(x.text),
+      (x) =>
+        !x.consumed &&
+        x.y0 > l.y0 &&
+        x.y0 < yLimit &&
+        isReducedSize(x) &&
+        /^Fonte ?:/.test(x.text),
     );
     const yTop = l.y0;
-    const yBottom = fonteLine ? fonteLine.y0 + 14 : l.y0 + 320;
+    const yBottom = Math.min(fonteLine ? fonteLine.y0 + 14 : l.y0 + 320, yLimit);
     const source = fonteLine?.text.replace(/^Fonte ?: ?/, "");
     if (fonteLine) {
       fonteLine.consumed = true;
@@ -469,7 +479,7 @@ function extractFloats(lines: Line[], page: PageIR, pending: PendingNode[]): voi
 
     if (m[1] === "Figura") {
       const imgs = page.images.filter(
-        (im) => im.bbox.y0 >= yTop - 6 && im.bbox.y0 <= yBottom,
+        (im) => im.bbox.y0 >= yTop - 6 && im.bbox.y0 <= yBottom && im.bbox.y0 < yLimit,
       );
       pending.push({
         y0: l.y0,
@@ -491,12 +501,12 @@ function extractFloats(lines: Line[], page: PageIR, pending: PendingNode[]): voi
           v.orientation === "horizontal" &&
           v.thickness >= 0.85 &&
           v.bbox.y0 > yTop &&
-          v.bbox.y0 < yBottom + 60,
+          v.bbox.y0 < Math.min(yBottom + 60, yLimit),
       );
       const top = heavy.length ? Math.min(...heavy.map((v) => v.bbox.y0)) : yTop;
       const bottom = heavy.length ? Math.max(...heavy.map((v) => v.bbox.y1)) : yBottom;
       const cellLines = lines.filter(
-        (x) => !x.consumed && x.y0 >= top - 2 && x.y0 <= bottom + 2,
+        (x) => !x.consumed && x.y0 >= top - 2 && x.y0 <= bottom + 2 && x.y0 < yLimit,
       );
       // Todas as réguas da região, não só as booktabs pesadas: o quadro do
       // documento real é traçado com 0,4bp e delimita as linhas lógicas.
@@ -508,7 +518,8 @@ function extractFloats(lines: Line[], page: PageIR, pending: PendingNode[]): voi
                 v.orientation === "horizontal" &&
                 v.thickness >= 0.3 &&
                 v.bbox.y0 >= top - 4 &&
-                v.bbox.y0 <= bottom + 4,
+                v.bbox.y0 <= bottom + 4 &&
+                v.bbox.y0 < yLimit,
             )
             .map((v) => v.bbox.y0),
         ),
@@ -885,6 +896,7 @@ export function classify(ir: DocumentIR): SemanticDoc {
     };
 
     let prevBaseline = -Infinity;
+    let firstBibliographyLine = true;
     for (const [li, l] of lines.entries()) {
       if (l.consumed) continue;
       if (mode === "body") drain(l.y0);
@@ -972,7 +984,9 @@ export function classify(ir: DocumentIR): SemanticDoc {
 
       if (mode === "bibliography") {
         if (!isBodySize(l) || !BODY_FONT.test(l.font)) continue;
-        if (!bibParts || gapBefore > BIB_ENTRY_GAP) {
+        const pageBreakHere = firstBibliographyLine;
+        firstBibliographyLine = false;
+        if (!bibParts || (!pageBreakHere && gapBefore > BIB_ENTRY_GAP)) {
           flushBib();
           bibParts = { parts: [], emphasized: [], page: l.page };
         }
