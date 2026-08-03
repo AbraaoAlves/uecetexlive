@@ -42,6 +42,6 @@ self.onmessage = async (event: MessageEvent<ImportPdfRequest>) => {
       payload.map(([, bytes]) => bytes.buffer),
     );
   } catch (err) {
-    post({ type: "error", message: (err as Error).message });
+    post({ type: "error", message: err instanceof Error ? err.message : String(err) });
   }
 };

@@ -26,7 +26,7 @@ export const strings = {
     openGuide: "Guia do trabalho…",
     compileHint: "Gerar PDF (Ctrl/Cmd+Enter): atualiza o PDF com as últimas edições.",
     menuHint:
-      "Menu: importar ZIP, exportar PDF ou projeto, importar .bbl, restaurar modelo.",
+      "Menu: importar ZIP, importar PDF, exportar PDF ou projeto, importar .bbl, restaurar modelo.",
     viewToggleHint: "Alternar entre fonte LaTeX e editor visual (Ctrl/Cmd+E).",
     bibViewToggleHint:
       "Alternar entre a fonte BibTeX e a lista de referências (Ctrl/Cmd+E).",

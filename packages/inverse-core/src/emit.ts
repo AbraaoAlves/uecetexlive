@@ -139,6 +139,7 @@ function emitProse(text: string, citeIndex: CiteIndex, used: Set<string>): strin
 function emitNode(
   n: BodyNode,
   figDir: string,
+  availableImages: ReadonlySet<string>,
   citeIndex: CiteIndex,
   used: Set<string>,
 ): string {
@@ -179,11 +180,15 @@ function emitNode(
       ].join("\n");
     }
     case "figure": {
-      const graphics = n.imageFiles.length
-        ? n.imageFiles
-            .map((f) => `\\includegraphics[width=0.75\\textwidth]{${figDir}/${f}}`)
-            .join("\n")
-        : "%% TODO(figura): imagem não recuperada da IR";
+      const available = n.imageFiles.filter((file) => availableImages.has(file));
+      const graphics = [
+        ...available.map(
+          (file) => `\\includegraphics[width=0.75\\textwidth]{${figDir}/${file}}`,
+        ),
+        ...(available.length !== n.imageFiles.length || available.length === 0
+          ? ["%% TODO(figura): imagem não recuperada da IR"]
+          : []),
+      ].join("\n");
       return [
         `\\begin{figure}[htb]`,
         `\\caption{${escapeLatex(n.caption)}}`,
@@ -414,14 +419,18 @@ export function emitFiles(sem: SemanticDoc, opts: EmitFilesOptions): EmitFilesRe
   for (const n of sem.body) {
     if (n.kind !== "figure") continue;
     figures++;
-    if (n.imageFiles.length === 0) {
+    const missingImage =
+      n.imageFiles.length === 0 || n.imageFiles.some((file) => !opts.assets?.has(file));
+    if (missingImage) {
       pendencias.push({
         kind: "figura-sem-imagem",
         page: n.page + 1,
         excerpt: excerptOf(n.caption),
       });
     }
-    for (const f of n.imageFiles) usedImages.add(f);
+    for (const file of n.imageFiles) {
+      if (opts.assets?.has(file)) usedImages.add(file);
+    }
   }
   for (const f of [...usedImages].sort()) {
     const bytes = opts.assets?.get(f);
@@ -451,7 +460,7 @@ export function emitFiles(sem: SemanticDoc, opts: EmitFilesOptions): EmitFilesRe
     }
     const cur = chapters[chapters.length - 1];
     if (!cur) continue;
-    let emitted = emitNode(n, figDir, citeIndex, citedKeys);
+    let emitted = emitNode(n, figDir, usedImages, citeIndex, citedKeys);
     if (n.kind === "table") tables++;
     if (n.kind === "list") listItems += n.items.length;
     if (n.kind === "code") codeBlocks++;
@@ -481,9 +490,12 @@ export function emitFiles(sem: SemanticDoc, opts: EmitFilesOptions): EmitFilesRe
 
   // footnotes reattach at paragraph granularity: append to the last
   // paragraph emitted for the footnote's page
-  const pendingNotes = [...sem.footnotes];
+  const pendingNotes = new Set(sem.footnotes);
   for (const ch of chapters) {
-    for (const note of pendingNotes.filter((f) => ch.pages.has(f.page))) {
+    for (const note of [...pendingNotes].filter((footnote) =>
+      ch.pages.has(footnote.page),
+    )) {
+      pendingNotes.delete(note);
       pendencias.push({
         kind: "nota-rodape",
         page: note.page + 1,

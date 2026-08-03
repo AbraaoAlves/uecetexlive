@@ -304,4 +304,122 @@ describe("tipo de trabalho e nomes de capítulo", () => {
     });
     expect(report.citations.literal).toBe(1);
   });
+
+  test("imagem sem bytes vira marcador em vez de include quebrado", () => {
+    const sem = {
+      metadata: {},
+      frontMatter: {
+        institutionLines: [],
+        board: [],
+        has: {
+          catalogCard: false,
+          approvalSheet: false,
+          illustrationList: false,
+          tableList: false,
+          abbreviationList: false,
+          symbolList: false,
+        },
+      },
+      pretextual: [],
+      posttextual: [],
+      bibliography: [],
+      footnotes: [],
+      unclassified: [],
+      body: [
+        {
+          kind: "heading",
+          level: "chapter",
+          numbered: true,
+          title: "Resultados",
+          page: 2,
+        },
+        {
+          kind: "figure",
+          number: 1,
+          caption: "Figura sem ativo",
+          imageFiles: ["ausente.png"],
+          page: 2,
+        },
+      ],
+    } as never;
+    const template = new Map<string, Uint8Array>([
+      [
+        "documento.tex",
+        new TextEncoder().encode(
+          "\\begin{document}\n\t\\input{elementos-textuais/x}\n\\end{document}\n",
+        ),
+      ],
+    ]);
+
+    const { files, report } = emitFiles(sem, { template, assets: new Map() });
+    const chapter = new TextDecoder().decode(
+      files.get("elementos-textuais/resultados.tex"),
+    );
+    expect(chapter).not.toContain("\\includegraphics");
+    expect(chapter).toContain("%% TODO(figura): imagem não recuperada da IR");
+    expect(report.pendencias).toContainEqual({
+      kind: "figura-sem-imagem",
+      page: 3,
+      excerpt: "Figura sem ativo",
+    });
+  });
+
+  test("cada nota de rodapé é anexada uma única vez", () => {
+    const sem = {
+      metadata: {},
+      frontMatter: {
+        institutionLines: [],
+        board: [],
+        has: {
+          catalogCard: false,
+          approvalSheet: false,
+          illustrationList: false,
+          tableList: false,
+          abbreviationList: false,
+          symbolList: false,
+        },
+      },
+      pretextual: [],
+      posttextual: [],
+      bibliography: [],
+      footnotes: [{ marker: "1", text: "Nota compartilhada", page: 4 }],
+      unclassified: [],
+      body: [
+        {
+          kind: "heading",
+          level: "chapter",
+          numbered: true,
+          title: "Primeiro",
+          page: 4,
+        },
+        { kind: "paragraph", text: "Texto um.", page: 4 },
+        {
+          kind: "heading",
+          level: "chapter",
+          numbered: true,
+          title: "Segundo",
+          page: 4,
+        },
+        { kind: "paragraph", text: "Texto dois.", page: 4 },
+      ],
+    } as never;
+    const template = new Map<string, Uint8Array>([
+      [
+        "documento.tex",
+        new TextEncoder().encode(
+          "\\begin{document}\n\t\\input{elementos-textuais/x}\n\\end{document}\n",
+        ),
+      ],
+    ]);
+
+    const { files, report } = emitFiles(sem, { template });
+    const emitted = [...files.entries()]
+      .filter(([path]) => path.startsWith("elementos-textuais/"))
+      .map(([, bytes]) => new TextDecoder().decode(bytes))
+      .join("\n");
+    expect(emitted.match(/\\footnote\{/g)).toHaveLength(1);
+    expect(report.pendencias.filter((item) => item.kind === "nota-rodape")).toHaveLength(
+      1,
+    );
+  });
 });
