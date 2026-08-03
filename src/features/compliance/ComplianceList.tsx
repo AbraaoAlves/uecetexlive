@@ -120,6 +120,11 @@ function ComplianceCheckRow({
   const items = check.items ?? [];
   const hasItems = check.status === "warn" && items.length > 0;
   const [expanded, setExpanded] = useState(() => items.length <= COLLAPSE_AFTER);
+  const containsCurrentItem =
+    currentItemId !== null &&
+    currentItemId !== undefined &&
+    items.some((item) => item.id === currentItemId);
+  const isExpanded = expanded || containsCurrentItem;
   const itemsId = `compliance-items-${check.id}`;
   const itemPrefix = `${check.id}-`;
 
@@ -140,12 +145,14 @@ function ComplianceCheckRow({
           <button
             type="button"
             data-testid={`compliance-expand-${check.id}`}
-            aria-expanded={expanded}
+            aria-expanded={isExpanded}
             aria-controls={itemsId}
             className="shrink-0 text-accent text-xs underline hover:no-underline"
             onClick={() => setExpanded((value) => !value)}
           >
-            {expanded ? strings.compliance.collapseItems : strings.compliance.expandItems}
+            {isExpanded
+              ? strings.compliance.collapseItems
+              : strings.compliance.expandItems}
           </button>
         )}
         {check.status === "warn" && check.action && !hasItems && (
@@ -170,7 +177,7 @@ function ComplianceCheckRow({
             {strings.compliance.markerHint}
           </p>
         )}
-      {hasItems && expanded && (
+      {hasItems && isExpanded && (
         <ul id={itemsId} className="ml-6 flex flex-col gap-1.5">
           {items.map((item) => {
             const danger = item.reason === "sem-legenda-e-fonte";

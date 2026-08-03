@@ -104,4 +104,29 @@ describe("ComplianceRail", () => {
     expect(screen.getByTestId("compliance-item-importPdf-a")).toBeTruthy();
     expect(screen.getAllByText("Não há atalho para esta pendência.")).toHaveLength(4);
   });
+
+  it("expande o grupo longo que contém a correção atual", () => {
+    const checks: ComplianceCheck[] = [
+      {
+        id: "importPdf",
+        status: "warn",
+        count: 4,
+        items: ["a", "b", "c", "d"].map((id) => ({ id, label: `Pendência ${id}` })),
+      },
+    ];
+    const { rerender } = render(
+      <ComplianceRail checks={checks} onAction={vi.fn()} currentItemId={null} />,
+    );
+
+    expect(
+      screen.getByTestId("compliance-expand-importPdf").getAttribute("aria-expanded"),
+    ).toBe("false");
+
+    rerender(<ComplianceRail checks={checks} onAction={vi.fn()} currentItemId="c" />);
+
+    expect(
+      screen.getByTestId("compliance-expand-importPdf").getAttribute("aria-expanded"),
+    ).toBe("true");
+    expect(screen.getByTestId("compliance-item-importPdf-c")).toBeTruthy();
+  });
 });
