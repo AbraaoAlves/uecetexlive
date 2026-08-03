@@ -95,3 +95,19 @@ test("guia reabre pelo menu com o que já foi preenchido", async ({ page }) => {
   await expect(page.getByTestId("wizard-fs-pending-titulo")).toHaveCount(0);
   await expect(pending.locator("li")).toHaveCount(before - 1);
 });
+
+test("guia mantém Tab dentro da tela cheia", async ({ page }) => {
+  await page.goto("/");
+  await page.getByTestId("welcome-fill").click();
+  await expect(page.getByTestId("wizard-fs")).toBeVisible();
+  await expect(page.getByTestId("metadata-field-titulo")).toBeFocused();
+
+  const first = page.getByTestId("wizard-fs-step-titulo");
+  const last = page.getByTestId("wizard-fs-next");
+  await first.focus();
+  await page.keyboard.press("Shift+Tab");
+  await expect(last).toBeFocused();
+  await last.focus();
+  await page.keyboard.press("Tab");
+  await expect(first).toBeFocused();
+});

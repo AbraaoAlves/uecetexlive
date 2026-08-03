@@ -9,6 +9,7 @@
  * Overlay dentro do AppShell, não rota própria: o estado do projeto já vive
  * todo lá, e assim nenhum store precisa ser extraído.
  */
+import * as Dialog from "@radix-ui/react-dialog";
 import { Check, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { isUnfilled } from "@/features/compliance/compliance-checklist";
@@ -113,18 +114,12 @@ export function WizardFullscreen({
 }: WizardFullscreenProps) {
   const [stepIndex, setStepIndex] = useState(initialStep);
   const bodyRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key !== "Escape") return;
-      // Os campos gravam no blur: fechar com um deles focado perderia o que
-      // acabou de ser digitado.
-      (document.activeElement as HTMLElement | null)?.blur();
-      onClose();
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
+  const contentRef = useRef<HTMLDivElement>(null);
+  const returnFocusRef = useRef<HTMLElement | null>(
+    typeof document !== "undefined" && document.activeElement instanceof HTMLElement
+      ? document.activeElement
+      : null,
+  );
 
   const workType = workTypeOf(fields);
   const step = WIZARD_STEPS_FULL[stepIndex] ?? WIZARD_STEPS_FULL[0];
@@ -145,6 +140,13 @@ export function WizardFullscreen({
   const pending = pendingOf(fields, workType);
   const pendingSteps = new Set(pending.map((p) => p.step));
   const isLast = stepIndex === WIZARD_STEPS_FULL.length - 1;
+
+  const close = () => {
+    // Os campos gravam no blur: fechar com um deles focado perderia o que
+    // acabou de ser digitado.
+    (document.activeElement as HTMLElement | null)?.blur();
+    onClose();
+  };
 
   const commit = (def: FieldDef, raw: string): boolean => {
     const value = def.verbatim
@@ -167,156 +169,196 @@ export function WizardFullscreen({
     (WIZARD_STEPS_FULL[index]?.fields.some((f) => f.required) ?? false);
 
   return (
-    <div className="fixed inset-0 z-50 flex bg-surface" data-testid="wizard-fs">
-      <nav
-        aria-label={strings.metadata.stepsLabel}
-        className="hidden w-64 shrink-0 flex-col gap-0.5 overflow-y-auto border-r p-3 md:flex"
-      >
-        <div className="mb-2 px-2 font-display text-base">
-          {strings.metadata.guideTitle}
-        </div>
-        {WIZARD_STEPS_FULL.map((s, i) => (
-          <button
-            key={s.id}
-            type="button"
-            data-testid={`wizard-fs-step-${s.id}`}
-            onClick={() => setStepIndex(i)}
-            className={cn(
-              "flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm",
-              i === stepIndex
-                ? "bg-accent-soft font-medium text-accent-strong"
-                : "text-ink-muted hover:bg-accent-soft/60",
-            )}
+    <Dialog.Root
+      open
+      onOpenChange={(open) => {
+        if (!open) close();
+      }}
+    >
+      <Dialog.Portal>
+        <Dialog.Overlay className="fixed inset-0 z-50 bg-surface" />
+        <Dialog.Content
+          asChild
+          aria-modal="true"
+          onOpenAutoFocus={(event) => {
+            event.preventDefault();
+            const initialFocus = bodyRef.current?.querySelector<HTMLElement>(
+              "input:not([disabled]), select:not([disabled]), textarea:not([disabled])",
+            );
+            (initialFocus ?? contentRef.current?.querySelector("button"))?.focus();
+          }}
+          onCloseAutoFocus={(event) => {
+            event.preventDefault();
+            if (returnFocusRef.current?.isConnected) returnFocusRef.current.focus();
+          }}
+        >
+          <div
+            ref={contentRef}
+            className="fixed inset-0 z-[51] flex bg-surface"
+            data-testid="wizard-fs"
           >
-            {isComplete(i) ? (
-              <Check className="size-3.5 shrink-0 text-success" />
-            ) : (
-              <span
-                className={cn(
-                  "size-1.5 shrink-0 rounded-full",
-                  pendingSteps.has(i) ? "bg-warning" : "bg-ink-subtle/40",
-                )}
-              />
-            )}
-            <span className="truncate">{s.title}</span>
-          </button>
-        ))}
-      </nav>
-
-      <div className="flex min-w-0 flex-1 flex-col">
-        <div className="flex shrink-0 items-center border-b px-6 py-3">
-          <h2 className="font-display text-xl">{step.title}</h2>
-          <button
-            type="button"
-            data-testid="wizard-fs-close"
-            aria-label={strings.metadata.close}
-            className="ml-auto rounded p-1.5 text-ink-muted hover:bg-accent-soft"
-            onClick={onClose}
-          >
-            <X className="size-4" />
-          </button>
-        </div>
-
-        <div className="min-h-0 flex-1 overflow-y-auto" data-testid="wizard-fs-body">
-          <div className="mx-auto w-full max-w-4xl px-6 py-4">
-            {step.description && (
-              <p className="text-ink-muted text-sm">{step.description}</p>
-            )}
-            <div
-              ref={bodyRef}
-              className={cn(
-                "mt-4 grid grid-cols-1 gap-x-4 gap-y-3",
-                step.columns === 3 ? "md:grid-cols-3" : "md:grid-cols-2",
-              )}
+            <Dialog.Title className="sr-only">{strings.metadata.guideTitle}</Dialog.Title>
+            <Dialog.Description className="sr-only">
+              {step.description}
+            </Dialog.Description>
+            <nav
+              aria-label={strings.metadata.stepsLabel}
+              className="hidden w-64 shrink-0 flex-col gap-0.5 overflow-y-auto border-r p-3 md:flex"
             >
-              {visibleFields.map((def) => (
-                <div key={def.macro} className="contents">
-                  {def.section && (
-                    <div className="mt-1 border-b pb-1 font-medium text-[11px] text-ink-subtle uppercase tracking-wider md:col-span-full">
-                      {def.section}
-                    </div>
+              <div className="mb-2 px-2 font-display text-base">
+                {strings.metadata.guideTitle}
+              </div>
+              {WIZARD_STEPS_FULL.map((s, i) => (
+                <button
+                  key={s.id}
+                  type="button"
+                  data-testid={`wizard-fs-step-${s.id}`}
+                  onClick={() => setStepIndex(i)}
+                  className={cn(
+                    "flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm",
+                    i === stepIndex
+                      ? "bg-accent-soft font-medium text-accent-strong"
+                      : "text-ink-muted hover:bg-accent-soft/60",
                   )}
-                  <WizardField
-                    def={def}
-                    field={fields.get(def.macro)}
-                    onCommit={commit}
-                    persisted={persisted}
-                  />
-                </div>
+                >
+                  {isComplete(i) ? (
+                    <Check className="size-3.5 shrink-0 text-success" />
+                  ) : (
+                    <span
+                      className={cn(
+                        "size-1.5 shrink-0 rounded-full",
+                        pendingSteps.has(i) ? "bg-warning" : "bg-ink-subtle/40",
+                      )}
+                    />
+                  )}
+                  <span className="truncate">{s.title}</span>
+                </button>
               ))}
-            </div>
-            {step.id === "opcionais" && (
-              <OptionalsStep toggles={toggles} onToggle={onToggle} />
-            )}
-            {step.id === "ficha" && (
-              <FichaStep onUpload={onFicha} sizeBytes={fichaSize} />
-            )}
-            {step.id === "revisao" && (
-              <div className="mt-2">
-                {pending.length === 0 ? (
-                  <p className="text-success text-sm" data-testid="wizard-fs-ready">
-                    {strings.metadata.reviewReady}
-                  </p>
-                ) : (
-                  <ul className="flex flex-col gap-1" data-testid="wizard-fs-pending">
-                    {pending.map((p) => (
-                      <li key={p.def.macro}>
-                        <button
-                          type="button"
-                          data-testid={`wizard-fs-pending-${p.def.macro}`}
-                          onClick={() => setStepIndex(p.step)}
-                          className="text-accent text-sm hover:underline"
-                        >
-                          {p.def.label}
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                )}
+            </nav>
+
+            <div className="flex min-w-0 flex-1 flex-col">
+              <div className="flex shrink-0 items-center border-b px-6 py-3">
+                <h2 className="font-display text-xl">{step.title}</h2>
                 <button
                   type="button"
-                  data-testid="wizard-fs-compile"
-                  // O motor recusa duas gerações ao mesmo tempo: com o botão
-                  // ativo, o guia fecharia sem gerar nada e o PDF anterior
-                  // passaria por atual.
-                  disabled={compiling}
-                  onClick={onCompile}
-                  className="mt-4 rounded bg-accent px-3 py-1.5 text-accent-foreground text-sm hover:bg-accent-strong disabled:cursor-wait disabled:opacity-50"
+                  data-testid="wizard-fs-close"
+                  aria-label={strings.metadata.close}
+                  className="ml-auto rounded p-1.5 text-ink-muted hover:bg-accent-soft"
+                  onClick={close}
                 >
-                  {compiling ? strings.topbar.compiling : strings.topbar.compile}
+                  <X className="size-4" />
                 </button>
               </div>
-            )}
-          </div>
-        </div>
 
-        <div className="flex shrink-0 items-center justify-between border-t px-6 py-3">
-          <button
-            type="button"
-            data-testid="wizard-fs-prev"
-            disabled={stepIndex === 0}
-            className="rounded px-3 py-1.5 text-ink-muted text-sm hover:bg-accent-soft disabled:opacity-40"
-            onClick={() => setStepIndex((i) => Math.max(0, i - 1))}
-          >
-            {strings.metadata.prev}
-          </button>
-          <span className="text-ink-subtle text-xs">
-            {stepIndex + 1} / {WIZARD_STEPS_FULL.length}
-          </span>
-          <button
-            type="button"
-            data-testid={isLast ? "wizard-fs-done" : "wizard-fs-next"}
-            className="rounded bg-accent px-3 py-1.5 text-accent-foreground text-sm hover:bg-accent-strong"
-            onClick={() =>
-              isLast
-                ? onClose()
-                : setStepIndex((i) => Math.min(WIZARD_STEPS_FULL.length - 1, i + 1))
-            }
-          >
-            {isLast ? strings.metadata.done : strings.metadata.next}
-          </button>
-        </div>
-      </div>
-    </div>
+              <div
+                className="min-h-0 flex-1 overflow-y-auto"
+                data-testid="wizard-fs-body"
+              >
+                <div className="mx-auto w-full max-w-4xl px-6 py-4">
+                  {step.description && (
+                    <p className="text-ink-muted text-sm">{step.description}</p>
+                  )}
+                  <div
+                    ref={bodyRef}
+                    className={cn(
+                      "mt-4 grid grid-cols-1 gap-x-4 gap-y-3",
+                      step.columns === 3 ? "md:grid-cols-3" : "md:grid-cols-2",
+                    )}
+                  >
+                    {visibleFields.map((def) => (
+                      <div key={def.macro} className="contents">
+                        {def.section && (
+                          <div className="mt-1 border-b pb-1 font-medium text-[11px] text-ink-subtle uppercase tracking-wider md:col-span-full">
+                            {def.section}
+                          </div>
+                        )}
+                        <WizardField
+                          def={def}
+                          field={fields.get(def.macro)}
+                          onCommit={commit}
+                          persisted={persisted}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                  {step.id === "opcionais" && (
+                    <OptionalsStep toggles={toggles} onToggle={onToggle} />
+                  )}
+                  {step.id === "ficha" && (
+                    <FichaStep onUpload={onFicha} sizeBytes={fichaSize} />
+                  )}
+                  {step.id === "revisao" && (
+                    <div className="mt-2">
+                      {pending.length === 0 ? (
+                        <p className="text-success text-sm" data-testid="wizard-fs-ready">
+                          {strings.metadata.reviewReady}
+                        </p>
+                      ) : (
+                        <ul
+                          className="flex flex-col gap-1"
+                          data-testid="wizard-fs-pending"
+                        >
+                          {pending.map((p) => (
+                            <li key={p.def.macro}>
+                              <button
+                                type="button"
+                                data-testid={`wizard-fs-pending-${p.def.macro}`}
+                                onClick={() => setStepIndex(p.step)}
+                                className="text-accent text-sm hover:underline"
+                              >
+                                {p.def.label}
+                              </button>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                      <button
+                        type="button"
+                        data-testid="wizard-fs-compile"
+                        // O motor recusa duas gerações ao mesmo tempo: com o botão
+                        // ativo, o guia fecharia sem gerar nada e o PDF anterior
+                        // passaria por atual.
+                        disabled={compiling}
+                        onClick={onCompile}
+                        className="mt-4 rounded bg-accent px-3 py-1.5 text-accent-foreground text-sm hover:bg-accent-strong disabled:cursor-wait disabled:opacity-50"
+                      >
+                        {compiling ? strings.topbar.compiling : strings.topbar.compile}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex shrink-0 items-center justify-between border-t px-6 py-3">
+                <button
+                  type="button"
+                  data-testid="wizard-fs-prev"
+                  disabled={stepIndex === 0}
+                  className="rounded px-3 py-1.5 text-ink-muted text-sm hover:bg-accent-soft disabled:opacity-40"
+                  onClick={() => setStepIndex((i) => Math.max(0, i - 1))}
+                >
+                  {strings.metadata.prev}
+                </button>
+                <span className="text-ink-subtle text-xs">
+                  {stepIndex + 1} / {WIZARD_STEPS_FULL.length}
+                </span>
+                <button
+                  type="button"
+                  data-testid={isLast ? "wizard-fs-done" : "wizard-fs-next"}
+                  className="rounded bg-accent px-3 py-1.5 text-accent-foreground text-sm hover:bg-accent-strong"
+                  onClick={() =>
+                    isLast
+                      ? close()
+                      : setStepIndex((i) => Math.min(WIZARD_STEPS_FULL.length - 1, i + 1))
+                  }
+                >
+                  {isLast ? strings.metadata.done : strings.metadata.next}
+                </button>
+              </div>
+            </div>
+          </div>
+        </Dialog.Content>
+      </Dialog.Portal>
+    </Dialog.Root>
   );
 }
