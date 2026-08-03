@@ -174,7 +174,7 @@ const T1_ACCENTS: Record<string, string> = {
 };
 const ACCENT_CHARS = Object.keys(T1_ACCENTS).join("");
 const HAS_ACCENT = new RegExp(`[${ACCENT_CHARS}]`);
-const ONLY_ACCENTS = new RegExp(`^[${ACCENT_CHARS}\\s]+$`);
+const ONLY_ACCENTS = new RegExp(`^\\s*[${ACCENT_CHARS}][${ACCENT_CHARS}\\s]*$`);
 
 /** "ˇc" -> "č". Acento seguido de letra vira a forma precomposta (NFC). */
 export function recomposeAccents(text: string): string {
@@ -201,7 +201,7 @@ export function recomposeAccents(text: string): string {
  */
 const ACCENT_ANCHOR_TOL = 3;
 
-function mergeAccentSpans(spans: TextSpan[]): TextSpan[] {
+export function mergeAccentSpans(spans: TextSpan[]): TextSpan[] {
   if (!spans.some((s) => ONLY_ACCENTS.test(s.text))) return spans;
   const dropped = new Set<number>();
   for (const [i, span] of spans.entries()) {
@@ -421,7 +421,13 @@ function extractVectors(
   page: mupdf.PDFPage,
   origin: Pick<PageBounds, "left" | "top">,
 ): VectorSegment[] {
-  const src = pageContentStream(page);
+  return extractVectorSegments(pageContentStream(page), origin);
+}
+
+export function extractVectorSegments(
+  src: string,
+  origin: Pick<PageBounds, "left" | "top">,
+): VectorSegment[] {
   const tokens =
     src.match(
       /\/[^\s/<>[\]()]+|<[^>]*>|\((?:\\.|[^\\)])*\)|\[[^\]]*\]|-?\d*\.?\d+|[A-Za-z'*]+/g,
@@ -438,9 +444,9 @@ function extractVectors(
     y0: number;
     x1: number;
     y1: number;
-    from: [number, number] | null;
   }[] = [];
   let cur: [number, number] | null = null;
+  let subpathStart: [number, number] | null = null;
 
   const emit = (stroked: boolean) => {
     for (const seg of path) {
@@ -460,6 +466,7 @@ function extractVectors(
     }
     path = [];
     cur = null;
+    subpathStart = null;
   };
 
   for (const t of tokens) {
@@ -487,13 +494,34 @@ function extractVectors(
         if (nums.length >= 1) lw = at(nums, -1);
         break;
       case "m":
-        if (!inText && nums.length >= 2) cur = apply(ctm, at(nums, -2), at(nums, -1));
+        if (!inText && nums.length >= 2) {
+          cur = apply(ctm, at(nums, -2), at(nums, -1));
+          subpathStart = cur;
+        }
         break;
       case "l":
         if (!inText && cur && nums.length >= 2) {
           const p2 = apply(ctm, at(nums, -2), at(nums, -1));
-          path.push({ x0: cur[0], y0: cur[1], x1: p2[0], y1: p2[1], from: cur });
+          path.push({ x0: cur[0], y0: cur[1], x1: p2[0], y1: p2[1] });
           cur = p2;
+        }
+        break;
+      case "c":
+        if (!inText && nums.length >= 6) cur = apply(ctm, at(nums, -2), at(nums, -1));
+        break;
+      case "v":
+      case "y":
+        if (!inText && nums.length >= 4) cur = apply(ctm, at(nums, -2), at(nums, -1));
+        break;
+      case "h":
+        if (!inText && cur && subpathStart) {
+          path.push({
+            x0: cur[0],
+            y0: cur[1],
+            x1: subpathStart[0],
+            y1: subpathStart[1],
+          });
+          cur = subpathStart;
         }
         break;
       case "re":
@@ -501,7 +529,7 @@ function extractVectors(
           const [x, y, w, h] = [at(nums, -4), at(nums, -3), at(nums, -2), at(nums, -1)];
           const [ax, ay] = apply(ctm, x, y);
           const [bx, by] = apply(ctm, x + w, y + h);
-          path.push({ x0: ax, y0: ay, x1: bx, y1: by, from: null });
+          path.push({ x0: ax, y0: ay, x1: bx, y1: by });
         }
         break;
       case "S":
@@ -518,6 +546,7 @@ function extractVectors(
       case "n":
         path = [];
         cur = null;
+        subpathStart = null;
         break;
     }
     nums.length = 0;

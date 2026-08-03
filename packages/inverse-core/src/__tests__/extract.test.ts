@@ -2,7 +2,9 @@ import { describe, expect, test, vi } from "vitest";
 import {
   extractImages,
   extractTextBlocks,
+  extractVectorSegments,
   mapOutline,
+  mergeAccentSpans,
   pageBoundsOf,
   pageRangeOf,
   vectorBBoxOf,
@@ -26,6 +28,35 @@ describe("vectorBBoxOf", () => {
       y0: 80,
       x1: 40,
       y1: 80,
+    });
+  });
+});
+
+describe("extractVectorSegments", () => {
+  test("avança o ponto atual depois de uma curva", () => {
+    expect(
+      extractVectorSegments("0 0 m 10 0 20 0 30 0 c 100 0 l S", { left: 0, top: 100 }),
+    ).toEqual([
+      {
+        kind: "vector",
+        bbox: { x0: 30, y0: 100, x1: 100, y1: 100 },
+        orientation: "horizontal",
+        thickness: 1,
+      },
+    ]);
+  });
+
+  test("fecha o subcaminho no ponto em que ele começou", () => {
+    const segments = extractVectorSegments("0 0 m 10 0 l 10 10 l 0 10 l h S", {
+      left: 0,
+      top: 100,
+    });
+
+    expect(segments).toContainEqual({
+      kind: "vector",
+      bbox: { x0: 0, y0: 90, x1: 0, y1: 100 },
+      orientation: "vertical",
+      thickness: 1,
     });
   });
 });
@@ -76,5 +107,51 @@ describe("pageRangeOf", () => {
 
   test("preserva um intervalo invertido na última página válida", () => {
     expect(pageRangeOf(3, [9, 1])).toEqual([2, 2]);
+  });
+});
+
+describe("mergeAccentSpans", () => {
+  test("preserva um espaço que não acompanha acento", () => {
+    const spans = [
+      {
+        kind: "text" as const,
+        text: "primeira",
+        font: "LatinModern",
+        size: 10,
+        bold: false,
+        italic: false,
+        bbox: { x0: 0, y0: 0, x1: 30, y1: 10 },
+        baseline: 10,
+        wmode: 0,
+      },
+      {
+        kind: "text" as const,
+        text: " ",
+        font: "LatinModern",
+        size: 10,
+        bold: false,
+        italic: false,
+        bbox: { x0: 30, y0: 0, x1: 33, y1: 10 },
+        baseline: 10,
+        wmode: 0,
+      },
+      {
+        kind: "text" as const,
+        text: "segunda",
+        font: "LatinModern",
+        size: 10,
+        bold: false,
+        italic: false,
+        bbox: { x0: 33, y0: 0, x1: 65, y1: 10 },
+        baseline: 10,
+        wmode: 0,
+      },
+    ];
+
+    expect(mergeAccentSpans(spans).map((span) => span.text)).toEqual([
+      "primeira",
+      " ",
+      "segunda",
+    ]);
   });
 });
