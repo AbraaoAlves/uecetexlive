@@ -341,6 +341,7 @@ export const strings = {
     pendingHint: "Confira se seu trabalho segue as normas da UECE",
     close: "Fechar",
     fixAction: "corrigir",
+    nextItem: "próximo",
     pretextualOk: "Os dados do trabalho (título, autor, orientador…) estão preenchidos.",
     pretextualWarnOne: "Falta preencher 1 dado do trabalho.",
     pretextualWarnMany: "Faltam preencher {n} dados do trabalho.",

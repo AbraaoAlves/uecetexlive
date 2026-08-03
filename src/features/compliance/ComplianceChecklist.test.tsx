@@ -99,4 +99,30 @@ describe("ComplianceChecklist", () => {
       line: 4,
     });
   });
+
+  it("offers the next item from each check that can enumerate", () => {
+    const onNext = vi.fn();
+    const checks: ComplianceCheck[] = [
+      {
+        id: "figures",
+        status: "warn",
+        count: 1,
+        items: [{ id: "cap.tex:0", label: "Figura" }],
+      },
+      { id: "abstract", status: "warn", count: 1 },
+    ];
+
+    render(
+      <ComplianceChecklist
+        checks={checks}
+        onAction={vi.fn()}
+        onNext={onNext}
+        onClose={vi.fn()}
+      />,
+    );
+
+    fireEvent.click(screen.getByTestId("compliance-next-figures"));
+    expect(onNext).toHaveBeenCalledWith("figures");
+    expect(screen.queryByTestId("compliance-next-abstract")).toBeNull();
+  });
 });

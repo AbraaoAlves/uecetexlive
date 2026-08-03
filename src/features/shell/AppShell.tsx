@@ -35,10 +35,12 @@ import { useCompile } from "@/features/compiler/useCompile";
 import { useIdleWarmup } from "@/features/compiler/useIdleWarmup";
 import { ComplianceChecklist } from "@/features/compliance/ComplianceChecklist";
 import {
+  type CheckId,
   type ComplianceAction,
   type ComplianceReviewAction,
   computeComplianceChecklist,
 } from "@/features/compliance/compliance-checklist";
+import { useComplianceTour } from "@/features/compliance/useComplianceTour";
 import {
   ImportPdfDialog,
   type ImportPdfState,
@@ -631,6 +633,7 @@ function ShellInner() {
       }),
     [meta, bibText, derivedTexSources, texOrder, importUnclassified],
   );
+  const complianceTour = useComplianceTour(complianceChecks);
   const checklistWarnCount = complianceChecks.filter((c) => c.status === "warn").length;
 
   const handleComplianceAction = useCallback(
@@ -654,6 +657,14 @@ function ShellInner() {
       }
     },
     [bibFile, navigateTo],
+  );
+
+  const handleComplianceNext = useCallback(
+    (checkId: CheckId) => {
+      const item = complianceTour.next(checkId);
+      if (item?.action) handleComplianceAction(item.action);
+    },
+    [complianceTour.next, handleComplianceAction],
   );
 
   const handleComplianceReviewAction = useCallback(
@@ -1538,7 +1549,10 @@ function ShellInner() {
         <ComplianceChecklist
           checks={complianceChecks}
           onAction={handleComplianceAction}
+          onNext={handleComplianceNext}
           onReviewAction={handleComplianceReviewAction}
+          currentItemId={complianceTour.current?.id}
+          visitedItemIds={complianceTour.visited}
           onClose={() => setChecklistOpen(false)}
         />
       )}

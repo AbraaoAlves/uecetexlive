@@ -72,3 +72,32 @@ test("já revisei remove só o marcador vivo e fecha a pendência", async ({ pag
   await expect(source).toHaveValue(/Texto preservado depois do aviso\./);
   await expect(source).not.toHaveValue(/%% TODO\(matemática\)/);
 });
+
+test("próximo percorre três avisos importados sem repetir", async ({ page }) => {
+  await page.goto("/");
+  await dismissWelcome(page);
+
+  await page.getByTestId("rail-file-elementos-textuais/introducao.tex").click();
+  await page.getByTestId("view-toggle").click();
+  const sourceInput = page.getByTestId("source-editor-input");
+  await sourceInput.click();
+  await sourceInput.press("ControlOrMeta+End");
+  await sourceInput.pressSequentially(
+    "\n%% TODO(matemática): primeiro aviso\n%% TODO(algoritmo): segundo aviso\n%% TODO(citação): terceiro aviso",
+  );
+  await expect(page.getByTestId("save-state")).toHaveAttribute("data-state", "saved");
+
+  const expected = [
+    "%% TODO(matemática): primeiro aviso",
+    "%% TODO(algoritmo): segundo aviso",
+    "%% TODO(citação): terceiro aviso",
+  ];
+  for (const marker of expected) {
+    await page.getByTestId("rail-checklist").click();
+    const next = page.getByTestId("compliance-next-importPdf");
+    await expect(next).toBeVisible();
+    await next.click();
+    await expect(sourceInput).toBeFocused();
+    expect(await selectedText(page)).toContain(marker);
+  }
+});

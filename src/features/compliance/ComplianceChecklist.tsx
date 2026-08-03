@@ -10,6 +10,7 @@ import { CheckCircle2, HelpCircle, ImageOff, TriangleAlert, X } from "lucide-rea
 import { useEffect } from "react";
 import { strings } from "@/lib/strings";
 import type {
+  CheckId,
   ComplianceAction,
   ComplianceCheck,
   ComplianceItem,
@@ -19,7 +20,10 @@ import type {
 export interface ComplianceChecklistProps {
   checks: ComplianceCheck[];
   onAction: (action: ComplianceAction) => void;
+  onNext?: (checkId: CheckId) => void;
   onReviewAction?: (action: ComplianceReviewAction) => void;
+  currentItemId?: string | null;
+  visitedItemIds?: ReadonlySet<string>;
   onClose: () => void;
 }
 
@@ -107,7 +111,10 @@ function ComplianceItemIcon({ item }: { item: ComplianceItem }) {
 export function ComplianceChecklist({
   checks,
   onAction,
+  onNext,
   onReviewAction,
+  currentItemId,
+  visitedItemIds,
   onClose,
 }: ComplianceChecklistProps) {
   useEffect(() => {
@@ -165,6 +172,19 @@ export function ComplianceChecklist({
                     <TriangleAlert className="mt-0.5 size-4 shrink-0 text-warning" />
                   )}
                   <span className="flex-1 text-sm">{messageFor(check)}</span>
+                  {check.status === "warn" &&
+                    check.items &&
+                    check.items.length > 0 &&
+                    onNext && (
+                      <button
+                        type="button"
+                        data-testid={`compliance-next-${check.id}`}
+                        className="shrink-0 text-accent text-sm underline hover:no-underline"
+                        onClick={() => onNext(check.id)}
+                      >
+                        {strings.compliance.nextItem}
+                      </button>
+                    )}
                   {check.status === "warn" && check.action && (
                     <button
                       type="button"
@@ -197,6 +217,8 @@ export function ComplianceChecklist({
                           data-testid={`compliance-item-${item.id}`}
                           data-reason={item.reason}
                           data-tone={danger ? "danger" : "warning"}
+                          data-current={currentItemId === item.id ? "true" : undefined}
+                          data-visited={visitedItemIds?.has(item.id) ? "true" : undefined}
                           aria-label={
                             item.detail ? `${item.label}. ${item.detail}` : item.label
                           }
