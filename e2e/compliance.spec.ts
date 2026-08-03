@@ -44,13 +44,14 @@ test("checklist reflects the fresh seed's real gaps and updates as they're fixed
 });
 
 // ADR-08: as referências deixaram o painel lateral e viraram modo de
-// visualização do .bib, então "corrigir" abre o arquivo na área de edição.
-test("'corrigir' nas referências abre o .bib na edição visual", async ({ page }) => {
+// visualização do .bib. Cada entrada irregular leva à edição visual, sem
+// repetir no cabeçalho a mesma ação da primeira entrada.
+test("'corrigir' em uma referência abre o .bib na edição visual", async ({ page }) => {
   await page.goto("/");
   await dismissWelcome(page);
 
   await page.getByTestId("rail-checklist").click();
-  await page.getByTestId("compliance-fix-references").click();
+  await page.locator('[data-testid^="compliance-item-fix-references:"]').first().click();
   await expect(page.getByTestId("compliance-checklist")).not.toBeVisible();
 
   const editorPane = page.getByTestId("editor-pane");
