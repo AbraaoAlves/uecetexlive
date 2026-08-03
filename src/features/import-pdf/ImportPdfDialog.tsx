@@ -65,7 +65,13 @@ export function ImportPdfDialog({
   // Foco entra no diálogo ao abrir: sem isso o Escape não chega e o leitor de
   // tela continua lendo a página atrás.
   const panelRef = useRef<HTMLDivElement>(null);
-  useEffect(() => panelRef.current?.focus(), []);
+  useEffect(() => {
+    const previousFocus = document.activeElement as HTMLElement | null;
+    panelRef.current?.focus();
+    return () => {
+      if (previousFocus?.isConnected) previousFocus.focus();
+    };
+  }, []);
 
   return (
     <div

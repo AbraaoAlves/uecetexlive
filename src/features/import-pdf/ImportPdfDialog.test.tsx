@@ -5,6 +5,24 @@ import { ImportPdfDialog } from "./ImportPdfDialog";
 afterEach(cleanup);
 
 describe("ImportPdfDialog", () => {
+  it("devolve o foco ao elemento que abriu o diálogo", () => {
+    const trigger = document.createElement("button");
+    document.body.append(trigger);
+    trigger.focus();
+
+    const { unmount } = render(
+      <ImportPdfDialog
+        state={{ kind: "error", message: "Falhou" }}
+        onConfirm={vi.fn()}
+        onClose={vi.fn()}
+      />,
+    );
+    unmount();
+
+    expect(document.activeElement).toBe(trigger);
+    trigger.remove();
+  });
+
   it("labels the error action according to the callback it will run", () => {
     const onClose = vi.fn();
     const { rerender } = render(

@@ -505,8 +505,12 @@ export function ReferencesPanel({
                               className="text-accent underline hover:no-underline"
                               onClick={() => {
                                 const command = `\\${citeCommand}{${row.key}}`;
+                                if (!navigator.clipboard) {
+                                  setCopyState({ key: row.key, ok: false });
+                                  return;
+                                }
                                 void navigator.clipboard
-                                  ?.writeText(command)
+                                  .writeText(command)
                                   .then(() => setCopyState({ key: row.key, ok: true }))
                                   .catch(() => setCopyState({ key: row.key, ok: false }));
                               }}

@@ -203,6 +203,7 @@ export function ComplianceChecklist({
                     )}
                 </div>
                 {check.id === "importPdf" &&
+                  onReviewAction &&
                   check.items?.some((item) => item.reviewAction) && (
                     <p
                       className="ml-6 text-ink-subtle text-xs"

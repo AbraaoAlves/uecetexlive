@@ -6,6 +6,7 @@ import { ReferencesPanel } from "./ReferencesPanel";
 // own auto-cleanup (which relies on a global `afterEach`) never runs — without
 // this, each render() in the file piles onto the same document.
 afterEach(cleanup);
+afterEach(() => vi.unstubAllGlobals());
 
 const SAMPLE = `@book{freire1970,
   author = {Freire, Paulo},
@@ -104,6 +105,17 @@ describe("ReferencesPanel", () => {
     render(<ReferencesPanel bibText={SAMPLE} />);
     expect(screen.queryByTestId("reference-edit-freire1970")).toBeNull();
     expect(screen.queryByTestId("reference-remove-freire1970")).toBeNull();
+  });
+
+  it("avisa quando o navegador não oferece área de transferência", () => {
+    vi.stubGlobal("navigator", { clipboard: undefined });
+    render(<ReferencesPanel bibText={SAMPLE} />);
+
+    fireEvent.click(screen.getByTestId("reference-copy-freire1970"));
+
+    expect(screen.getByTestId("references-copy-status").textContent).toContain(
+      "Não foi possível copiar",
+    );
   });
 
   it("edits a field through the dialog and writes only that entry's chunk", () => {

@@ -103,6 +103,32 @@ describe("ComplianceChecklist", () => {
     });
   });
 
+  it("does not explain a review action that is unavailable", () => {
+    const checks: ComplianceCheck[] = [
+      {
+        id: "importPdf",
+        status: "warn",
+        count: 1,
+        items: [
+          {
+            id: "marker",
+            label: "Revisão da importação",
+            reviewAction: {
+              kind: "removePendencyMarker",
+              path: "cap.tex",
+              line: 4,
+            },
+          },
+        ],
+      },
+    ];
+
+    render(<ComplianceChecklist checks={checks} onAction={vi.fn()} onClose={vi.fn()} />);
+
+    expect(screen.queryByTestId("compliance-marker-hint")).toBeNull();
+    expect(screen.queryByTestId("compliance-item-review-marker")).toBeNull();
+  });
+
   it("offers the next item from each check that can enumerate", () => {
     const onNext = vi.fn();
     const checks: ComplianceCheck[] = [
