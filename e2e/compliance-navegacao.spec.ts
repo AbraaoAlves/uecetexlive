@@ -44,3 +44,31 @@ test("uma figura irregular leva à linha certa no modo fonte em todo clique", as
   await expect(sourceInput).toBeFocused();
   expect(await selectedText(page)).toContain("\\begin{figure}[ht!]");
 });
+
+test("já revisei remove só o marcador vivo e fecha a pendência", async ({ page }) => {
+  await page.goto("/");
+  await dismissWelcome(page);
+
+  await page.getByTestId("rail-file-elementos-textuais/introducao.tex").click();
+  await page.getByTestId("view-toggle").click();
+  const sourceInput = page.getByTestId("source-editor-input");
+  await sourceInput.click();
+  await sourceInput.press("ControlOrMeta+End");
+  await sourceInput.pressSequentially(
+    "\nTexto preservado antes do aviso.\n%% TODO(matemática): reconstruir a equação\nTexto preservado depois do aviso.",
+  );
+  await expect(page.getByTestId("save-state")).toHaveAttribute("data-state", "saved");
+
+  await page.getByTestId("rail-checklist").click();
+  const reviewedButton = page.getByRole("button", { name: "já revisei" });
+  await expect(reviewedButton).toBeVisible();
+  await expect(page.getByTestId("compliance-marker-hint")).toBeVisible();
+  await reviewedButton.click();
+  await expect(reviewedButton).not.toBeVisible();
+
+  await page.getByTestId("compliance-close").click();
+  const source = page.getByTestId("source-editor-value");
+  await expect(source).toHaveValue(/Texto preservado antes do aviso\./);
+  await expect(source).toHaveValue(/Texto preservado depois do aviso\./);
+  await expect(source).not.toHaveValue(/%% TODO\(matemática\)/);
+});

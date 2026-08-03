@@ -13,11 +13,13 @@ import type {
   ComplianceAction,
   ComplianceCheck,
   ComplianceItem,
+  ComplianceReviewAction,
 } from "./compliance-checklist";
 
 export interface ComplianceChecklistProps {
   checks: ComplianceCheck[];
   onAction: (action: ComplianceAction) => void;
+  onReviewAction?: (action: ComplianceReviewAction) => void;
   onClose: () => void;
 }
 
@@ -105,6 +107,7 @@ function ComplianceItemIcon({ item }: { item: ComplianceItem }) {
 export function ComplianceChecklist({
   checks,
   onAction,
+  onReviewAction,
   onClose,
 }: ComplianceChecklistProps) {
   useEffect(() => {
@@ -175,6 +178,15 @@ export function ComplianceChecklist({
                     </button>
                   )}
                 </div>
+                {check.id === "importPdf" &&
+                  check.items?.some((item) => item.reviewAction) && (
+                    <p
+                      className="ml-6 text-ink-subtle text-xs"
+                      data-testid="compliance-marker-hint"
+                    >
+                      {strings.compliance.markerHint}
+                    </p>
+                  )}
                 {check.status === "warn" && check.items && check.items.length > 0 && (
                   <ul className="ml-6 flex flex-col gap-1.5">
                     {check.items.map((item) => {
@@ -213,6 +225,18 @@ export function ComplianceChecklist({
                               }}
                             >
                               {strings.compliance.fixAction}
+                            </button>
+                          )}
+                          {item.reviewAction && onReviewAction && (
+                            <button
+                              type="button"
+                              data-testid={`compliance-item-review-${item.id}`}
+                              className="shrink-0 text-accent text-xs underline hover:no-underline"
+                              onClick={() => {
+                                if (item.reviewAction) onReviewAction(item.reviewAction);
+                              }}
+                            >
+                              {strings.compliance.markerReviewedAction}
                             </button>
                           )}
                         </li>

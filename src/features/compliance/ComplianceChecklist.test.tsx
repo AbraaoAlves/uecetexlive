@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ComplianceChecklist } from "./ComplianceChecklist";
 import type { ComplianceCheck } from "./compliance-checklist";
@@ -57,5 +57,46 @@ describe("ComplianceChecklist", () => {
     );
     expect(noBoth.dataset.tone).toBe("danger");
     expect(noBoth.className).toContain("text-danger");
+  });
+
+  it("explains and dispatches the review of a live import marker", () => {
+    const onReviewAction = vi.fn();
+    const checks: ComplianceCheck[] = [
+      {
+        id: "importPdf",
+        status: "warn",
+        count: 1,
+        items: [
+          {
+            id: "marker",
+            label: "Revisão da importação",
+            reviewAction: {
+              kind: "removePendencyMarker",
+              path: "cap.tex",
+              line: 4,
+            },
+          },
+        ],
+      },
+    ];
+
+    render(
+      <ComplianceChecklist
+        checks={checks}
+        onAction={vi.fn()}
+        onReviewAction={onReviewAction}
+        onClose={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByTestId("compliance-marker-hint").textContent).toContain(
+      "O aviso some",
+    );
+    fireEvent.click(screen.getByTestId("compliance-item-review-marker"));
+    expect(onReviewAction).toHaveBeenCalledWith({
+      kind: "removePendencyMarker",
+      path: "cap.tex",
+      line: 4,
+    });
   });
 });

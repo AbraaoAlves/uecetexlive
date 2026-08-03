@@ -337,6 +337,9 @@ export const strings = {
     importPdfWarnOne: "1 trecho do PDF importado precisa da sua revisão.",
     importPdfWarnMany: "{n} trechos do PDF importado precisam da sua revisão.",
     importMarkerLabel: "Revisão da importação",
+    markerHint:
+      "O aviso some quando você usa “já revisei” para retirar o marcador do texto.",
+    markerReviewedAction: "já revisei",
     importUnclassifiedLabel: "Trecho sem capítulo",
     importUnclassifiedHelp:
       "Reescreva este trecho no capítulo certo, consultando o PDF original.",

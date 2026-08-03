@@ -36,6 +36,7 @@ import { useIdleWarmup } from "@/features/compiler/useIdleWarmup";
 import { ComplianceChecklist } from "@/features/compliance/ComplianceChecklist";
 import {
   type ComplianceAction,
+  type ComplianceReviewAction,
   computeComplianceChecklist,
 } from "@/features/compliance/compliance-checklist";
 import {
@@ -43,7 +44,10 @@ import {
   type ImportPdfState,
 } from "@/features/import-pdf/ImportPdfDialog";
 import { MAX_PDF_BYTES, rejectPdf } from "@/features/import-pdf/pdf-file";
-import { scanPendencyMarkers } from "@/features/import-pdf/pendency-markers";
+import {
+  removePendencyMarkerAtLine,
+  scanPendencyMarkers,
+} from "@/features/import-pdf/pendency-markers";
 import {
   makePersistedImportReport,
   staticPendenciesFromReport,
@@ -650,6 +654,17 @@ function ShellInner() {
       }
     },
     [bibFile, navigateTo],
+  );
+
+  const handleComplianceReviewAction = useCallback(
+    (action: ComplianceReviewAction) => {
+      if (action.kind !== "removePendencyMarker") return;
+      const source = texSources[action.path];
+      if (source === undefined) return;
+      const next = removePendencyMarkerAtLine(source, action.line);
+      if (next !== source) updateFileText(action.path, next);
+    },
+    [texSources, updateFileText],
   );
 
   /**
@@ -1523,6 +1538,7 @@ function ShellInner() {
         <ComplianceChecklist
           checks={complianceChecks}
           onAction={handleComplianceAction}
+          onReviewAction={handleComplianceReviewAction}
           onClose={() => setChecklistOpen(false)}
         />
       )}

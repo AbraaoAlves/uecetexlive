@@ -33,6 +33,12 @@ export type ComplianceAction =
   /** line is 1-based; mode says which editor to land in (default: keep current). */
   | { kind: "openFile"; path: string; line?: number; mode?: "source" | "visual" };
 
+export type ComplianceReviewAction = {
+  kind: "removePendencyMarker";
+  path: string;
+  line: number;
+};
+
 /** One concrete thing to fix, inside a check that knows how to enumerate. */
 export interface ComplianceItem {
   /** Stable across recomputes — React key, and how "next item" avoids repeats. */
@@ -44,6 +50,8 @@ export interface ComplianceItem {
   reason?: string;
   /** Absent = nowhere to navigate (an unclassified PDF excerpt has no home). */
   action?: ComplianceAction;
+  /** Removes a live import marker after the student confirms the review. */
+  reviewAction?: ComplianceReviewAction;
 }
 
 export interface ComplianceCheck {
@@ -344,6 +352,11 @@ export function computeComplianceChecklist(input: ComplianceInput): ComplianceCh
         path: marker.path,
         line: marker.line,
         mode: "source",
+      },
+      reviewAction: {
+        kind: "removePendencyMarker",
+        path: marker.path,
+        line: marker.line,
       },
     };
   });

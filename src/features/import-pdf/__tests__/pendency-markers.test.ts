@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { scanPendencyMarkers } from "../pendency-markers";
+import { removePendencyMarkerAtLine, scanPendencyMarkers } from "../pendency-markers";
 
 describe("scanPendencyMarkers", () => {
   it("normalizes known labels and follows document order before alphabetical extras", () => {
@@ -88,5 +88,24 @@ describe("scanPendencyMarkers", () => {
         detail: "reancorar na palavra exata (p9)",
       },
     ]);
+  });
+});
+
+describe("removePendencyMarkerAtLine", () => {
+  it("removes an own-line marker with its original CRLF", () => {
+    const source = "Antes\r\n%% TODO(matemática): reconstruir a equação\r\nDepois\r\n";
+    expect(removePendencyMarkerAtLine(source, 2)).toBe("Antes\r\nDepois\r\n");
+  });
+
+  it("removes only the marker suffix when it follows content", () => {
+    const source =
+      "Texto\\footnote{Nota} %% TODO(nota 3): reancorar na palavra exata (p7)\nDepois";
+    expect(removePendencyMarkerAtLine(source, 1)).toBe("Texto\\footnote{Nota} \nDepois");
+  });
+
+  it("leaves the source byte-identical when the requested line has no marker", () => {
+    const source = "Antes\n%% TODO(figura): recuperar imagem\nDepois";
+    expect(removePendencyMarkerAtLine(source, 3)).toBe(source);
+    expect(removePendencyMarkerAtLine(source, 99)).toBe(source);
   });
 });

@@ -70,3 +70,30 @@ export function scanPendencyMarkers(
   }
   return markers;
 }
+
+/** Removes exactly one live marker while preserving every unrelated byte. */
+export function removePendencyMarkerAtLine(source: string, line: number): string {
+  if (!Number.isInteger(line) || line < 1) return source;
+
+  let lineStart = 0;
+  for (let current = 1; current < line; current += 1) {
+    const newline = source.indexOf("\n", lineStart);
+    if (newline < 0) return source;
+    lineStart = newline + 1;
+  }
+
+  const newline = source.indexOf("\n", lineStart);
+  const physicalEnd = newline < 0 ? source.length : newline + 1;
+  let contentEnd = newline < 0 ? source.length : newline;
+  if (contentEnd > lineStart && source[contentEnd - 1] === "\r") contentEnd -= 1;
+
+  const content = source.slice(lineStart, contentEnd);
+  const markerOffset = content.indexOf("%% TODO(");
+  if (markerOffset < 0) return source;
+  const prefix = content.slice(0, markerOffset);
+
+  if (prefix.trim() === "") {
+    return source.slice(0, lineStart) + source.slice(physicalEnd);
+  }
+  return source.slice(0, lineStart + markerOffset) + source.slice(contentEnd);
+}
