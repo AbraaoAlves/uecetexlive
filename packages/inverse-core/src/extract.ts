@@ -51,13 +51,18 @@ import type {
 const R = (n: number): number => Math.round(n * 100) / 100;
 
 /** Normaliza os limites PDF para as dimensões e o topo do espaço do usuário. */
-export function pageBoundsOf(bounds: readonly [number, number, number, number]): {
+export interface PageBounds {
   width: number;
   height: number;
+  left: number;
   top: number;
-} {
+}
+
+export function pageBoundsOf(
+  bounds: readonly [number, number, number, number],
+): PageBounds {
   const [x0, y0, x1, y1] = bounds;
-  return { width: R(x1 - x0), height: R(y1 - y0), top: R(y1) };
+  return { width: R(x1 - x0), height: R(y1 - y0), left: R(x0), top: R(y1) };
 }
 
 /** Limita o intervalo pedido às páginas existentes, preservando a ordem. */
@@ -220,12 +225,25 @@ function mergeAccentSpans(spans: TextSpan[]): TextSpan[] {
   return spans.filter((_, i) => !dropped.has(i));
 }
 
-function extractTextBlocks(
+export function extractTextBlocks(
   page: mupdf.PDFPage,
   fontStats: Map<string, FontUsage>,
 ): TextBlock[] {
   const stext = page.toStructuredText("preserve-spans");
-  const data = JSON.parse(stext.asJSON()) as { blocks: STextBlock[] };
+  try {
+    return textBlocksFromData(
+      JSON.parse(stext.asJSON()) as { blocks: STextBlock[] },
+      fontStats,
+    );
+  } finally {
+    stext.destroy();
+  }
+}
+
+function textBlocksFromData(
+  data: { blocks: STextBlock[] },
+  fontStats: Map<string, FontUsage>,
+): TextBlock[] {
   const blocks: TextBlock[] = [];
 
   for (const b of data.blocks) {
@@ -306,36 +324,41 @@ function union(boxes: BBox[]): BBox {
 // Image layer
 // ---------------------------------------------------------------------------
 
-function extractImages(
+export function extractImages(
   page: mupdf.PDFPage,
   assets: Map<string, Uint8Array>,
   seen: Map<string, string>,
 ): ImageBlock[] {
   const out: ImageBlock[] = [];
-  page.toStructuredText("preserve-images").walk({
-    onImageBlock(bbox, _transform, image) {
-      const pix = image.toPixmap();
-      try {
-        const png = pix.asPNG();
-        const digest = sha256(png);
-        const file = `img-${digest.slice(0, 12)}.png`;
-        if (!seen.has(digest)) {
-          seen.set(digest, file);
-          assets.set(file, png);
+  const stext = page.toStructuredText("preserve-images");
+  try {
+    stext.walk({
+      onImageBlock(bbox, _transform, image) {
+        const pix = image.toPixmap();
+        try {
+          const png = pix.asPNG();
+          const digest = sha256(png);
+          const file = `img-${digest.slice(0, 12)}.png`;
+          if (!seen.has(digest)) {
+            seen.set(digest, file);
+            assets.set(file, png);
+          }
+          out.push({
+            kind: "imageBlock",
+            bbox: rectToBBox(bbox as never as [number, number, number, number]),
+            width: pix.getWidth(),
+            height: pix.getHeight(),
+            sha256: digest,
+            file,
+          });
+        } finally {
+          pix.destroy();
         }
-        out.push({
-          kind: "imageBlock",
-          bbox: rectToBBox(bbox as never as [number, number, number, number]),
-          width: pix.getWidth(),
-          height: pix.getHeight(),
-          sha256: digest,
-          file,
-        });
-      } finally {
-        pix.destroy();
-      }
-    },
-  });
+      },
+    });
+  } finally {
+    stext.destroy();
+  }
   out.sort(byReadingOrder);
   return out;
 }
@@ -381,7 +404,23 @@ function pageContentStream(page: mupdf.PDFPage): string {
  * Text (BT..ET) and everything else is skipped — the stext layer owns text.
  * Coordinates are flipped to the same top-left origin the stext JSON uses.
  */
-function extractVectors(page: mupdf.PDFPage, pageHeight: number): VectorSegment[] {
+export function vectorBBoxOf(
+  segment: readonly [number, number, number, number],
+  origin: Pick<PageBounds, "left" | "top">,
+): BBox {
+  const [x0, y0, x1, y1] = segment;
+  return {
+    x0: R(Math.min(x0, x1) - origin.left),
+    y0: R(origin.top - Math.max(y0, y1)),
+    x1: R(Math.max(x0, x1) - origin.left),
+    y1: R(origin.top - Math.min(y0, y1)),
+  };
+}
+
+function extractVectors(
+  page: mupdf.PDFPage,
+  origin: Pick<PageBounds, "left" | "top">,
+): VectorSegment[] {
   const src = pageContentStream(page);
   const tokens =
     src.match(
@@ -414,12 +453,7 @@ function extractVectors(page: mupdf.PDFPage, pageHeight: number): VectorSegment[
       const scale = Math.sqrt(Math.abs(ctm[0] * ctm[3] - ctm[1] * ctm[2])) || 1;
       segments.push({
         kind: "vector",
-        bbox: {
-          x0: R(Math.min(seg.x0, seg.x1)),
-          y0: R(pageHeight - Math.max(seg.y0, seg.y1)),
-          x1: R(Math.max(seg.x0, seg.x1)),
-          y1: R(pageHeight - Math.min(seg.y0, seg.y1)),
-        },
+        bbox: vectorBBoxOf([seg.x0, seg.y0, seg.x1, seg.y1], origin),
         orientation: isHRule ? "horizontal" : "vertical",
         thickness: R(stroked ? lw * scale : Math.min(w, h)),
       });
@@ -518,15 +552,18 @@ function extractLinks(doc: mupdf.PDFDocument, page: mupdf.PDFPage): LinkRegion[]
 }
 
 type RawOutline = { title?: string; uri?: string; down?: RawOutline[] };
-function mapOutline(
+const MAX_OUTLINE_DEPTH = 32;
+
+export function mapOutline(
   items: RawOutline[] | null | undefined,
   doc: mupdf.PDFDocument,
+  depth = 0,
 ): OutlineNode[] {
-  if (!items) return [];
+  if (!items || depth >= MAX_OUTLINE_DEPTH) return [];
   return items.map((it) => ({
     title: it.title ?? "",
     page: it.uri ? doc.resolveLink(it.uri) : -1,
-    children: mapOutline(it.down, doc),
+    children: mapOutline(it.down, doc, depth + 1),
   }));
 }
 
@@ -583,7 +620,7 @@ export function extract(pdfBytes: Uint8Array, opts: ExtractOptions = {}): Extrac
           height: bounds.height,
           blocks: extractTextBlocks(page, fontStats),
           images: extractImages(page, assets, seenImages),
-          vectors: extractVectors(page, bounds.top),
+          vectors: extractVectors(page, bounds),
           links: extractLinks(doc, page),
         });
       } finally {
