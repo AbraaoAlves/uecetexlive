@@ -38,3 +38,35 @@ test("as abas do rail alternam arquivos e conformidade pelo teclado", async ({
   await expect(filesTab).toHaveAttribute("aria-selected", "true");
   await expect(page.getByTestId("project-files-panel")).toBeVisible();
 });
+
+test("ir para mantém a aba aberta e identifica o item já visitado", async ({ page }) => {
+  await page.goto("/");
+  await dismissWelcome(page);
+
+  await page.getByTestId("rail-tab-compliance").click();
+  const expand = page.getByTestId("compliance-expand-references");
+  if ((await expand.getAttribute("aria-expanded")) === "false") await expand.click();
+
+  const goto = page.locator('[data-testid^="compliance-goto-references-"]').first();
+  await expect(goto).toBeVisible();
+  const gotoId = await goto.getAttribute("data-testid");
+  expect(gotoId).toBeTruthy();
+  const itemTestId = gotoId?.replace("compliance-goto-", "compliance-item-");
+  const visitedTestId = gotoId?.replace("compliance-goto-", "compliance-item-visited-");
+
+  await goto.click();
+
+  await expect(page.getByTestId("rail-tab-compliance")).toHaveAttribute(
+    "aria-selected",
+    "true",
+  );
+  await expect(page.getByTestId("compliance-rail-panel")).toBeVisible();
+  await expect(page.getByTestId(itemTestId ?? "")).toHaveAttribute(
+    "data-visited",
+    "true",
+  );
+  await expect(page.getByTestId(visitedTestId ?? "")).toBeVisible();
+  await expect(
+    page.getByTestId("editor-pane").getByTestId("references-panel"),
+  ).toBeVisible();
+});

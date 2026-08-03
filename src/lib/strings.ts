@@ -351,6 +351,7 @@ export const strings = {
     collapseItems: "ocultar itens",
     gotoItem: "ir para",
     notNavigable: "Não há atalho para esta pendência.",
+    visitedItem: "já visitado",
     pretextualOk: "Os dados do trabalho (título, autor, orientador…) estão preenchidos.",
     pretextualWarnOne: "Falta preencher 1 dado do trabalho.",
     pretextualWarnMany: "Faltam preencher {n} dados do trabalho.",

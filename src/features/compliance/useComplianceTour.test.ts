@@ -36,6 +36,16 @@ describe("useComplianceTour", () => {
     act(() => expect(result.current.next("figures")?.id).toBe("b"));
   });
 
+  it("marks a selected item as visited without removing it from the tour", () => {
+    const { result } = renderHook(() => useComplianceTour(figures(["a", "b"])));
+
+    act(() => result.current.visit("b"));
+
+    expect(result.current.current?.id).toBe("b");
+    expect([...result.current.visited]).toEqual(["b"]);
+    act(() => expect(result.current.next("figures")?.id).toBe("a"));
+  });
+
   it("forgets only ids that disappear and reconciles the current item", () => {
     const { result, rerender } = renderHook(({ checks }) => useComplianceTour(checks), {
       initialProps: { checks: figures(["a", "b", "c"]) },

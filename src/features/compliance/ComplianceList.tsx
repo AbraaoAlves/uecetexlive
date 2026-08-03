@@ -95,6 +95,7 @@ function ComplianceItemIcon({ item }: { item: ComplianceItem }) {
 export interface ComplianceListProps {
   checks: readonly ComplianceCheck[];
   onAction: (action: ComplianceAction) => void;
+  onItemAction?: (item: ComplianceItem) => void;
   onNext?: (checkId: CheckId) => void;
   onReviewAction?: (action: ComplianceReviewAction) => void;
   currentItemId?: string | null;
@@ -105,6 +106,7 @@ export interface ComplianceListProps {
 interface ComplianceCheckRowProps {
   check: ComplianceCheck;
   onAction: (action: ComplianceAction) => void;
+  onItemAction?: (item: ComplianceItem) => void;
   onNext?: (checkId: CheckId) => void;
   onReviewAction?: (action: ComplianceReviewAction) => void;
   currentItemId?: string | null;
@@ -115,6 +117,7 @@ interface ComplianceCheckRowProps {
 function ComplianceCheckRow({
   check,
   onAction,
+  onItemAction,
   onNext,
   onReviewAction,
   currentItemId,
@@ -204,6 +207,7 @@ function ComplianceCheckRow({
         >
           {items.map((item) => {
             const danger = item.reason === "sem-legenda-e-fonte";
+            const visited = visitedItemIds?.has(item.id) ?? false;
             const itemTestId = `compliance-item-${itemPrefix}${item.id}`;
             return (
               <li
@@ -212,13 +216,19 @@ function ComplianceCheckRow({
                 data-reason={item.reason}
                 data-tone={danger ? "danger" : "warning"}
                 data-current={currentItemId === item.id ? "true" : undefined}
-                data-visited={visitedItemIds?.has(item.id) ? "true" : undefined}
+                data-visited={visited ? "true" : undefined}
                 aria-current={currentItemId === item.id ? "true" : undefined}
-                aria-label={item.detail ? `${item.label}. ${item.detail}` : item.label}
+                aria-label={[
+                  item.label,
+                  item.detail,
+                  visited ? strings.compliance.visitedItem : null,
+                ]
+                  .filter(Boolean)
+                  .join(". ")}
                 className={`flex items-start gap-2 rounded border px-2.5 py-2 ${
                   danger ? "border-danger/30 text-danger" : "text-ink-muted"
                 } ${currentItemId === item.id ? "ring-2 ring-accent" : ""} ${
-                  visitedItemIds?.has(item.id) ? "opacity-70" : ""
+                  visited ? "opacity-70" : ""
                 }`}
               >
                 <ComplianceItemIcon item={item} />
@@ -232,6 +242,17 @@ function ComplianceCheckRow({
                   >
                     {item.label}
                   </span>
+                  {visited && (
+                    <span
+                      className="mt-0.5 flex items-center gap-1 text-xs text-ink-subtle"
+                      data-testid={`compliance-item-visited-${itemPrefix}${item.id}`}
+                    >
+                      <span role="img" aria-label={strings.compliance.visitedItem}>
+                        <CheckCircle2 aria-hidden="true" className="size-3" />
+                      </span>
+                      <span>{strings.compliance.visitedItem}</span>
+                    </span>
+                  )}
                   {item.detail && (
                     <span
                       title={variant === "rail" ? item.detail : undefined}
@@ -259,7 +280,10 @@ function ComplianceCheckRow({
                         : strings.compliance.fixAction
                     }: ${item.label}`}
                     className="shrink-0 text-accent text-xs underline hover:no-underline"
-                    onClick={() => onAction(item.action as ComplianceAction)}
+                    onClick={() => {
+                      onItemAction?.(item);
+                      onAction(item.action as ComplianceAction);
+                    }}
                   >
                     {variant === "rail"
                       ? strings.compliance.gotoItem
@@ -295,6 +319,7 @@ function ComplianceCheckRow({
 export function ComplianceList({
   checks,
   onAction,
+  onItemAction,
   onNext,
   onReviewAction,
   currentItemId,
@@ -308,6 +333,7 @@ export function ComplianceList({
           key={check.id}
           check={check}
           onAction={onAction}
+          onItemAction={onItemAction}
           onNext={onNext}
           onReviewAction={onReviewAction}
           currentItemId={currentItemId}

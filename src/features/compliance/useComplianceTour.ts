@@ -5,6 +5,7 @@ export interface ComplianceTour {
   current: ComplianceItem | null;
   visited: ReadonlySet<string>;
   next: (checkId: CheckId) => ComplianceItem | null;
+  visit: (itemId: string) => void;
 }
 
 export function useComplianceTour(checks: readonly ComplianceCheck[]): ComplianceTour {
@@ -55,9 +56,23 @@ export function useComplianceTour(checks: readonly ComplianceCheck[]): Complianc
     [checks],
   );
 
+  const visit = useCallback(
+    (itemId: string) => {
+      if (!items.some((item) => item.id === itemId)) return;
+      const nextVisited = new Set(visitedRef.current);
+      nextVisited.add(itemId);
+      visitedRef.current = nextVisited;
+      currentIdRef.current = itemId;
+      setVisited(nextVisited);
+      setCurrentId(itemId);
+    },
+    [items],
+  );
+
   return {
     current: items.find((item) => item.id === currentId) ?? null,
     visited,
     next,
+    visit,
   };
 }

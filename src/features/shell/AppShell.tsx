@@ -39,6 +39,7 @@ import { ComplianceRail } from "@/features/compliance/ComplianceRail";
 import {
   type CheckId,
   type ComplianceAction,
+  type ComplianceItem,
   type ComplianceReviewAction,
   computeComplianceChecklist,
   pendingItemCount,
@@ -645,7 +646,6 @@ function ShellInner() {
 
   const handleComplianceAction = useCallback(
     (action: ComplianceAction) => {
-      setChecklistOpen(false);
       if (action.kind === "openMetadata") {
         setMetadataOpen(true);
       } else if (action.kind === "openReferences") {
@@ -664,6 +664,13 @@ function ShellInner() {
       }
     },
     [bibFile, navigateTo],
+  );
+
+  const handleComplianceItemAction = useCallback(
+    (item: ComplianceItem) => {
+      complianceTour.visit(item.id);
+    },
+    [complianceTour.visit],
   );
 
   const handleComplianceNext = useCallback(
@@ -1427,6 +1434,7 @@ function ShellInner() {
                 <ComplianceRail
                   checks={complianceChecks}
                   onAction={handleComplianceAction}
+                  onItemAction={handleComplianceItemAction}
                   onReviewAction={handleComplianceReviewAction}
                   currentItemId={complianceTour.current?.id}
                   visitedItemIds={complianceTour.visited}
@@ -1608,8 +1616,14 @@ function ShellInner() {
       {checklistOpen && (
         <ComplianceChecklist
           checks={complianceChecks}
-          onAction={handleComplianceAction}
-          onNext={handleComplianceNext}
+          onAction={(action) => {
+            setChecklistOpen(false);
+            handleComplianceAction(action);
+          }}
+          onNext={(checkId) => {
+            setChecklistOpen(false);
+            handleComplianceNext(checkId);
+          }}
           onReviewAction={handleComplianceReviewAction}
           currentItemId={complianceTour.current?.id}
           visitedItemIds={complianceTour.visited}
