@@ -278,6 +278,7 @@ export const MathBlock = Node.create({
 
 function FigureView({ node, updateAttributes }: NodeViewProps) {
   const resources = useContext(EditorResourcesContext);
+  const strings = useEditorStrings();
   const src = node.attrs.src as string | null;
   const url = src ? resources.imageUrl(src) : null;
   const isPdf = src?.toLowerCase().endsWith(".pdf") ?? false;
@@ -312,8 +313,11 @@ function FigureView({ node, updateAttributes }: NodeViewProps) {
           />
           <label className="mt-1 flex items-center gap-1 text-ink-subtle text-xs">
             <span aria-hidden="true">\Fonte{"{"}</span>
+            {/* Os dois delimitadores são decoração: quem lê por leitor de tela
+                precisa do nome no próprio campo. */}
             <input
               data-testid="figure-fonte"
+              aria-label={strings.editor.figureFonteLabel}
               className="min-w-0 flex-1 bg-transparent text-center outline-none"
               value={(node.attrs.fonte as string) ?? ""}
               onChange={(e) =>

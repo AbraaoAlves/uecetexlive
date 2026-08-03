@@ -25,6 +25,7 @@ export interface EditorStrings {
     findNoMatches: string;
     tableLabel: string;
     editAsLatex: string;
+    figureFonteLabel: string;
     uploadImage: string;
     uploadImageError: string;
   };
@@ -82,6 +83,7 @@ export const DEFAULT_EDITOR_STRINGS: EditorStrings = {
     findNoMatches: "nenhuma ocorrência",
     tableLabel: "Tabela",
     editAsLatex: "editar como LaTeX",
+    figureFonteLabel: "Indicação da fonte da figura",
     uploadImage: "Enviar imagem ou PDF do computador…",
     uploadImageError: "Não foi possível enviar — use PNG, JPG ou PDF de até 10 MB.",
   },

@@ -112,7 +112,16 @@ export function ReferencesPanel({
   const rowRefs = useRef(new Map<string, HTMLLIElement>());
   const focusReference = useCallback((key: string) => {
     const row = rowRefs.current.get(key);
-    if (!row) return;
+    if (!row) {
+      // A linha some quando a entrada foi apagada ou quando a busca ocupa o
+      // lugar da lista. Voltar em silêncio deixa quem usa leitor de tela sem
+      // saber que o atalho não levou a lugar nenhum.
+      setFocusAnnouncement((previous) => ({
+        text: strings.references.focusNotFound.replace("{key}", key),
+        sequence: (previous?.sequence ?? 0) + 1,
+      }));
+      return;
+    }
     row.scrollIntoView({ block: "center" });
     const target =
       row.querySelector<HTMLElement>(`[data-testid="reference-edit-${key}"]`) ?? row;

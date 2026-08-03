@@ -288,6 +288,7 @@ export const strings = {
     completeGroupLabel: "Completas",
     goToFirstIncomplete: "ir para a primeira",
     focusedAnnouncement: "Referência {key} pronta para edição.",
+    focusNotFound: "Referência {key} não está na lista.",
     summaryOne: "1 referência",
     summaryMany: "{n} referências",
     summaryIncomplete: "{n} incompletas",

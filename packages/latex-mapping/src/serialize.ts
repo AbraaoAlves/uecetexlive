@@ -153,7 +153,9 @@ export function serializeBlock(
       const src = (node.attrs?.src as string) ?? "";
       const caption = (node.attrs?.caption as string) ?? "";
       const label = node.attrs?.label as string | null;
-      const fonte = node.attrs?.fonte as string | null;
+      // `?? null` porque um nó sem o atributo chega como `undefined` — sem
+      // isso o `.trim()` abaixo derruba a serialização inteira.
+      const fonte = (node.attrs?.fonte as string | null | undefined) ?? null;
       const captionInner = `${label ? `\\label{${label}}` : ""}${escapeText(caption)}`;
       const graphics = `\\includegraphics${options ? `[${options}]` : ""}{${src}}`;
       return [

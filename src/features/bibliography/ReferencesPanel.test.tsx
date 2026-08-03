@@ -125,15 +125,24 @@ describe("ReferencesPanel", () => {
 
     const copy = screen.getByTestId("reference-copy-freire1970");
     fireEvent.click(copy);
-    await waitFor(() => expect(writeText).toHaveBeenCalledTimes(1));
+    // Esperar pela contagem de chamadas não serve: `writeText` roda no clique,
+    // antes de o anúncio existir. O sinal observável é o próprio anúncio.
+    await waitFor(() =>
+      expect(screen.getByTestId("references-copy-status").textContent).toContain(
+        "Citação copiada",
+      ),
+    );
     const firstStatus = screen.getByTestId("references-copy-status");
 
     fireEvent.click(copy);
-    await waitFor(() => expect(writeText).toHaveBeenCalledTimes(2));
-    const secondStatus = screen.getByTestId("references-copy-status");
+    await waitFor(() =>
+      expect(screen.getByTestId("references-copy-status")).not.toBe(firstStatus),
+    );
 
-    expect(secondStatus.textContent).toContain("Citação copiada");
-    expect(secondStatus).not.toBe(firstStatus);
+    expect(screen.getByTestId("references-copy-status").textContent).toContain(
+      "Citação copiada",
+    );
+    expect(writeText).toHaveBeenCalledTimes(2);
   });
 
   it("edits a field through the dialog and writes only that entry's chunk", () => {

@@ -348,6 +348,14 @@ describe("figures (§4.2)", () => {
     expect(serializeDoc(generated)).not.toContain("\\Fonte");
   });
 
+  it("serializes a figure node that has no fonte attribute at all", () => {
+    const generated = doc({
+      type: "latexFigure",
+      attrs: { src: "figuras/nova.png", caption: "Nova figura", placement: "htb" },
+    });
+    expect(serializeDoc(generated)).not.toContain("\\Fonte");
+  });
+
   it("preserves the UECE source after changing a figure caption", () => {
     const ueceFigure = [
       "\\begin{figure}[ht!]",
