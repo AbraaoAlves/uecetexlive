@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ReferencesPanel } from "./ReferencesPanel";
 
@@ -116,6 +116,24 @@ describe("ReferencesPanel", () => {
     expect(screen.getByTestId("references-copy-status").textContent).toContain(
       "Não foi possível copiar",
     );
+  });
+
+  it("recria o anúncio ao copiar a mesma citação novamente", async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    vi.stubGlobal("navigator", { clipboard: { writeText } });
+    render(<ReferencesPanel bibText={SAMPLE} />);
+
+    const copy = screen.getByTestId("reference-copy-freire1970");
+    fireEvent.click(copy);
+    await waitFor(() => expect(writeText).toHaveBeenCalledTimes(1));
+    const firstStatus = screen.getByTestId("references-copy-status");
+
+    fireEvent.click(copy);
+    await waitFor(() => expect(writeText).toHaveBeenCalledTimes(2));
+    const secondStatus = screen.getByTestId("references-copy-status");
+
+    expect(secondStatus.textContent).toContain("Citação copiada");
+    expect(secondStatus).not.toBe(firstStatus);
   });
 
   it("edits a field through the dialog and writes only that entry's chunk", () => {

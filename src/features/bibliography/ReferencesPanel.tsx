@@ -84,7 +84,11 @@ export function ReferencesPanel({
   const [searchOpen, setSearchOpen] = useState(false);
   const [addedToastKey, setAddedToastKey] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
-  const [copyState, setCopyState] = useState<{ key: string; ok: boolean } | null>(null);
+  const [copyState, setCopyState] = useState<{
+    key: string;
+    ok: boolean;
+    sequence: number;
+  } | null>(null);
   const [editing, setEditing] = useState<EditingReference | null>(null);
   const [editError, setEditError] = useState<string | null>(null);
   const [removeTarget, setRemoveTarget] = useState<{
@@ -118,6 +122,13 @@ export function ReferencesPanel({
       sequence: (previous?.sequence ?? 0) + 1,
     }));
   }, []);
+  const announceCopy = (key: string, ok: boolean) => {
+    setCopyState((previous) => ({
+      key,
+      ok,
+      sequence: (previous?.sequence ?? 0) + 1,
+    }));
+  };
   // biome-ignore lint/correctness/useExhaustiveDependencies: focusNonce é o sinal de repetição — pedir a mesma chave duas vezes tem de destacar duas vezes
   useEffect(() => {
     if (!focusKey) return;
@@ -261,7 +272,12 @@ export function ReferencesPanel({
     >
       {/* Trocar o rótulo do botão não é anunciado por leitor de tela; esta
           região é o que faz "copiado" (ou a falha) chegar a quem não vê. */}
-      <output className="sr-only" aria-live="polite" data-testid="references-copy-status">
+      <output
+        key={`copy-${copyState?.sequence ?? 0}`}
+        className="sr-only"
+        aria-live="polite"
+        data-testid="references-copy-status"
+      >
         {copyState === null
           ? ""
           : copyState.ok
@@ -269,7 +285,7 @@ export function ReferencesPanel({
             : strings.references.copyFailed}
       </output>
       <output
-        key={focusAnnouncement?.sequence ?? 0}
+        key={`focus-${focusAnnouncement?.sequence ?? 0}`}
         className="sr-only"
         aria-live="polite"
         data-testid="references-focus-status"
@@ -506,13 +522,13 @@ export function ReferencesPanel({
                               onClick={() => {
                                 const command = `\\${citeCommand}{${row.key}}`;
                                 if (!navigator.clipboard) {
-                                  setCopyState({ key: row.key, ok: false });
+                                  announceCopy(row.key, false);
                                   return;
                                 }
                                 void navigator.clipboard
                                   .writeText(command)
-                                  .then(() => setCopyState({ key: row.key, ok: true }))
-                                  .catch(() => setCopyState({ key: row.key, ok: false }));
+                                  .then(() => announceCopy(row.key, true))
+                                  .catch(() => announceCopy(row.key, false));
                               }}
                             >
                               {copyState?.key === row.key && copyState.ok
