@@ -35,6 +35,7 @@ import { ReferencesPanel } from "@/features/bibliography/ReferencesPanel";
 import { useCompile } from "@/features/compiler/useCompile";
 import { useIdleWarmup } from "@/features/compiler/useIdleWarmup";
 import { ComplianceChecklist } from "@/features/compliance/ComplianceChecklist";
+import { ComplianceRail } from "@/features/compliance/ComplianceRail";
 import {
   type CheckId,
   type ComplianceAction,
@@ -1421,9 +1422,15 @@ function ShellInner() {
               <Tabs.Content
                 value="compliance"
                 data-testid="compliance-rail-panel"
-                className="min-h-0 flex-1 outline-none"
+                className="min-h-0 flex-1 overflow-hidden outline-none"
               >
-                <span className="sr-only">{strings.rail.complianceTab}</span>
+                <ComplianceRail
+                  checks={complianceChecks}
+                  onAction={handleComplianceAction}
+                  onReviewAction={handleComplianceReviewAction}
+                  currentItemId={complianceTour.current?.id}
+                  visitedItemIds={complianceTour.visited}
+                />
               </Tabs.Content>
             </Tabs.Root>
           </div>
