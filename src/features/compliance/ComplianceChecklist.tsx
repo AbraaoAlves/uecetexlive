@@ -6,10 +6,14 @@
  * which owns opening the wizard/references tab/file (AppShell already
  * owns those surfaces — this panel doesn't reach into them directly).
  */
-import { CheckCircle2, TriangleAlert, X } from "lucide-react";
+import { CheckCircle2, HelpCircle, ImageOff, TriangleAlert, X } from "lucide-react";
 import { useEffect } from "react";
 import { strings } from "@/lib/strings";
-import type { ComplianceAction, ComplianceCheck } from "./compliance-checklist";
+import type {
+  ComplianceAction,
+  ComplianceCheck,
+  ComplianceItem,
+} from "./compliance-checklist";
 
 export interface ComplianceChecklistProps {
   checks: ComplianceCheck[];
@@ -67,6 +71,37 @@ function messageFor(check: ComplianceCheck): string {
   );
 }
 
+function ComplianceItemIcon({ item }: { item: ComplianceItem }) {
+  const className = `mt-0.5 size-4 shrink-0 ${
+    item.reason === "sem-legenda-e-fonte" ? "text-danger" : "text-warning"
+  }`;
+  if (item.reason === "sem-legenda") {
+    return (
+      <ImageOff
+        className={className}
+        data-testid={`compliance-item-icon-${item.id}`}
+        data-icon="image-off"
+      />
+    );
+  }
+  if (item.reason === "sem-fonte") {
+    return (
+      <HelpCircle
+        className={className}
+        data-testid={`compliance-item-icon-${item.id}`}
+        data-icon="help-circle"
+      />
+    );
+  }
+  return (
+    <TriangleAlert
+      className={className}
+      data-testid={`compliance-item-icon-${item.id}`}
+      data-icon="triangle-alert"
+    />
+  );
+}
+
 export function ComplianceChecklist({
   checks,
   onAction,
@@ -118,25 +153,72 @@ export function ComplianceChecklist({
                 key={check.id}
                 data-testid={`compliance-check-${check.id}`}
                 data-status={check.status}
-                className="flex items-start gap-2.5"
+                className="flex flex-col gap-2"
               >
-                {check.status === "ok" ? (
-                  <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-success" />
-                ) : (
-                  <TriangleAlert className="mt-0.5 size-4 shrink-0 text-warning" />
-                )}
-                <span className="flex-1 text-sm">{messageFor(check)}</span>
-                {check.status === "warn" && check.action && (
-                  <button
-                    type="button"
-                    data-testid={`compliance-fix-${check.id}`}
-                    className="shrink-0 text-accent text-sm underline hover:no-underline"
-                    onClick={() => {
-                      if (check.action) onAction(check.action);
-                    }}
-                  >
-                    {strings.compliance.fixAction}
-                  </button>
+                <div className="flex items-start gap-2.5">
+                  {check.status === "ok" ? (
+                    <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-success" />
+                  ) : (
+                    <TriangleAlert className="mt-0.5 size-4 shrink-0 text-warning" />
+                  )}
+                  <span className="flex-1 text-sm">{messageFor(check)}</span>
+                  {check.status === "warn" && check.action && (
+                    <button
+                      type="button"
+                      data-testid={`compliance-fix-${check.id}`}
+                      className="shrink-0 text-accent text-sm underline hover:no-underline"
+                      onClick={() => {
+                        if (check.action) onAction(check.action);
+                      }}
+                    >
+                      {strings.compliance.fixAction}
+                    </button>
+                  )}
+                </div>
+                {check.status === "warn" && check.items && check.items.length > 0 && (
+                  <ul className="ml-6 flex flex-col gap-1.5">
+                    {check.items.map((item) => {
+                      const danger = item.reason === "sem-legenda-e-fonte";
+                      return (
+                        <li
+                          key={item.id}
+                          data-testid={`compliance-item-${item.id}`}
+                          data-reason={item.reason}
+                          data-tone={danger ? "danger" : "warning"}
+                          aria-label={
+                            item.detail ? `${item.label}. ${item.detail}` : item.label
+                          }
+                          className={`flex items-start gap-2 rounded border px-2.5 py-2 ${
+                            danger ? "border-danger/30 text-danger" : "text-ink-muted"
+                          }`}
+                        >
+                          <ComplianceItemIcon item={item} />
+                          <span className="min-w-0 flex-1">
+                            <span className="block break-words text-sm">
+                              {item.label}
+                            </span>
+                            {item.detail && (
+                              <span className="block text-xs opacity-90">
+                                {item.detail}
+                              </span>
+                            )}
+                          </span>
+                          {item.action && (
+                            <button
+                              type="button"
+                              data-testid={`compliance-item-fix-${item.id}`}
+                              className="shrink-0 text-accent text-xs underline hover:no-underline"
+                              onClick={() => {
+                                if (item.action) onAction(item.action);
+                              }}
+                            >
+                              {strings.compliance.fixAction}
+                            </button>
+                          )}
+                        </li>
+                      );
+                    })}
+                  </ul>
                 )}
               </li>
             ))}

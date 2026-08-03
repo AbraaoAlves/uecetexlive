@@ -71,6 +71,7 @@ function macroArgumentText(
       let groupIndex = 0;
       for (let index = macroIndex + 1; index < siblings.length; index += 1) {
         const sibling = siblings[index];
+        if (!sibling) continue;
         if (sibling.type === "whitespace" || sibling.type === "comment") continue;
         if (sibling.type !== "group") break;
         if (groupIndex === argumentIndex) return flattenText(sibling.content);
@@ -103,8 +104,7 @@ function macroArgumentText(
 }
 
 function containsFonteLegend(nodes: Ast.Node[]): boolean {
-  for (let index = 0; index < nodes.length; index += 1) {
-    const node = nodes[index];
+  for (const node of nodes) {
     if (
       node.type === "macro" &&
       node.content === "legend" &&
