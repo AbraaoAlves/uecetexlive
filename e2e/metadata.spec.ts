@@ -118,20 +118,38 @@ test("banca slots respect the work-type cap (TCC: 3, dissertação: 4, tese: 5)"
   await page.getByTestId("wizard-step-2").click();
   await page.getByTestId("metadata-option-tccgraduacao").check();
   await page.getByTestId("wizard-step-6").click();
-  await expect(page.getByTestId("metadata-field-membrodabancaquatro")).toBeVisible();
-  await expect(page.getByTestId("metadata-field-membrodabancacinco")).not.toBeVisible();
-  await expect(page.getByTestId("metadata-field-membrodabancaseis")).not.toBeVisible();
+
+  const segundo = page.getByTestId("metadata-field-membrodabancadois");
+  const terceiro = page.getByTestId("metadata-field-membrodabancatres");
+  const quarto = page.getByTestId("metadata-field-membrodabancaquatro");
+  const quinto = page.getByTestId("metadata-field-membrodabancacinco");
+  const sexto = page.getByTestId("metadata-field-membrodabancaseis");
+
+  await expect(segundo).toBeVisible();
+  await expect(terceiro).not.toBeVisible();
+  await segundo.fill("Membro dois");
+  await segundo.blur();
+  await expect(terceiro).toBeVisible();
+  await terceiro.fill("Membro três");
+  await terceiro.blur();
+  await expect(quarto).toBeVisible();
+  await expect(quinto).not.toBeVisible();
+  await expect(sexto).not.toBeVisible();
 
   await page.getByTestId("wizard-step-2").click();
   await page.getByTestId("metadata-option-dissertacao").check();
   await page.getByTestId("wizard-step-6").click();
-  await expect(page.getByTestId("metadata-field-membrodabancacinco")).toBeVisible();
-  await expect(page.getByTestId("metadata-field-membrodabancaseis")).not.toBeVisible();
+  await quarto.fill("Membro quatro");
+  await quarto.blur();
+  await expect(quinto).toBeVisible();
+  await expect(sexto).not.toBeVisible();
 
   await page.getByTestId("wizard-step-2").click();
   await page.getByTestId("metadata-option-tese").check();
   await page.getByTestId("wizard-step-6").click();
-  await expect(page.getByTestId("metadata-field-membrodabancaseis")).toBeVisible();
+  await quinto.fill("Membro cinco");
+  await quinto.blur();
+  await expect(sexto).toBeVisible();
 });
 
 test("resumo/abstract step writes surgically into their own files, not documento.tex", async ({

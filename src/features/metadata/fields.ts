@@ -55,9 +55,14 @@ const isStricto = (t: WorkType | null) => t === "dissertacao" || t === "tese";
 const isUab = (_type: WorkType | null, fields: ReadonlyMap<string, MetadataField>) =>
   fields.get("ehuab")?.value.trim() === "sim";
 
-/** O campo tem algum valor digitado? */
-const filled = (macro: string) => (fields: ReadonlyMap<string, MetadataField>) =>
-  (fields.get(macro)?.value.trim() ?? "") !== "";
+const BANCA_PLACEHOLDER = /^Membro da Banca (?:Dois|Três|Quatro|Cinco|Seis)$/;
+
+/** O campo tem um nome de banca, não o exemplo distribuído pelo modelo? */
+const namedBancaMember =
+  (macro: string) => (fields: ReadonlyMap<string, MetadataField>) => {
+    const value = fields.get(macro)?.value.trim() ?? "";
+    return value !== "" && !BANCA_PLACEHOLDER.test(value);
+  };
 
 /**
  * Revelação progressiva da banca: o slot seguinte só aparece depois que o
@@ -69,8 +74,8 @@ const afterSlot = (
   own: string,
   extra?: (type: WorkType | null) => boolean,
 ): FieldDef["showWhen"] => {
-  const previousFilled = filled(`membrodabanca${previous}`);
-  const ownFilled = filled(`membrodabanca${own}`);
+  const previousFilled = namedBancaMember(`membrodabanca${previous}`);
+  const ownFilled = namedBancaMember(`membrodabanca${own}`);
   // "Nunca esconder dado existente" vale para a cadeia progressiva, NÃO para o
   // limite do tipo de trabalho: a folha de aprovação de TCC imprime até o 4º
   // membro (lib/uecetex2.sty), então mostrar o 5º sugeriria que ele aparece no
@@ -380,7 +385,7 @@ export const WIZARD_STEPS: readonly StepDef[] = [
       ...bancaSlot("dois", 2, {
         firstHint: "Deixe vazio para não aparecer na folha de aprovação",
       }),
-      ...bancaSlot("tres", 3),
+      ...bancaSlot("tres", 3, { showWhen: afterSlot("dois", "tres") }),
       ...bancaSlot("quatro", 4, { showWhen: afterSlot("tres", "quatro") }),
       // TCC (graduação/especialização) imprime só até o membro 4.
       ...bancaSlot("cinco", 5, { showWhen: afterSlot("quatro", "cinco", isStricto) }),
