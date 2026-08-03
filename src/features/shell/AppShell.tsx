@@ -34,10 +34,8 @@ import {
 import { ReferencesPanel } from "@/features/bibliography/ReferencesPanel";
 import { useCompile } from "@/features/compiler/useCompile";
 import { useIdleWarmup } from "@/features/compiler/useIdleWarmup";
-import { ComplianceChecklist } from "@/features/compliance/ComplianceChecklist";
 import { ComplianceRail } from "@/features/compliance/ComplianceRail";
 import {
-  type CheckId,
   type ComplianceAction,
   type ComplianceItem,
   type ComplianceReviewAction,
@@ -246,7 +244,6 @@ function ShellInner() {
     useBackupReminder(ui, setUi, uiReady);
   const [metadataOpen, setMetadataOpen] = useState(false);
   const [guideOpen, setGuideOpen] = useState(false);
-  const [checklistOpen, setChecklistOpen] = useState(false);
   const [newChapterOpen, setNewChapterOpen] = useState(false);
   const [previewTab, setPreviewTab] = useState<"pdf" | "log">("pdf");
   // Um "estou no fonte" por tipo de edição visual, não um só: quem pede a
@@ -671,14 +668,6 @@ function ShellInner() {
       complianceTour.visit(item.id);
     },
     [complianceTour.visit],
-  );
-
-  const handleComplianceNext = useCallback(
-    (checkId: CheckId) => {
-      const item = complianceTour.next(checkId);
-      if (item?.action) handleComplianceAction(item.action);
-    },
-    [complianceTour.next, handleComplianceAction],
   );
 
   const handleComplianceReviewAction = useCallback(
@@ -1422,8 +1411,7 @@ function ShellInner() {
                   onOpenMetadata={() => setMetadataOpen(true)}
                   metadataActive={metadataOpen}
                   metadataPending={metadataPending}
-                  onOpenChecklist={() => setChecklistOpen(true)}
-                  checklistActive={checklistOpen}
+                  onOpenCompliance={() => setUi({ railTab: "compliance" })}
                 />
               </Tabs.Content>
               <Tabs.Content
@@ -1611,23 +1599,6 @@ function ShellInner() {
           onApply={applyWorkMetadata}
           onClose={() => setMetadataOpen(false)}
           persisted={saveState === "saved"}
-        />
-      )}
-      {checklistOpen && (
-        <ComplianceChecklist
-          checks={complianceChecks}
-          onAction={(action) => {
-            setChecklistOpen(false);
-            handleComplianceAction(action);
-          }}
-          onNext={(checkId) => {
-            setChecklistOpen(false);
-            handleComplianceNext(checkId);
-          }}
-          onReviewAction={handleComplianceReviewAction}
-          currentItemId={complianceTour.current?.id}
-          visitedItemIds={complianceTour.visited}
-          onClose={() => setChecklistOpen(false)}
         />
       )}
       {newChapterOpen && (

@@ -1,11 +1,11 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { ComplianceChecklist } from "./ComplianceChecklist";
+import { ComplianceList } from "./ComplianceList";
 import type { ComplianceCheck } from "./compliance-checklist";
 
 afterEach(cleanup);
 
-describe("ComplianceChecklist", () => {
+describe("ComplianceList", () => {
   it("distinguishes every figure reason by icon, tone and accessible text", () => {
     const checks: ComplianceCheck[] = [
       {
@@ -35,23 +35,23 @@ describe("ComplianceChecklist", () => {
       },
     ];
 
-    render(<ComplianceChecklist checks={checks} onAction={vi.fn()} onClose={vi.fn()} />);
+    render(<ComplianceList checks={checks} onAction={vi.fn()} />);
 
-    const noCaption = screen.getByTestId("compliance-item-cap.tex:0");
+    const noCaption = screen.getByTestId("compliance-item-figures-cap.tex:0");
     expect(noCaption.getAttribute("aria-label")).toContain("Sem legenda.");
     expect(screen.getByTestId("compliance-item-icon-cap.tex:0").dataset.icon).toBe(
       "image-off",
     );
     expect(noCaption.dataset.tone).toBe("warning");
 
-    const noFonte = screen.getByTestId("compliance-item-cap.tex:1");
+    const noFonte = screen.getByTestId("compliance-item-figures-cap.tex:1");
     expect(noFonte.getAttribute("aria-label")).toContain("Sem indicação de fonte.");
     expect(screen.getByTestId("compliance-item-icon-cap.tex:1").dataset.icon).toBe(
       "help-circle",
     );
     expect(noFonte.dataset.tone).toBe("warning");
 
-    const noBoth = screen.getByTestId("compliance-item-cap.tex:2");
+    const noBoth = screen.getByTestId("compliance-item-figures-cap.tex:2");
     expect(noBoth.getAttribute("aria-label")).toContain(
       "Sem legenda e sem indicação de fonte.",
     );
@@ -81,11 +81,10 @@ describe("ComplianceChecklist", () => {
     ];
 
     render(
-      <ComplianceChecklist
+      <ComplianceList
         checks={checks}
         onAction={vi.fn()}
         onReviewAction={onReviewAction}
-        onClose={vi.fn()}
       />,
     );
 
@@ -123,14 +122,13 @@ describe("ComplianceChecklist", () => {
       },
     ];
 
-    render(<ComplianceChecklist checks={checks} onAction={vi.fn()} onClose={vi.fn()} />);
+    render(<ComplianceList checks={checks} onAction={vi.fn()} />);
 
     expect(screen.queryByTestId("compliance-marker-hint")).toBeNull();
     expect(screen.queryByTestId("compliance-item-review-marker")).toBeNull();
   });
 
-  it("offers the next item from each check that can enumerate", () => {
-    const onNext = vi.fn();
+  it("mantém o item visitado e os atalhos de cada pendência visíveis", () => {
     const checks: ComplianceCheck[] = [
       {
         id: "figures",
@@ -148,29 +146,20 @@ describe("ComplianceChecklist", () => {
     ];
 
     render(
-      <ComplianceChecklist
+      <ComplianceList
         checks={checks}
         onAction={vi.fn()}
-        onNext={onNext}
         currentItemId="cap.tex:0"
         visitedItemIds={new Set(["cap.tex:0"])}
-        onClose={vi.fn()}
       />,
     );
 
-    fireEvent.click(screen.getByTestId("compliance-next-figures"));
-    expect(onNext).toHaveBeenCalledWith("figures");
-    expect(
-      screen.getByRole("button", {
-        name: "próximo: 1 figura está sem legenda ou sem indicação de fonte.",
-      }),
-    ).toBeTruthy();
-    const current = screen.getByTestId("compliance-item-cap.tex:0");
+    const current = screen.getByTestId("compliance-item-figures-cap.tex:0");
     expect(current.getAttribute("aria-current")).toBe("true");
     expect(current.className).toContain("ring-2");
     expect(current.className).toContain("opacity-70");
-    expect(screen.queryByTestId("compliance-fix-figures")).toBeNull();
-    expect(screen.getByTestId("compliance-fix-abstract")).toBeTruthy();
-    expect(screen.queryByTestId("compliance-next-abstract")).toBeNull();
+    expect(screen.getByTestId("compliance-item-visited-figures-cap.tex:0")).toBeTruthy();
+    expect(screen.getByText("Não há atalho para esta pendência.")).toBeTruthy();
+    expect(screen.getByTestId("compliance-goto-abstract")).toBeTruthy();
   });
 });

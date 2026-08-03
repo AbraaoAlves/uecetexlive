@@ -3,7 +3,7 @@ import { strings } from "@/lib/strings";
 import { ComplianceList, type ComplianceListProps } from "./ComplianceList";
 import { pendingItemCount } from "./compliance-checklist";
 
-export type ComplianceRailProps = Omit<ComplianceListProps, "variant" | "onNext">;
+export type ComplianceRailProps = ComplianceListProps;
 
 export function ComplianceRail({ checks, ...props }: ComplianceRailProps) {
   const pendingCount = pendingItemCount(checks);
@@ -38,7 +38,7 @@ export function ComplianceRail({ checks, ...props }: ComplianceRailProps) {
       </header>
       {(!allClear || showOkChecks) && (
         <div className="min-h-0 flex-1 overflow-y-auto px-3 py-3">
-          <ComplianceList checks={checks} {...props} variant="rail" />
+          <ComplianceList checks={checks} {...props} />
         </div>
       )}
     </section>

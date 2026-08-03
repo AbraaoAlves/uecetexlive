@@ -47,9 +47,8 @@ export interface ProjectRailProps {
   metadataActive?: boolean;
   /** Title still the template placeholder — nudge the student. */
   metadataPending?: boolean;
-  /** Opens the "Meu trabalho está certo?" checklist (3.2). */
-  onOpenChecklist?: () => void;
-  checklistActive?: boolean;
+  /** Seleciona o painel de conformidade. */
+  onOpenCompliance?: () => void;
   /** Inclui ou tira do PDF a página opcional do arquivo (M2). */
   onToggleImprimir?: (macro: string, enabled: boolean) => void;
 }
@@ -91,8 +90,7 @@ export function ProjectRail({
   onOpenMetadata,
   metadataActive = false,
   metadataPending = false,
-  onOpenChecklist,
-  checklistActive = false,
+  onOpenCompliance,
   onToggleImprimir,
 }: ProjectRailProps) {
   const uploadInputRef = useRef<HTMLInputElement>(null);
@@ -153,15 +151,12 @@ export function ProjectRail({
           )}
         </button>
       )}
-      {onOpenChecklist && (
+      {onOpenCompliance && (
         <button
           type="button"
           data-testid="rail-checklist"
-          onClick={onOpenChecklist}
-          className={cn(
-            "mb-1 flex w-full items-center gap-2 px-3 py-1.5 text-left font-medium hover:bg-accent-soft/60",
-            checklistActive && "bg-accent-soft text-accent-strong",
-          )}
+          onClick={onOpenCompliance}
+          className="mb-1 flex w-full items-center gap-2 px-3 py-1.5 text-left font-medium hover:bg-accent-soft/60"
         >
           <ListChecks className="size-3.5 shrink-0" />
           <span className="truncate">{strings.compliance.railEntry}</span>

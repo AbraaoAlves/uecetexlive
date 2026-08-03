@@ -2,7 +2,6 @@ import { CheckCircle2, HelpCircle, ImageOff, TriangleAlert } from "lucide-react"
 import { useState } from "react";
 import { strings } from "@/lib/strings";
 import type {
-  CheckId,
   ComplianceAction,
   ComplianceCheck,
   ComplianceItem,
@@ -96,41 +95,33 @@ export interface ComplianceListProps {
   checks: readonly ComplianceCheck[];
   onAction: (action: ComplianceAction) => void;
   onItemAction?: (item: ComplianceItem) => void;
-  onNext?: (checkId: CheckId) => void;
   onReviewAction?: (action: ComplianceReviewAction) => void;
   currentItemId?: string | null;
   visitedItemIds?: ReadonlySet<string>;
-  variant?: "modal" | "rail";
 }
 
 interface ComplianceCheckRowProps {
   check: ComplianceCheck;
   onAction: (action: ComplianceAction) => void;
   onItemAction?: (item: ComplianceItem) => void;
-  onNext?: (checkId: CheckId) => void;
   onReviewAction?: (action: ComplianceReviewAction) => void;
   currentItemId?: string | null;
   visitedItemIds?: ReadonlySet<string>;
-  variant: "modal" | "rail";
 }
 
 function ComplianceCheckRow({
   check,
   onAction,
   onItemAction,
-  onNext,
   onReviewAction,
   currentItemId,
   visitedItemIds,
-  variant,
 }: ComplianceCheckRowProps) {
   const items = check.items ?? [];
   const hasItems = check.status === "warn" && items.length > 0;
-  const [expanded, setExpanded] = useState(
-    () => variant === "modal" || items.length <= COLLAPSE_AFTER,
-  );
+  const [expanded, setExpanded] = useState(() => items.length <= COLLAPSE_AFTER);
   const itemsId = `compliance-items-${check.id}`;
-  const itemPrefix = variant === "rail" ? `${check.id}-` : "";
+  const itemPrefix = `${check.id}-`;
 
   return (
     <li
@@ -145,18 +136,7 @@ function ComplianceCheckRow({
           <TriangleAlert className="mt-0.5 size-4 shrink-0 text-warning" />
         )}
         <span className="min-w-0 flex-1 text-sm">{messageFor(check)}</span>
-        {hasItems && variant === "modal" && onNext && (
-          <button
-            type="button"
-            data-testid={`compliance-next-${check.id}`}
-            aria-label={`${strings.compliance.nextItem}: ${messageFor(check)}`}
-            className="shrink-0 text-accent text-sm underline hover:no-underline"
-            onClick={() => onNext(check.id)}
-          >
-            {strings.compliance.nextItem}
-          </button>
-        )}
-        {hasItems && variant === "rail" && (
+        {hasItems && (
           <button
             type="button"
             data-testid={`compliance-expand-${check.id}`}
@@ -171,22 +151,12 @@ function ComplianceCheckRow({
         {check.status === "warn" && check.action && !hasItems && (
           <button
             type="button"
-            data-testid={
-              variant === "rail"
-                ? `compliance-goto-${check.id}`
-                : `compliance-fix-${check.id}`
-            }
-            aria-label={`${
-              variant === "rail"
-                ? strings.compliance.gotoItem
-                : strings.compliance.fixAction
-            }: ${messageFor(check)}`}
+            data-testid={`compliance-goto-${check.id}`}
+            aria-label={`${strings.compliance.gotoItem}: ${messageFor(check)}`}
             className="shrink-0 text-accent text-sm underline hover:no-underline"
             onClick={() => onAction(check.action as ComplianceAction)}
           >
-            {variant === "rail"
-              ? strings.compliance.gotoItem
-              : strings.compliance.fixAction}
+            {strings.compliance.gotoItem}
           </button>
         )}
       </div>
@@ -200,11 +170,8 @@ function ComplianceCheckRow({
             {strings.compliance.markerHint}
           </p>
         )}
-      {hasItems && (variant === "modal" || expanded) && (
-        <ul
-          id={variant === "rail" ? itemsId : undefined}
-          className="ml-6 flex flex-col gap-1.5"
-        >
+      {hasItems && expanded && (
+        <ul id={itemsId} className="ml-6 flex flex-col gap-1.5">
           {items.map((item) => {
             const danger = item.reason === "sem-legenda-e-fonte";
             const visited = visitedItemIds?.has(item.id) ?? false;
@@ -233,15 +200,7 @@ function ComplianceCheckRow({
               >
                 <ComplianceItemIcon item={item} />
                 <span className="min-w-0 flex-1">
-                  <span
-                    className={
-                      variant === "rail"
-                        ? "block line-clamp-2 text-sm"
-                        : "block break-words text-sm"
-                    }
-                  >
-                    {item.label}
-                  </span>
+                  <span className={"block line-clamp-2 text-sm"}>{item.label}</span>
                   {visited && (
                     <span
                       className="mt-0.5 flex items-center gap-1 text-xs text-ink-subtle"
@@ -255,12 +214,8 @@ function ComplianceCheckRow({
                   )}
                   {item.detail && (
                     <span
-                      title={variant === "rail" ? item.detail : undefined}
-                      className={
-                        variant === "rail"
-                          ? "block truncate text-xs opacity-90"
-                          : "block text-xs opacity-90"
-                      }
+                      title={item.detail}
+                      className="block truncate text-xs opacity-90"
                     >
                       {item.detail}
                     </span>
@@ -269,31 +224,21 @@ function ComplianceCheckRow({
                 {item.action ? (
                   <button
                     type="button"
-                    data-testid={
-                      variant === "rail"
-                        ? `compliance-goto-${check.id}-${item.id}`
-                        : `compliance-item-fix-${item.id}`
-                    }
-                    aria-label={`${
-                      variant === "rail"
-                        ? strings.compliance.gotoItem
-                        : strings.compliance.fixAction
-                    }: ${item.label}`}
+                    data-testid={`compliance-goto-${check.id}-${item.id}`}
+                    aria-label={`${strings.compliance.gotoItem}: ${item.label}`}
                     className="shrink-0 text-accent text-xs underline hover:no-underline"
                     onClick={() => {
                       onItemAction?.(item);
                       onAction(item.action as ComplianceAction);
                     }}
                   >
-                    {variant === "rail"
-                      ? strings.compliance.gotoItem
-                      : strings.compliance.fixAction}
+                    {strings.compliance.gotoItem}
                   </button>
-                ) : variant === "rail" ? (
+                ) : (
                   <span className="shrink-0 text-ink-subtle text-xs">
                     {strings.compliance.notNavigable}
                   </span>
-                ) : null}
+                )}
                 {item.reviewAction && onReviewAction && (
                   <button
                     type="button"
@@ -320,11 +265,9 @@ export function ComplianceList({
   checks,
   onAction,
   onItemAction,
-  onNext,
   onReviewAction,
   currentItemId,
   visitedItemIds,
-  variant = "modal",
 }: ComplianceListProps) {
   return (
     <ul className="flex flex-col gap-3">
@@ -334,11 +277,9 @@ export function ComplianceList({
           check={check}
           onAction={onAction}
           onItemAction={onItemAction}
-          onNext={onNext}
           onReviewAction={onReviewAction}
           currentItemId={currentItemId}
           visitedItemIds={visitedItemIds}
-          variant={variant}
         />
       ))}
     </ul>
