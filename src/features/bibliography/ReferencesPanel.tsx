@@ -92,7 +92,10 @@ export function ReferencesPanel({
     usageCount: number;
   } | null>(null);
   const [removeError, setRemoveError] = useState<string | null>(null);
-  const [focusAnnouncement, setFocusAnnouncement] = useState("");
+  const [focusAnnouncement, setFocusAnnouncement] = useState<{
+    text: string;
+    sequence: number;
+  } | null>(null);
 
   useEffect(() => {
     if (initialSearchQuery) setSearchOpen(true);
@@ -110,7 +113,10 @@ export function ReferencesPanel({
     const target =
       row.querySelector<HTMLElement>(`[data-testid="reference-edit-${key}"]`) ?? row;
     target.focus();
-    setFocusAnnouncement(strings.references.focusedAnnouncement.replace("{key}", key));
+    setFocusAnnouncement((previous) => ({
+      text: strings.references.focusedAnnouncement.replace("{key}", key),
+      sequence: (previous?.sequence ?? 0) + 1,
+    }));
   }, []);
   // biome-ignore lint/correctness/useExhaustiveDependencies: focusNonce é o sinal de repetição — pedir a mesma chave duas vezes tem de destacar duas vezes
   useEffect(() => {
@@ -263,11 +269,12 @@ export function ReferencesPanel({
             : strings.references.copyFailed}
       </output>
       <output
+        key={focusAnnouncement?.sequence ?? 0}
         className="sr-only"
         aria-live="polite"
         data-testid="references-focus-status"
       >
-        {focusAnnouncement}
+        {focusAnnouncement?.text ?? ""}
       </output>
       {onWriteBib && (
         <div className="flex gap-1.5 border-b p-2">

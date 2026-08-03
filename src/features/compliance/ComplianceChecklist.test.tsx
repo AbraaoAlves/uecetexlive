@@ -93,6 +93,9 @@ describe("ComplianceChecklist", () => {
       "O aviso some",
     );
     fireEvent.click(screen.getByTestId("compliance-item-review-marker"));
+    expect(
+      screen.getByRole("button", { name: "já revisei: Revisão da importação" }),
+    ).toBeTruthy();
     expect(onReviewAction).toHaveBeenCalledWith({
       kind: "removePendencyMarker",
       path: "cap.tex",
@@ -123,6 +126,11 @@ describe("ComplianceChecklist", () => {
 
     fireEvent.click(screen.getByTestId("compliance-next-figures"));
     expect(onNext).toHaveBeenCalledWith("figures");
+    expect(
+      screen.getByRole("button", {
+        name: "próximo: 1 figura está sem legenda ou sem indicação de fonte.",
+      }),
+    ).toBeTruthy();
     expect(screen.queryByTestId("compliance-next-abstract")).toBeNull();
   });
 });

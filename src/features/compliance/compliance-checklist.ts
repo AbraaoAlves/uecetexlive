@@ -340,16 +340,19 @@ function checkUncitedEntries(
 
 function checkImportPdf(input: ComplianceInput): ComplianceCheck | null {
   const idOccurrences = new Map<string, number>();
+  const uniqueId = (idBase: string): string => {
+    const occurrence = (idOccurrences.get(idBase) ?? 0) + 1;
+    idOccurrences.set(idBase, occurrence);
+    return occurrence === 1 ? idBase : `${idBase}:${occurrence}`;
+  };
   const markerItems: ComplianceItem[] = scanPendencyMarkers(
     input.texSources,
     input.texOrder ?? [],
   ).map((marker) => {
     const kind = typeof marker.kind === "string" ? marker.kind : marker.kind.other;
     const idBase = `importPdf:${marker.path}:${kind}:${marker.detail}`;
-    const occurrence = (idOccurrences.get(idBase) ?? 0) + 1;
-    idOccurrences.set(idBase, occurrence);
     return {
-      id: occurrence === 1 ? idBase : `${idBase}:${occurrence}`,
+      id: uniqueId(idBase),
       label: typeof marker.kind === "object" ? marker.kind.other : pendencyLabelFor(kind),
       detail: marker.detail,
       action: {
@@ -371,8 +374,9 @@ function checkImportPdf(input: ComplianceInput): ComplianceCheck | null {
         kind === "nao-classificado"
           ? strings.compliance.importUnclassifiedHelp
           : strings.compliance.importLegacyHelp;
+      const idBase = `importPdf:${kind}:${excerpt}:${page}`;
       return {
-        id: `importPdf:${kind}:${excerpt}:${page}`,
+        id: uniqueId(idBase),
         label: pendencyLabelFor(kind),
         detail: `${excerpt} — p. ${page}. ${help}`,
       };

@@ -212,4 +212,30 @@ describe("ReferencesPanel", () => {
       "completeFirst",
     ]);
   });
+
+  it("replaces the live status when the same reference is requested again", () => {
+    HTMLElement.prototype.scrollIntoView = vi.fn();
+    const { rerender } = render(
+      <ReferencesPanel
+        bibText={SAMPLE}
+        onWriteBib={vi.fn()}
+        focusKey="freire1970"
+        focusNonce={1}
+      />,
+    );
+    const firstStatus = screen.getByTestId("references-focus-status");
+
+    rerender(
+      <ReferencesPanel
+        bibText={SAMPLE}
+        onWriteBib={vi.fn()}
+        focusKey="freire1970"
+        focusNonce={2}
+      />,
+    );
+
+    const secondStatus = screen.getByTestId("references-focus-status");
+    expect(secondStatus.textContent).toContain("freire1970");
+    expect(secondStatus).not.toBe(firstStatus);
+  });
 });

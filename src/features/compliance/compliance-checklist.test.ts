@@ -340,6 +340,20 @@ describe("computeComplianceChecklist", () => {
     expect(shiftedItems?.map((item) => item.id)).toEqual(items?.map((item) => item.id));
   });
 
+  it("keeps identical unclassified import entries as distinct items", () => {
+    const repeated = {
+      kind: "nao-classificado",
+      excerpt: "Trecho repetido",
+      page: 7,
+    };
+    const items = computeComplianceChecklist(
+      baseInput({ importUnclassified: [repeated, repeated] }),
+    ).find((check) => check.id === "importPdf")?.items;
+
+    expect(items).toHaveLength(2);
+    expect(new Set(items?.map((item) => item.id)).size).toBe(2);
+  });
+
   it("every check carries an action to jump to the fix", () => {
     const checks = computeComplianceChecklist(baseInput({ meta: EMPTY_META }));
     for (const check of checks) {

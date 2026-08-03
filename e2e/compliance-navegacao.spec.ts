@@ -60,7 +60,7 @@ test("já revisei remove só o marcador vivo e fecha a pendência", async ({ pag
   await expect(page.getByTestId("save-state")).toHaveAttribute("data-state", "saved");
 
   await page.getByTestId("rail-checklist").click();
-  const reviewedButton = page.getByRole("button", { name: "já revisei" });
+  const reviewedButton = page.getByRole("button", { name: /^já revisei:/ });
   await expect(reviewedButton).toBeVisible();
   await expect(page.getByTestId("compliance-marker-hint")).toBeVisible();
   await reviewedButton.click();

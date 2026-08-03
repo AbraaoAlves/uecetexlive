@@ -179,6 +179,7 @@ export function ComplianceChecklist({
                       <button
                         type="button"
                         data-testid={`compliance-next-${check.id}`}
+                        aria-label={`${strings.compliance.nextItem}: ${messageFor(check)}`}
                         className="shrink-0 text-accent text-sm underline hover:no-underline"
                         onClick={() => onNext(check.id)}
                       >
@@ -189,6 +190,7 @@ export function ComplianceChecklist({
                     <button
                       type="button"
                       data-testid={`compliance-fix-${check.id}`}
+                      aria-label={`${strings.compliance.fixAction}: ${messageFor(check)}`}
                       className="shrink-0 text-accent text-sm underline hover:no-underline"
                       onClick={() => {
                         if (check.action) onAction(check.action);
@@ -241,6 +243,7 @@ export function ComplianceChecklist({
                             <button
                               type="button"
                               data-testid={`compliance-item-fix-${item.id}`}
+                              aria-label={`${strings.compliance.fixAction}: ${item.label}`}
                               className="shrink-0 text-accent text-xs underline hover:no-underline"
                               onClick={() => {
                                 if (item.action) onAction(item.action);
@@ -253,6 +256,7 @@ export function ComplianceChecklist({
                             <button
                               type="button"
                               data-testid={`compliance-item-review-${item.id}`}
+                              aria-label={`${strings.compliance.markerReviewedAction}: ${item.label}`}
                               className="shrink-0 text-accent text-xs underline hover:no-underline"
                               onClick={() => {
                                 if (item.reviewAction) onReviewAction(item.reviewAction);
