@@ -29,6 +29,32 @@ export function useUiSettings(): UseUiSettings {
   // reaplicados por cima do que veio do disco.
   const hydratedRef = useRef(false);
   const pendingPatchesRef = useRef<Partial<UiSettings>[]>([]);
+  const saveChainRef = useRef<Promise<void>>(Promise.resolve());
+
+  const queuePersistence = useCallback(
+    (settings: UiSettings, includedPatches: readonly Partial<UiSettings>[]) => {
+      saveChainRef.current = saveChainRef.current
+        .catch(() => {})
+        .then(async () => {
+          try {
+            await saveUiSettings(settings);
+          } catch {
+            try {
+              await saveUiSettings(settings);
+            } catch (error) {
+              console.error("não foi possível guardar as preferências", error);
+              return;
+            }
+          }
+
+          const included = new Set(includedPatches);
+          pendingPatchesRef.current = pendingPatchesRef.current.filter(
+            (patch) => !included.has(patch),
+          );
+        });
+    },
+    [],
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -36,42 +62,54 @@ export function useUiSettings(): UseUiSettings {
       .then((loaded) => {
         if (cancelled) return;
         const migrated = migrateUiSettings(loaded);
-        const pending = pendingPatchesRef.current;
-        pendingPatchesRef.current = [];
+        const pending = [...pendingPatchesRef.current];
         const merged: UiSettings = Object.assign({}, migrated, ...pending);
         hydratedRef.current = true;
+        uiRef.current = merged;
         setUiState(merged);
         setReady(true);
         // Grava quando a migração mudou algo, ou quando havia patch em voo —
         // senão o valor legado (ou a escolha recém-feita) só sairia do disco
         // no próximo setUi.
         if (migrated !== loaded || pending.length > 0) {
-          void saveUiSettings(merged).catch(() => {});
+          queuePersistence(merged, pending);
         }
       })
       .catch(() => {
         // IndexedDB unavailable — keep in-memory defaults for the session.
         if (cancelled) return;
+        const pending = [...pendingPatchesRef.current];
+        const fallback: UiSettings = Object.assign(
+          {},
+          UiSettingsSchema.parse({}),
+          ...pending,
+        );
         hydratedRef.current = true;
-        pendingPatchesRef.current = [];
+        uiRef.current = fallback;
+        setUiState(fallback);
         setReady(true);
+        if (pending.length > 0) queuePersistence(fallback, pending);
       });
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [queuePersistence]);
 
-  const setUi = useCallback((patch: Partial<UiSettings>) => {
-    const next = { ...uiRef.current, ...patch };
-    setUiState(next);
-    if (!hydratedRef.current) {
-      // Antes da hidratação, gravar seria escrever por cima do que ainda nem
-      // foi lido — o patch espera e vai junto quando a leitura voltar.
+  const setUi = useCallback(
+    (patch: Partial<UiSettings>) => {
+      const next = { ...uiRef.current, ...patch };
+      uiRef.current = next;
+      setUiState(next);
       pendingPatchesRef.current.push(patch);
-      return;
-    }
-    void saveUiSettings(next).catch(() => {});
-  }, []);
+      if (!hydratedRef.current) {
+        // Antes da hidratação, gravar seria escrever por cima do que ainda nem
+        // foi lido — o patch espera e vai junto quando a leitura voltar.
+        return;
+      }
+      queuePersistence(next, [...pendingPatchesRef.current]);
+    },
+    [queuePersistence],
+  );
 
   return { ui, setUi, ready };
 }
