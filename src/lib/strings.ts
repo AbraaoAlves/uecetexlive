@@ -319,6 +319,7 @@ export const strings = {
     referencesOk: "Todas as referências têm os campos obrigatórios preenchidos.",
     referencesWarnOne: "1 referência está com campo obrigatório faltando.",
     referencesWarnMany: "{n} referências estão com campo obrigatório faltando.",
+    referenceMissingFields: "Faltam: {fields}.",
     figuresOk: "Todas as figuras têm legenda e indicação de fonte.",
     figuresWarnOne: "1 figura está sem legenda ou sem indicação de fonte.",
     figuresWarnMany: "{n} figuras estão sem legenda ou sem indicação de fonte.",

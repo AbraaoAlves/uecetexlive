@@ -4,13 +4,9 @@
  * `id`+`status`+`count` onto PT copy (strings.compliance), the same
  * aggregate-message pattern the incomplete-references lint uses.
  */
-import {
-  isKnownEntryType,
-  isParseFailure,
-  missingRequiredFields,
-  parseBibFile,
-} from "@papyru/bibliography";
+import { isParseFailure, parseBibFile } from "@papyru/bibliography";
 import { extractCitedKeys } from "@/features/bibliography/citation-usage";
+import { incompleteEntriesOf } from "@/features/bibliography/missing-fields";
 import { checkFigures } from "@/features/project/figures-checklist";
 import type { MetadataField, WorkType } from "@/features/project/metadata";
 import { TEMPLATE_PLACEHOLDER_TITLE } from "@/features/project/metadata";
@@ -161,20 +157,30 @@ function checkAbstract(meta: ReadonlyMap<string, MetadataField>): ComplianceChec
 }
 
 function checkReferences(bibText: string | null): ComplianceCheck {
-  if (bibText === null) return { id: "references", status: "ok", count: 0 };
-  const file = parseBibFile(bibText);
-  let incomplete = 0;
-  for (const chunk of file.chunks) {
-    if (chunk.kind !== "entry" || isParseFailure(chunk.parsed)) continue;
-    const entry = chunk.parsed;
-    if (!isKnownEntryType(entry.entryType)) continue;
-    if (missingRequiredFields(entry.entryType, entry.fields).length > 0) incomplete++;
-  }
+  const incomplete = incompleteEntriesOf(bibText);
+  const items: ComplianceItem[] = incomplete.map(({ key, missing }) => ({
+    id: `references:${key}`,
+    label: key,
+    detail: strings.compliance.referenceMissingFields.replace(
+      "{fields}",
+      missing.join(", "),
+    ),
+    ...(bibText === null
+      ? {}
+      : {
+          action: {
+            kind: "openReferences" as const,
+            key,
+            intent: "focus" as const,
+          },
+        }),
+  }));
   return {
     id: "references",
-    status: incomplete === 0 ? "ok" : "warn",
-    count: incomplete,
-    action: { kind: "openReferences" },
+    status: items.length === 0 ? "ok" : "warn",
+    count: items.length,
+    action: items[0]?.action,
+    items,
   };
 }
 
@@ -269,14 +275,28 @@ function checkOrphanCitations(
   const cited = extractCitedKeys(texSources, citeCommands);
   const known = bibKeysOf(bibText);
   const orphans = [...cited].filter((k) => !known.has(k));
+  const items: ComplianceItem[] = orphans.map((key) => ({
+    id: `orphanCitations:${key}`,
+    label: key,
+    ...(bibText === null
+      ? {}
+      : {
+          action: {
+            kind: "openReferences" as const,
+            key,
+            intent: "search" as const,
+          },
+        }),
+  }));
   return {
     id: "orphanCitations",
-    status: orphans.length === 0 ? "ok" : "warn",
-    count: orphans.length,
+    status: items.length === 0 ? "ok" : "warn",
+    count: items.length,
     // Sem .bib no projeto não há para onde levar o aluno — oferecer "corrigir"
     // que não faz nada é pior do que não oferecer. Criar o arquivo do zero é
     // outro pedido.
-    action: bibText === null ? undefined : { kind: "openReferences" },
+    action: items[0]?.action,
+    items,
   };
 }
 
@@ -288,11 +308,25 @@ function checkUncitedEntries(
   const cited = extractCitedKeys(texSources, citeCommands);
   const known = bibKeysOf(bibText);
   const uncited = [...known].filter((k) => !cited.has(k));
+  const items: ComplianceItem[] = uncited.map((key) => ({
+    id: `uncitedEntries:${key}`,
+    label: key,
+    ...(bibText === null
+      ? {}
+      : {
+          action: {
+            kind: "openReferences" as const,
+            key,
+            intent: "focus" as const,
+          },
+        }),
+  }));
   return {
     id: "uncitedEntries",
-    status: uncited.length === 0 ? "ok" : "warn",
-    count: uncited.length,
-    action: { kind: "openReferences" },
+    status: items.length === 0 ? "ok" : "warn",
+    count: items.length,
+    action: items[0]?.action,
+    items,
   };
 }
 

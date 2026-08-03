@@ -60,6 +60,19 @@ const INCOMPLETE_BIB = `@book{silva2026,
 }
 `;
 
+const TWO_INCOMPLETE_BIB = `@book{silva2026,
+  author = {Silva, Maria},
+  title = {Jogos Digitais},
+  year = {2026}
+}
+
+@article{souza2025,
+  author = {Souza, João},
+  title = {Ensino de Programação},
+  year = {2025}
+}
+`;
+
 function baseInput(overrides: Partial<ComplianceInput>): ComplianceInput {
   return {
     meta: FILLED_META,
@@ -96,6 +109,51 @@ describe("computeComplianceChecklist", () => {
     const references = checks.find((c) => c.id === "references");
     expect(references?.status).toBe("warn");
     expect(references?.count).toBe(1);
+  });
+
+  it("enumerates incomplete, orphan and uncited reference keys with useful intents", () => {
+    const checks = computeComplianceChecklist(
+      baseInput({
+        bibText: TWO_INCOMPLETE_BIB,
+        texSources: {
+          "introducao.tex": "\\citeonline{silva2026} e \\citeonline{fantasma2024}",
+        },
+      }),
+    );
+
+    const references = checks.find((check) => check.id === "references");
+    expect(references?.items).toHaveLength(2);
+    expect(references?.items?.map((item) => item.label)).toEqual([
+      "silva2026",
+      "souza2025",
+    ]);
+    expect(references?.items?.[0]?.detail).toContain("Editora");
+    expect(references?.items?.map((item) => item.action)).toEqual([
+      { kind: "openReferences", key: "silva2026", intent: "focus" },
+      { kind: "openReferences", key: "souza2025", intent: "focus" },
+    ]);
+
+    const orphans = checks.find((check) => check.id === "orphanCitations");
+    expect(orphans?.items).toEqual([
+      {
+        id: "orphanCitations:fantasma2024",
+        label: "fantasma2024",
+        action: {
+          kind: "openReferences",
+          key: "fantasma2024",
+          intent: "search",
+        },
+      },
+    ]);
+
+    const uncited = checks.find((check) => check.id === "uncitedEntries");
+    expect(uncited?.items).toEqual([
+      {
+        id: "uncitedEntries:souza2025",
+        label: "souza2025",
+        action: { kind: "openReferences", key: "souza2025", intent: "focus" },
+      },
+    ]);
   });
 
   it("treats a missing .bib file as ok (nothing to report)", () => {
@@ -227,6 +285,7 @@ describe("computeComplianceChecklist", () => {
     const orphans = checks.find((c) => c.id === "orphanCitations");
     expect(orphans?.status).toBe("warn");
     expect(orphans?.action).toBeUndefined();
+    expect(orphans?.items?.every((item) => item.action === undefined)).toBe(true);
   });
 });
 
