@@ -984,10 +984,13 @@ function ShellInner() {
       if (file.kind === "tex") importedTexSources[file.path] = bytesToText(file.bytes);
     }
     const importedGraph = buildIncludeGraph(importedTexSources, imported.entry);
-    const importedOrder = importedGraph.inputs.flatMap((input) =>
-      input.resolved ? [input.resolved] : [],
+    // Mesma régua de ordem de leitura que a conformidade usa depois do
+    // recarregamento — senão as pendências guardadas no relatório sairiam de
+    // uma varredura e a lista da tela, de outra.
+    const importedMarkers = scanPendencyMarkers(
+      importedTexSources,
+      importedGraph.readingOrder,
     );
-    const importedMarkers = scanPendencyMarkers(importedTexSources, importedOrder);
     const validatedReport = validateImportReport(outcome.report);
     const staticPendencies = staticPendenciesFromReport(
       validatedReport?.pendencies ?? [],

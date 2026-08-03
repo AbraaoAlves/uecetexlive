@@ -137,7 +137,21 @@ function findTabular(raw: string): { bodyStart: number; colspec: string } | null
   return { bodyStart: close + 1, colspec: raw.slice(cursor + 1, close) };
 }
 
-const LABEL_PREFIX = /^\s*\\label\{[^}]*\}[ \t]*/;
+const LABEL_MACRO = "\\label{";
+
+/**
+ * Onde o texto começa de verdade dentro de `[start, end)`: depois do
+ * `\label{...}`, quando ele abre o argumento. Aqui também se conta chave — o
+ * mesmo motivo do colspec, e por isso nada de `[^}]*`.
+ */
+function skipLabel(text: string, start: number, end: number): number {
+  const at = start + (/^\s*/.exec(text.slice(start, end))?.[0].length ?? 0);
+  if (!text.startsWith(LABEL_MACRO, at)) return start;
+  const close = groupEnd(text, at + LABEL_MACRO.length - 1);
+  if (close === -1 || close >= end) return start;
+  const after = close + 1;
+  return after + (/^[ \t]*/.exec(text.slice(after, end))?.[0].length ?? 0);
+}
 
 /**
  * Span do argumento de uma das macros dadas, dentro de `text`. O `\label{...}`
@@ -154,8 +168,7 @@ function macroArgumentSpan(
     const open = at + macro.length + 1;
     const close = groupEnd(text, open);
     if (close === -1) continue;
-    const label = LABEL_PREFIX.exec(text.slice(open + 1, close));
-    return { start: open + 1 + (label?.[0].length ?? 0), end: close };
+    return { start: skipLabel(text, open + 1, close), end: close };
   }
   return null;
 }
