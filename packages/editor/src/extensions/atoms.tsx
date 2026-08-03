@@ -302,6 +302,7 @@ function FigureView({ node, updateAttributes }: NodeViewProps) {
         )}
         <figcaption className="mt-2">
           <input
+            data-testid="figure-caption"
             className="w-full bg-transparent text-center text-ink-muted text-sm outline-none"
             value={(node.attrs.caption as string) ?? ""}
             placeholder="Legenda…"
@@ -309,6 +310,18 @@ function FigureView({ node, updateAttributes }: NodeViewProps) {
               updateAttributes({ caption: e.target.value, rawSource: null })
             }
           />
+          <label className="mt-1 flex items-center gap-1 text-ink-subtle text-xs">
+            <span aria-hidden="true">\Fonte{"{"}</span>
+            <input
+              data-testid="figure-fonte"
+              className="min-w-0 flex-1 bg-transparent text-center outline-none"
+              value={(node.attrs.fonte as string) ?? ""}
+              onChange={(e) =>
+                updateAttributes({ fonte: e.target.value, rawSource: null })
+              }
+            />
+            <span aria-hidden="true">{"}"}</span>
+          </label>
         </figcaption>
         {node.attrs.label ? (
           <span className="text-[10px] text-ink-subtle">
@@ -333,6 +346,7 @@ export const LatexFigure = Node.create({
       options: { default: null },
       caption: { default: null },
       label: { default: null },
+      fonte: { default: null },
     };
   },
   parseHTML: () => [{ tag: "figure[data-latex-figure]" }],

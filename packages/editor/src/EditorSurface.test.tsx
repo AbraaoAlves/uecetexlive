@@ -32,14 +32,18 @@ function makeResources(overrides: Partial<EditorResources> = {}): EditorResource
   };
 }
 
-function renderSurface(resources: EditorResources) {
+function renderSurface(
+  resources: EditorResources,
+  source = "Texto.",
+  onChange: (source: string) => void = () => {},
+) {
   return render(
     <TooltipPrimitive.Provider>
       <EditorSurface
         path="doc.tex"
-        source="Texto."
+        source={source}
         resources={resources}
-        onChange={() => {}}
+        onChange={onChange}
       />
     </TooltipPrimitive.Provider>,
   );
@@ -218,5 +222,41 @@ describe("EditorSurface citation picker", () => {
     expect(win.__serialize(win.__uecetexEditor.getJSON())).toContain(
       "\\cite[p. 45]{novo2024}",
     );
+  });
+});
+
+describe("EditorSurface figures", () => {
+  it("keeps the UECE source after editing caption and fonte", async () => {
+    const onChange = vi.fn();
+    const source = [
+      "\\begin{figure}[ht!]",
+      "\\centering",
+      "\\Caption{\\label{fig:exemplo}Legenda inicial}",
+      "\\UECEfig{}{",
+      "\\fbox{\\includegraphics[width=8cm]{figuras/figura-1}}",
+      "}{",
+      "\\Fonte{Elaborado pelo autor}",
+      "}",
+      "\\end{figure}",
+    ].join("\n");
+    renderSurface(makeResources(), source, onChange);
+
+    fireEvent.change(await screen.findByTestId("figure-caption"), {
+      target: { value: "Legenda atualizada" },
+    });
+    fireEvent.change(screen.getByTestId("figure-fonte"), {
+      target: { value: "Arquivo institucional" },
+    });
+
+    await waitFor(() =>
+      expect(onChange).toHaveBeenLastCalledWith(
+        expect.stringContaining("\\Fonte{Arquivo institucional}"),
+      ),
+    );
+    expect(onChange).toHaveBeenLastCalledWith(
+      expect.stringContaining("\\Caption{\\label{fig:exemplo}Legenda atualizada}"),
+    );
+    expect(onChange).toHaveBeenLastCalledWith(expect.stringContaining("\\UECEfig{}{"));
+    expect(onChange).toHaveBeenLastCalledWith(expect.stringContaining("\\fbox{"));
   });
 });
