@@ -301,6 +301,20 @@ describe("EditorSurface tables", () => {
     expect(emitted).toContain("\\Fonte{Elaborado pelo autor}");
   });
 
+  it("apagar a fonte da tabela tira a macro, não deixa uma linha em branco", async () => {
+    const onChange = vi.fn();
+    renderSurface(makeResources(), IMPORTED_QUADRO, onChange);
+
+    const fonte = await screen.findByTestId("table-fonte");
+    fireEvent.change(fonte, { target: { value: "  " } });
+    fireEvent.blur(fonte);
+
+    await waitFor(() => expect(onChange).toHaveBeenCalled());
+    // `\Fonte{}` imprimiria "Fonte:" em branco no PDF.
+    expect(onChange.mock.lastCall?.[0]).not.toContain("\\Fonte");
+    expect(onChange.mock.lastCall?.[0]).toContain("Suporte & Parcial \\\\");
+  });
+
   it("edita legenda e fonte da tabela sem perder o rótulo", async () => {
     const onChange = vi.fn();
     renderSurface(makeResources(), IMPORTED_QUADRO, onChange);

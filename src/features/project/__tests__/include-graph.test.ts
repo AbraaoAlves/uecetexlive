@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { buildIncludeGraph } from "../include-graph";
+import { buildIncludeGraph, orderedTexPaths } from "../include-graph";
 
 describe("buildIncludeGraph", () => {
   it("yields ordered inputs with .tex resolution", () => {
@@ -62,6 +62,27 @@ describe("buildIncludeGraph", () => {
     // `inputs` só conhece o primeiro nível; a ordem de leitura desce junto.
     expect(graph.inputs.map((input) => input.resolved)).toEqual(["cap1.tex", "cap2.tex"]);
     expect(graph.readingOrder).toEqual(["main.tex", "cap1.tex", "secao.tex", "cap2.tex"]);
+  });
+
+  it("ordena o que está fora do grafo sem depender do idioma", () => {
+    const sources = {
+      "Zulu.tex": "",
+      "apendice.tex": "",
+      "Ápice.tex": "",
+      "anexo.tex": "",
+      "cap.tex": "",
+    };
+
+    // Comparação por unidade de código: maiúsculas antes de minúsculas e o
+    // acentuado depois, sempre — sem tabela de intercalação no meio, a ordem é
+    // a mesma em qualquer navegador.
+    expect(orderedTexPaths(sources, ["cap.tex"])).toEqual([
+      "cap.tex",
+      "Zulu.tex",
+      "anexo.tex",
+      "apendice.tex",
+      "Ápice.tex",
+    ]);
   });
 
   it("harvests bibliography target and style", () => {

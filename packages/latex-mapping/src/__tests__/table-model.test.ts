@@ -201,6 +201,22 @@ describe("parseTable / serializeTable", () => {
     expect(semUltima).toContain("\\bottomrule");
   });
 
+  it("trata traço de booktabs como fronteira, não como separador a duplicar", () => {
+    // Inserir depois do cabeçalho: a linha nova entra do lado do corpo, e o
+    // `\midrule` continua sendo um só.
+    const out = serializeTable(insertRow(parseTable(SIMPLE) as never, 0));
+
+    expect(out.match(/\\midrule/g)).toHaveLength(1);
+    expect(out).toContain(
+      [
+        "\tRanking & Coverage & Support \\\\",
+        "\t\\midrule",
+        "\t &  &  \\\\",
+        "\tE1 & Complete & Both \\\\",
+      ].join("\n"),
+    );
+  });
+
   it("não deixa a tabela sem nenhuma linha de conteúdo", () => {
     const model = parseTable("\\begin{tabular}{ll}\nA & B \\\\\n\\end{tabular}") as never;
     expect(removeRow(model, 0)).toBe(model);
@@ -219,6 +235,45 @@ describe("parseTable / serializeTable", () => {
     expect(out).toContain("\\Fonte{Pesquisa direta}");
     expect(out).toContain("Cobertura & Total \\\\");
     expect(tableCaption(parseTable(out) as never)).toBe("Critérios revisados");
+  });
+
+  it("acha legenda e fonte com argumento opcional", () => {
+    const source = IMPORTED_QUADRO.replace(
+      "\\Caption{\\label{qua:criterios} Critérios comparados}",
+      "\\caption[Critérios]{\\label{qua:criterios} Critérios comparados}",
+    ).replace("\\Fonte{Elaborado", "\\Fonte[Origem]{Elaborado");
+    const model = parseTable(source) as never;
+
+    expect(tableCaption(model)).toBe("Critérios comparados");
+    expect(tableFonte(model)).toBe("Elaborado pelo autor");
+    expect(serializeTable(editCaption(model, "Outra"))).toContain(
+      "\\caption[Critérios]{\\label{qua:criterios} Outra}",
+    );
+  });
+
+  it("lê rótulo com grupos dentro sem invadir a legenda", () => {
+    const source = IMPORTED_QUADRO.replace(
+      "\\label{qua:criterios}",
+      "\\label{qua:{anexo}criterios}",
+    );
+    const model = parseTable(source) as never;
+
+    expect(tableCaption(model)).toBe("Critérios comparados");
+    expect(serializeTable(editCaption(model, "Outra"))).toContain(
+      "\\Caption{\\label{qua:{anexo}criterios} Outra}",
+    );
+  });
+
+  it("apaga a macro inteira quando a fonte é esvaziada", () => {
+    const model = parseTable(IMPORTED_QUADRO) as never;
+    const out = serializeTable(editFonte(model, "   "));
+
+    expect(out).not.toContain("\\Fonte");
+    expect(out).toContain("\\end{tabular}\n}{\n}\n\\end{quadro}");
+    // A legenda vazia é outro caso: o \label mora dentro dela.
+    expect(serializeTable(editCaption(model, ""))).toContain(
+      "\\Caption{\\label{qua:criterios} }",
+    );
   });
 
   it("não inventa legenda nem fonte onde não existem", () => {

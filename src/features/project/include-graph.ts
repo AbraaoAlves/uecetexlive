@@ -134,9 +134,12 @@ export function orderedTexPaths(
     seen.add(path);
     paths.push(path);
   }
+  // Comparação por unidade de código, não `localeCompare`: a ordem entra em
+  // teste e é a ordem em que o aluno é levado às correções, então não pode
+  // depender do idioma nem da tabela de intercalação do navegador.
   const extras = Object.keys(texSources)
     .filter((path) => !seen.has(path))
-    .sort((left, right) => left.localeCompare(right));
+    .sort((left, right) => (left < right ? -1 : left > right ? 1 : 0));
   paths.push(...extras);
   return paths;
 }

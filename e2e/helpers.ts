@@ -42,7 +42,10 @@ export async function seedImportReport(page: Page): Promise<void> {
             db.close();
             resolve();
           };
-          tx.onerror = () => reject(tx.error);
+          tx.onerror = () => {
+            db.close();
+            reject(tx.error);
+          };
         };
       }),
     ["uecetexlive", "import-report:uecetex2"],

@@ -34,6 +34,13 @@ export interface TableTextSpan {
   end: number;
 }
 
+export interface TableMacroSpan {
+  /** Toda a chamada, do `\` ao `}` de fechamento. */
+  macro: TableTextSpan;
+  /** Só o texto editável de dentro do argumento obrigatório. */
+  argument: TableTextSpan;
+}
+
 export interface TableModel {
   /** Everything up to and including `\begin{tabular}{spec}`. */
   pre: string;
@@ -46,13 +53,20 @@ export interface TableModel {
    * `\label{...}` que costuma vir antes dele. `null` quando a tabela não tem
    * `\Caption`/`\caption`: aí não há lugar seguro para inventar uma.
    */
-  captionSpan: TableTextSpan | null;
+  captionSpan: TableMacroSpan | null;
   /** O mesmo para a indicação de fonte, dentro do `post`. */
-  fonteSpan: TableTextSpan | null;
+  fonteSpan: TableMacroSpan | null;
 }
 
 const RULE_MACRO =
   /\\(?:hline|toprule|midrule|bottomrule|cmidrule|cline|addlinespace|specialrule)/;
+
+/**
+ * Traços que marcam **fronteira** de faixa (booktabs), não separador que se
+ * repete entre linhas. O `\hline` fica de fora de propósito: ele separa toda
+ * linha da seguinte, e é o que as tabelas vindas de PDF usam.
+ */
+const BOUNDARY_RULE = /\\(?:toprule|midrule|bottomrule|specialrule)/;
 
 /** `\Caption` é a forma da UECE; `\caption` é a do LaTeX. */
 const CAPTION_MACROS = ["Caption", "caption"] as const;
@@ -154,21 +168,34 @@ function skipLabel(text: string, start: number, end: number): number {
 }
 
 /**
- * Span do argumento de uma das macros dadas, dentro de `text`. O `\label{...}`
- * que abre o argumento fica de fora: quem edita a legenda quer trocar o texto,
- * não perder a âncora das referências cruzadas.
+ * Onde uma das macros dadas mora, dentro de `text`, e onde fica o texto
+ * editável dela.
+ *
+ * Dois cuidados: o argumento opcional (`\caption[Resumo]{Legenda}`,
+ * `\Fonte[Origem]{Autor}`) é pulado antes do obrigatório, e o `\label{...}`
+ * que costuma abrir o argumento fica de fora — quem edita a legenda quer
+ * trocar o texto, não perder a âncora das referências cruzadas.
  */
-function macroArgumentSpan(
-  text: string,
-  macros: readonly string[],
-): TableTextSpan | null {
+function macroSpan(text: string, macros: readonly string[]): TableMacroSpan | null {
   for (const macro of macros) {
-    const at = text.indexOf(`\\${macro}{`);
-    if (at === -1) continue;
-    const open = at + macro.length + 1;
-    const close = groupEnd(text, open);
-    if (close === -1) continue;
-    return { start: skipLabel(text, open + 1, close), end: close };
+    const token = `\\${macro}`;
+    for (let at = text.indexOf(token); at !== -1; at = text.indexOf(token, at + 1)) {
+      let cursor = at + token.length;
+      if (text[cursor] === "[") {
+        const optionalEnd = text.indexOf("]", cursor);
+        if (optionalEnd === -1) continue;
+        cursor = optionalEnd + 1;
+      }
+      // Sem `{` logo aqui não é esta macro — `\Fonte` casaria o começo de
+      // `\Fontes`, e o nome mais longo tem de seguir adiante.
+      if (text[cursor] !== "{") continue;
+      const close = groupEnd(text, cursor);
+      if (close === -1) continue;
+      return {
+        macro: { start: at, end: close + 1 },
+        argument: { start: skipLabel(text, cursor + 1, close), end: close },
+      };
+    }
   }
   return null;
 }
@@ -195,8 +222,8 @@ export function parseTable(raw: string): TableModel | null {
     post,
     colspec: begin.colspec,
     segments: parseBody(raw.slice(bodyStart, endIdx)),
-    captionSpan: macroArgumentSpan(pre, CAPTION_MACROS),
-    fonteSpan: macroArgumentSpan(post, FONTE_MACROS),
+    captionSpan: macroSpan(pre, CAPTION_MACROS),
+    fonteSpan: macroSpan(post, FONTE_MACROS),
   };
   // A tabular with no editable content row is not worth a grid.
   if (!model.segments.some((s) => s.kind === "row")) return null;
@@ -240,33 +267,18 @@ function rowSegmentIndices(model: TableModel): number[] {
 }
 
 /**
- * Onde entra o separador da linha nova.
- *
- * Uma tabela do importador é `\hline` entre todas as linhas; uma do modelo é
- * `\toprule`/`\midrule`/`\bottomrule`, sem nada entre as linhas de conteúdo.
- * Copiar o que já separa a linha escolhida da vizinha **do lado em que a nova
- * entra** acerta os dois casos: com `\hline`, a nova ganha seu traço; com
- * booktabs, o trecho é vazio e nada é inventado — e a linha nova nunca cai
- * depois do `\bottomrule`.
- */
-function separatorFor(
-  model: TableModel,
-  rows: number[],
-  position: number,
-): TableSegment[] {
-  const current = rows[position];
-  const next = rows[position + 1];
-  const previous = rows[position - 1];
-  if (current === undefined) return [];
-  if (next !== undefined) return model.segments.slice(current + 1, next);
-  if (previous !== undefined) return model.segments.slice(previous + 1, current);
-  return [];
-}
-
-/**
  * Linha vazia logo depois de `rowIndex`, com o mesmo recuo e o mesmo `\\` da
  * linha de referência. Ela nasce `edited` — não existe no original, e é a única
  * que a serialização reescreve.
+ *
+ * Onde ela entra depende do que separa a linha escolhida da vizinha **do lado
+ * em que a nova cai**:
+ *
+ * - `\hline` e afins se repetem entre todas as linhas (é o que as tabelas
+ *   vindas de PDF usam), então a nova ganha uma cópia do traço;
+ * - `\toprule`/`\midrule`/`\bottomrule` são fronteira de faixa, não separador:
+ *   duplicá-los poria a linha nova entre dois traços. A nova entra do lado do
+ *   corpo, depois da fronteira, e nada é copiado.
  */
 export function insertRow(model: TableModel, rowIndex: number): TableModel {
   const rows = rowSegmentIndices(model);
@@ -281,9 +293,21 @@ export function insertRow(model: TableModel, rowIndex: number): TableModel {
     trailer: reference.trailer,
     edited: true,
   };
-  const separator = separatorFor(model, rows, rowIndex);
+
+  const next = rows[rowIndex + 1];
+  const previous = rows[rowIndex - 1];
+  const run =
+    next !== undefined
+      ? model.segments.slice(at + 1, next)
+      : previous !== undefined
+        ? model.segments.slice(previous + 1, at)
+        : [];
   const segments = model.segments.slice();
-  segments.splice(at + 1, 0, ...separator.map((segment) => ({ ...segment })), fresh);
+  if (run.some((segment) => BOUNDARY_RULE.test(segment.text))) {
+    segments.splice(next ?? at + 1, 0, fresh);
+  } else {
+    segments.splice(at + 1, 0, ...run.map((segment) => ({ ...segment })), fresh);
+  }
   return { ...model, segments };
 }
 
@@ -292,6 +316,11 @@ export function insertRow(model: TableModel, rowIndex: number): TableModel {
  * da borda, para nunca levar junto o `\bottomrule` da tabela. Remover a última
  * linha não é permitido: sem linha de conteúdo a tabela deixa de ser grade e
  * volta a aparecer como código.
+ *
+ * Aqui a fronteira de faixa **vai junto**, ao contrário do que acontece ao
+ * inserir: quem sai é a linha de cabeçalho, e sem cabeçalho não há faixa para
+ * o `\midrule` fechar. Inserir é o caso oposto — a linha nova precisa cair de
+ * um lado ou do outro da fronteira que continua existindo.
  */
 export function removeRow(model: TableModel, rowIndex: number): TableModel {
   const rows = rowSegmentIndices(model);
@@ -305,42 +334,74 @@ export function removeRow(model: TableModel, rowIndex: number): TableModel {
   return { ...model, segments };
 }
 
-function replaceSpan(text: string, span: TableTextSpan, value: string): string {
-  return text.slice(0, span.start) + value + text.slice(span.end);
+function replaceArgument(
+  text: string,
+  span: TableMacroSpan,
+  value: string,
+): { text: string; span: TableMacroSpan } {
+  const delta = value.length - (span.argument.end - span.argument.start);
+  return {
+    text: text.slice(0, span.argument.start) + value + text.slice(span.argument.end),
+    span: {
+      macro: { start: span.macro.start, end: span.macro.end + delta },
+      argument: {
+        start: span.argument.start,
+        end: span.argument.end + delta,
+      },
+    },
+  };
+}
+
+/** Apaga a macro inteira — e a linha, se ela não tinha mais nada. */
+function removeMacro(text: string, span: TableMacroSpan): string {
+  const lineStart = text.lastIndexOf("\n", span.macro.start) + 1;
+  const lineBreak = text.indexOf("\n", span.macro.end);
+  const lineEnd = lineBreak === -1 ? text.length : lineBreak;
+  const rest =
+    text.slice(lineStart, span.macro.start) + text.slice(span.macro.end, lineEnd);
+  if (rest.trim() === "") {
+    return (
+      text.slice(0, lineStart) + text.slice(lineBreak === -1 ? lineEnd : lineEnd + 1)
+    );
+  }
+  return text.slice(0, span.macro.start) + text.slice(span.macro.end);
 }
 
 /** Texto da legenda, ou `null` quando a tabela não tem `\Caption`/`\caption`. */
 export function tableCaption(model: TableModel): string | null {
-  return model.captionSpan
-    ? model.pre.slice(model.captionSpan.start, model.captionSpan.end)
-    : null;
+  const span = model.captionSpan;
+  return span ? model.pre.slice(span.argument.start, span.argument.end) : null;
 }
 
 /** Texto da indicação de fonte, ou `null` quando não há `\Fonte`. */
 export function tableFonte(model: TableModel): string | null {
-  return model.fonteSpan
-    ? model.post.slice(model.fonteSpan.start, model.fonteSpan.end)
-    : null;
+  const span = model.fonteSpan;
+  return span ? model.post.slice(span.argument.start, span.argument.end) : null;
 }
 
+/**
+ * Legenda vazia **não** apaga a macro: o `\label` mora dentro dela, e levá-lo
+ * junto quebraria toda referência cruzada que aponta para esta tabela.
+ */
 export function editCaption(model: TableModel, value: string): TableModel {
   const span = model.captionSpan;
   if (!span) return model;
-  return {
-    ...model,
-    pre: replaceSpan(model.pre, span, value),
-    captionSpan: { start: span.start, end: span.start + value.length },
-  };
+  const next = replaceArgument(model.pre, span, value);
+  return { ...model, pre: next.text, captionSpan: next.span };
 }
 
+/**
+ * Fonte apagada some da saída: `\Fonte{}` imprime a linha "Fonte:" em branco no
+ * PDF — o mesmo cuidado que a figura já tinha.
+ */
 export function editFonte(model: TableModel, value: string): TableModel {
   const span = model.fonteSpan;
   if (!span) return model;
-  return {
-    ...model,
-    post: replaceSpan(model.post, span, value),
-    fonteSpan: { start: span.start, end: span.start + value.length },
-  };
+  if (value.trim() === "") {
+    return { ...model, post: removeMacro(model.post, span), fonteSpan: null };
+  }
+  const next = replaceArgument(model.post, span, value);
+  return { ...model, post: next.text, fonteSpan: next.span };
 }
 
 /**
