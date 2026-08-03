@@ -110,6 +110,24 @@ Conformidade (ADR-09). Consequências:
 - o "ver código" interno da lista sai: com o `view-toggle` abrindo o
   CodeMirror editável, um segundo modo-fonte somente leitura só confundiria.
 
+## ADR-09 — Conformidade como aba do rail
+
+**Contexto.** A conferência de conformidade inicialmente abria numa janela
+sobre o editor. Para que uma ação de correção fosse útil, ela precisava fechar
+antes de abrir o destino; assim, a pessoa perdia a lista enquanto corrigia. A
+janela também não mantinha o foco dentro de si nem o devolvia ao controle de
+origem quando fechada.
+
+**Decisão.** A conformidade vive como aba permanente do painel lateral, ao
+lado do texto. As ações abrem o destino no editor, nas referências ou nos
+dados do trabalho sem trocar a aba; cada pendência visitada permanece visível
+até que deixe de existir.
+
+**Consequências.** A lista acompanha a correção e pode orientar o próximo
+passo sem reconstruir contexto. Em contrapartida, ela precisa caber na largura
+do painel: grupos longos começam recolhidos, e descrições extensas são
+abreviadas visualmente com o texto completo disponível como dica.
+
 ## Decisões de escopo do produto (SKIP)
 
 Registradas porque foram deliberadas, não esquecidas — com a condição em que
