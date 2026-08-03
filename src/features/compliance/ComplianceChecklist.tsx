@@ -186,19 +186,21 @@ export function ComplianceChecklist({
                         {strings.compliance.nextItem}
                       </button>
                     )}
-                  {check.status === "warn" && check.action && (
-                    <button
-                      type="button"
-                      data-testid={`compliance-fix-${check.id}`}
-                      aria-label={`${strings.compliance.fixAction}: ${messageFor(check)}`}
-                      className="shrink-0 text-accent text-sm underline hover:no-underline"
-                      onClick={() => {
-                        if (check.action) onAction(check.action);
-                      }}
-                    >
-                      {strings.compliance.fixAction}
-                    </button>
-                  )}
+                  {check.status === "warn" &&
+                    check.action &&
+                    !(check.items && check.items.length > 0) && (
+                      <button
+                        type="button"
+                        data-testid={`compliance-fix-${check.id}`}
+                        aria-label={`${strings.compliance.fixAction}: ${messageFor(check)}`}
+                        className="shrink-0 text-accent text-sm underline hover:no-underline"
+                        onClick={() => {
+                          if (check.action) onAction(check.action);
+                        }}
+                      >
+                        {strings.compliance.fixAction}
+                      </button>
+                    )}
                 </div>
                 {check.id === "importPdf" &&
                   check.items?.some((item) => item.reviewAction) && (
@@ -221,11 +223,14 @@ export function ComplianceChecklist({
                           data-tone={danger ? "danger" : "warning"}
                           data-current={currentItemId === item.id ? "true" : undefined}
                           data-visited={visitedItemIds?.has(item.id) ? "true" : undefined}
+                          aria-current={currentItemId === item.id ? "true" : undefined}
                           aria-label={
                             item.detail ? `${item.label}. ${item.detail}` : item.label
                           }
                           className={`flex items-start gap-2 rounded border px-2.5 py-2 ${
                             danger ? "border-danger/30 text-danger" : "text-ink-muted"
+                          } ${currentItemId === item.id ? "ring-2 ring-accent" : ""} ${
+                            visitedItemIds?.has(item.id) ? "opacity-70" : ""
                           }`}
                         >
                           <ComplianceItemIcon item={item} />

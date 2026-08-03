@@ -110,9 +110,15 @@ describe("ComplianceChecklist", () => {
         id: "figures",
         status: "warn",
         count: 1,
+        action: { kind: "openFile", path: "cap.tex", line: 1 },
         items: [{ id: "cap.tex:0", label: "Figura" }],
       },
-      { id: "abstract", status: "warn", count: 1 },
+      {
+        id: "abstract",
+        status: "warn",
+        count: 1,
+        action: { kind: "openMetadata" },
+      },
     ];
 
     render(
@@ -120,6 +126,8 @@ describe("ComplianceChecklist", () => {
         checks={checks}
         onAction={vi.fn()}
         onNext={onNext}
+        currentItemId="cap.tex:0"
+        visitedItemIds={new Set(["cap.tex:0"])}
         onClose={vi.fn()}
       />,
     );
@@ -131,6 +139,12 @@ describe("ComplianceChecklist", () => {
         name: "próximo: 1 figura está sem legenda ou sem indicação de fonte.",
       }),
     ).toBeTruthy();
+    const current = screen.getByTestId("compliance-item-cap.tex:0");
+    expect(current.getAttribute("aria-current")).toBe("true");
+    expect(current.className).toContain("ring-2");
+    expect(current.className).toContain("opacity-70");
+    expect(screen.queryByTestId("compliance-fix-figures")).toBeNull();
+    expect(screen.getByTestId("compliance-fix-abstract")).toBeTruthy();
     expect(screen.queryByTestId("compliance-next-abstract")).toBeNull();
   });
 });
