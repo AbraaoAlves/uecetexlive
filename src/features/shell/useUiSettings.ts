@@ -38,10 +38,7 @@ export function useUiSettings(): UseUiSettings {
         const migrated = migrateUiSettings(loaded);
         const pending = pendingPatchesRef.current;
         pendingPatchesRef.current = [];
-        const merged = pending.reduce<UiSettings>(
-          (acc, patch) => ({ ...acc, ...patch }),
-          migrated,
-        );
+        const merged: UiSettings = Object.assign({}, migrated, ...pending);
         hydratedRef.current = true;
         setUiState(merged);
         setReady(true);
