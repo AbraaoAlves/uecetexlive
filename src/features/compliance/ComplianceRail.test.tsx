@@ -63,6 +63,23 @@ describe("ComplianceRail", () => {
     expect(screen.queryByTestId("compliance-item-references-silva2026")).toBeNull();
   });
 
+  it("oferece a próxima correção enquanto há pendências", () => {
+    const onNext = vi.fn();
+    const checks: ComplianceCheck[] = [
+      {
+        id: "pretextual",
+        status: "warn",
+        count: 1,
+        action: { kind: "openMetadata" },
+      },
+    ];
+
+    render(<ComplianceRail checks={checks} onAction={vi.fn()} onNext={onNext} />);
+
+    fireEvent.click(screen.getByTestId("compliance-next-all"));
+    expect(onNext).toHaveBeenCalledOnce();
+  });
+
   it("mantém grupos longos recolhidos e explica quando não há destino", () => {
     const checks: ComplianceCheck[] = [
       {

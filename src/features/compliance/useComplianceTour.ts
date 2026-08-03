@@ -1,15 +1,21 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { CheckId, ComplianceCheck, ComplianceItem } from "./compliance-checklist";
+import {
+  type CheckId,
+  type ComplianceCheck,
+  type ComplianceItem,
+  effectiveItems,
+} from "./compliance-checklist";
 
 export interface ComplianceTour {
   current: ComplianceItem | null;
   visited: ReadonlySet<string>;
   next: (checkId: CheckId) => ComplianceItem | null;
+  nextAll: () => ComplianceItem | null;
   visit: (itemId: string) => void;
 }
 
 export function useComplianceTour(checks: readonly ComplianceCheck[]): ComplianceTour {
-  const items = useMemo(() => checks.flatMap((check) => check.items ?? []), [checks]);
+  const items = useMemo(() => checks.flatMap(effectiveItems), [checks]);
   const [currentId, setCurrentId] = useState<string | null>(null);
   const [visited, setVisited] = useState<ReadonlySet<string>>(() => new Set());
   const currentIdRef = useRef(currentId);
@@ -31,9 +37,8 @@ export function useComplianceTour(checks: readonly ComplianceCheck[]): Complianc
     }
   }, [items]);
 
-  const next = useCallback(
-    (checkId: CheckId): ComplianceItem | null => {
-      const candidates = checks.find((check) => check.id === checkId)?.items ?? [];
+  const advance = useCallback(
+    (candidates: readonly ComplianceItem[]): ComplianceItem | null => {
       if (candidates.length === 0) return null;
 
       let candidate = candidates.find((item) => !visitedRef.current.has(item.id));
@@ -53,8 +58,18 @@ export function useComplianceTour(checks: readonly ComplianceCheck[]): Complianc
       setCurrentId(candidate.id);
       return candidate;
     },
-    [checks],
+    [],
   );
+
+  const next = useCallback(
+    (checkId: CheckId) => {
+      const check = checks.find((candidate) => candidate.id === checkId);
+      return check ? advance(effectiveItems(check)) : null;
+    },
+    [advance, checks],
+  );
+
+  const nextAll = useCallback(() => advance(items), [advance, items]);
 
   const visit = useCallback(
     (itemId: string) => {
@@ -73,6 +88,7 @@ export function useComplianceTour(checks: readonly ComplianceCheck[]): Complianc
     current: items.find((item) => item.id === currentId) ?? null,
     visited,
     next,
+    nextAll,
     visit,
   };
 }

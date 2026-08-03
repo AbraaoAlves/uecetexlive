@@ -4,9 +4,11 @@ import { ComplianceList, type ComplianceListProps } from "./ComplianceList";
 import { pendingItemCount } from "./compliance-checklist";
 import { orderComplianceChecks } from "./compliance-order";
 
-export type ComplianceRailProps = ComplianceListProps;
+export interface ComplianceRailProps extends ComplianceListProps {
+  onNext?: () => void;
+}
 
-export function ComplianceRail({ checks, ...props }: ComplianceRailProps) {
+export function ComplianceRail({ checks, onNext, ...props }: ComplianceRailProps) {
   const pendingCount = pendingItemCount(checks);
   const orderedChecks = orderComplianceChecks(checks);
   const [showOkChecks, setShowOkChecks] = useState(false);
@@ -25,6 +27,16 @@ export function ComplianceRail({ checks, ...props }: ComplianceRailProps) {
         <p className="text-ink-subtle text-xs" data-testid="compliance-rail-summary">
           {summary}
         </p>
+        {!allClear && onNext && (
+          <button
+            type="button"
+            data-testid="compliance-next-all"
+            className="mt-1 text-accent text-xs underline hover:no-underline"
+            onClick={onNext}
+          >
+            {strings.compliance.nextOverall}
+          </button>
+        )}
         {allClear && (
           <button
             type="button"

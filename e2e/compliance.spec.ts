@@ -57,6 +57,31 @@ test("ir para em uma referência abre o .bib sem sair da aba", async ({ page }) 
   await expect(page.getByTestId("view-toggle")).toHaveText("Fonte BibTeX");
 });
 
+test("corrigir o próximo percorre verificações sem repetir", async ({ page }) => {
+  await page.goto("/");
+  await dismissWelcome(page);
+
+  await page.getByTestId("rail-checklist").click();
+  const next = page.getByTestId("compliance-next-all");
+
+  await next.click();
+  await expect(page.getByTestId("metadata-wizard")).toBeVisible();
+  await page.getByTestId("wizard-close").click();
+
+  await next.click();
+  await expect(page.getByTestId("metadata-wizard")).toBeVisible();
+  await page.getByTestId("wizard-close").click();
+
+  await next.click();
+  await expect(
+    page.getByTestId("editor-pane").getByTestId("references-panel"),
+  ).toBeVisible();
+  await expect(page.getByTestId("rail-tab-compliance")).toHaveAttribute(
+    "aria-selected",
+    "true",
+  );
+});
+
 test("setas alternam as abas sem abrir uma janela", async ({ page }) => {
   await page.goto("/");
   await dismissWelcome(page);

@@ -349,6 +349,7 @@ export const strings = {
     close: "Fechar",
     fixAction: "corrigir",
     nextItem: "próximo",
+    nextOverall: "Corrigir o próximo",
     expandItems: "ver itens",
     collapseItems: "ocultar itens",
     gotoItem: "ir para",

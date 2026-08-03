@@ -42,6 +42,7 @@ import {
   computeComplianceChecklist,
   pendingItemCount,
 } from "@/features/compliance/compliance-checklist";
+import { orderComplianceChecks } from "@/features/compliance/compliance-order";
 import { useComplianceTour } from "@/features/compliance/useComplianceTour";
 import {
   ImportPdfDialog,
@@ -634,7 +635,11 @@ function ShellInner() {
       }),
     [meta, bibText, derivedTexSources, texOrder, importUnclassified],
   );
-  const complianceTour = useComplianceTour(complianceChecks);
+  const orderedComplianceChecks = useMemo(
+    () => orderComplianceChecks(complianceChecks),
+    [complianceChecks],
+  );
+  const complianceTour = useComplianceTour(orderedComplianceChecks);
   const checklistPendingCount = pendingItemCount(complianceChecks);
   const checklistWarnCount = complianceChecks.filter((c) => c.status === "warn").length;
   const checklistPendingHint = strings.compliance.pendingTabHint
@@ -669,6 +674,11 @@ function ShellInner() {
     },
     [complianceTour.visit],
   );
+
+  const handleComplianceNext = useCallback(() => {
+    const item = complianceTour.nextAll();
+    if (item?.action) handleComplianceAction(item.action);
+  }, [complianceTour.nextAll, handleComplianceAction]);
 
   const handleComplianceReviewAction = useCallback(
     (action: ComplianceReviewAction) => {
@@ -1424,6 +1434,7 @@ function ShellInner() {
                   onAction={handleComplianceAction}
                   onItemAction={handleComplianceItemAction}
                   onReviewAction={handleComplianceReviewAction}
+                  onNext={handleComplianceNext}
                   currentItemId={complianceTour.current?.id}
                   visitedItemIds={complianceTour.visited}
                 />

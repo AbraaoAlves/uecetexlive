@@ -46,6 +46,35 @@ describe("useComplianceTour", () => {
     act(() => expect(result.current.next("figures")?.id).toBe("a"));
   });
 
+  it("percorre todas as verificações na ordem recebida, inclusive as não enumeradas", () => {
+    const checks: ComplianceCheck[] = [
+      {
+        id: "pretextual",
+        status: "warn",
+        count: 4,
+        action: { kind: "openMetadata" },
+      },
+      {
+        id: "abstract",
+        status: "warn",
+        count: 1,
+        action: { kind: "openMetadata" },
+      },
+      {
+        id: "references",
+        status: "warn",
+        count: 1,
+        items: [{ id: "silva2026", label: "Silva 2026" }],
+      },
+    ];
+    const { result } = renderHook(() => useComplianceTour(checks));
+
+    act(() => expect(result.current.nextAll()?.id).toBe("pretextual"));
+    act(() => expect(result.current.nextAll()?.id).toBe("abstract"));
+    act(() => expect(result.current.nextAll()?.id).toBe("silva2026"));
+    expect([...result.current.visited]).toEqual(["pretextual", "abstract", "silva2026"]);
+  });
+
   it("forgets only ids that disappear and reconciles the current item", () => {
     const { result, rerender } = renderHook(({ checks }) => useComplianceTour(checks), {
       initialProps: { checks: figures(["a", "b", "c"]) },
