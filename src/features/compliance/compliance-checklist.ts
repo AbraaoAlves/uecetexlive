@@ -14,6 +14,7 @@ import { extractCitedKeys } from "@/features/bibliography/citation-usage";
 import { checkFigures } from "@/features/project/figures-checklist";
 import type { MetadataField, WorkType } from "@/features/project/metadata";
 import { TEMPLATE_PLACEHOLDER_TITLE } from "@/features/project/metadata";
+import { strings } from "@/lib/strings";
 
 export type CheckId =
   | "pretextual"
@@ -178,21 +179,74 @@ function checkReferences(bibText: string | null): ComplianceCheck {
 }
 
 function checkFiguresAcrossProject(texSources: Record<string, string>): ComplianceCheck {
-  let bad = 0;
-  let firstBadPath: string | null = null;
-  for (const [path, source] of Object.entries(texSources)) {
+  type FigureReason = "sem-legenda" | "sem-fonte" | "sem-legenda-e-fonte";
+  const reasonOrder: Record<FigureReason, number> = {
+    "sem-legenda-e-fonte": 0,
+    "sem-legenda": 1,
+    "sem-fonte": 2,
+  };
+  const pending: Array<{
+    item: ComplianceItem;
+    reasonOrder: number;
+    fileOrder: number;
+    line: number;
+  }> = [];
+
+  for (const [fileOrder, [path, source]] of Object.entries(texSources).entries()) {
     for (const fig of checkFigures(source)) {
-      if (!fig.hasCaption || !fig.hasFonte) {
-        bad++;
-        firstBadPath ??= path;
-      }
+      if (fig.hasCaption && fig.hasFonte) continue;
+
+      const reason: FigureReason =
+        !fig.hasCaption && !fig.hasFonte
+          ? "sem-legenda-e-fonte"
+          : !fig.hasCaption
+            ? "sem-legenda"
+            : "sem-fonte";
+      const detail =
+        reason === "sem-legenda-e-fonte"
+          ? strings.compliance.figureNoBoth
+          : reason === "sem-legenda"
+            ? strings.compliance.figureNoCaption
+            : strings.compliance.figureNoFonte;
+      const fileName = path.split("/").at(-1) || path;
+      const fallbackLabel = strings.compliance.figureFallbackLabel
+        .replace("{n}", String(fig.index + 1))
+        .replace("{file}", fileName);
+      const action: ComplianceAction = {
+        kind: "openFile",
+        path,
+        line: fig.line,
+        mode: "source",
+      };
+      pending.push({
+        item: {
+          id: `${path}:${fig.index}`,
+          label: fig.caption ?? fallbackLabel,
+          detail,
+          reason,
+          action,
+        },
+        reasonOrder: reasonOrder[reason],
+        fileOrder,
+        line: fig.line,
+      });
     }
   }
+
+  const items = pending
+    .sort(
+      (left, right) =>
+        left.reasonOrder - right.reasonOrder ||
+        left.fileOrder - right.fileOrder ||
+        left.line - right.line,
+    )
+    .map(({ item }) => item);
   return {
     id: "figures",
-    status: bad === 0 ? "ok" : "warn",
-    count: bad,
-    action: firstBadPath ? { kind: "openFile", path: firstBadPath } : undefined,
+    status: items.length === 0 ? "ok" : "warn",
+    count: items.length,
+    action: items[0]?.action,
+    items,
   };
 }
 

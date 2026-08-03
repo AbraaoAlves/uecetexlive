@@ -115,7 +115,69 @@ describe("computeComplianceChecklist", () => {
     const figures = checks.find((c) => c.id === "figures");
     expect(figures?.status).toBe("warn");
     expect(figures?.count).toBe(1);
-    expect(figures?.action).toEqual({ kind: "openFile", path: "cap1.tex" });
+    expect(figures?.action).toEqual({
+      kind: "openFile",
+      path: "cap1.tex",
+      line: 1,
+      mode: "source",
+    });
+  });
+
+  it("enumerates figures by severity, then file and line", () => {
+    const checks = computeComplianceChecklist(
+      baseInput({
+        texSources: {
+          "b.tex": [
+            "\\begin{figure}",
+            "\\end{figure}",
+            "",
+            "\\begin{figure}",
+            "\\caption{B com legenda}",
+            "\\end{figure}",
+          ].join("\n"),
+          "a.tex": [
+            "\\begin{figure}",
+            "\\Fonte{Autor}",
+            "\\end{figure}",
+            "",
+            "\\begin{figure}",
+            "\\caption{   }",
+            "\\end{figure}",
+          ].join("\n"),
+        },
+      }),
+    );
+
+    expect(checks.find((check) => check.id === "figures")?.items).toEqual([
+      {
+        id: "b.tex:0",
+        label: "Figura 1 de b.tex",
+        detail: "Sem legenda e sem indicação de fonte.",
+        reason: "sem-legenda-e-fonte",
+        action: { kind: "openFile", path: "b.tex", line: 1, mode: "source" },
+      },
+      {
+        id: "a.tex:0",
+        label: "Figura 1 de a.tex",
+        detail: "Sem legenda.",
+        reason: "sem-legenda",
+        action: { kind: "openFile", path: "a.tex", line: 1, mode: "source" },
+      },
+      {
+        id: "b.tex:1",
+        label: "B com legenda",
+        detail: "Sem indicação de fonte.",
+        reason: "sem-fonte",
+        action: { kind: "openFile", path: "b.tex", line: 4, mode: "source" },
+      },
+      {
+        id: "a.tex:1",
+        label: "Figura 2 de a.tex",
+        detail: "Sem indicação de fonte.",
+        reason: "sem-fonte",
+        action: { kind: "openFile", path: "a.tex", line: 5, mode: "source" },
+      },
+    ]);
   });
 
   it("flags a citation with no matching bib entry as an orphan", () => {
