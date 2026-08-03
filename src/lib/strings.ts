@@ -253,6 +253,8 @@ export const strings = {
     incompleteAction: "completar",
     incompleteAggregateOne: "1 referência incompleta",
     incompleteAggregateMany: "{n} referências incompletas",
+    incompleteGroupLabel: "Faltam dados nestas",
+    completeGroupLabel: "Completas",
     summaryOne: "1 referência",
     summaryMany: "{n} referências",
     summaryIncomplete: "{n} incompletas",

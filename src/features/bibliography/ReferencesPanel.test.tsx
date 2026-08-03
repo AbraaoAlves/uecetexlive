@@ -34,6 +34,40 @@ const WITH_INCOMPLETE = `${SAMPLE}
 }
 `;
 
+const MIXED_COMPLETENESS = `@book{completeFirst,
+  author = {Zulu, Ana},
+  title = {Completa primeiro},
+  publisher = {Editora A},
+  year = {2000}
+}
+
+@book{incompleteOld,
+  author = {Bravo, Bia},
+  title = {Incompleta antiga},
+  year = {1900}
+}
+
+@book{incompleteNew,
+  author = {Alpha, Alice},
+  title = {Incompleta nova},
+  year = {2100}
+}
+
+@book{completeLast,
+  author = {Echo, Eva},
+  title = {Completa por último},
+  publisher = {Editora B},
+  year = {1800}
+}
+`;
+
+function renderedReferenceKeys(): string[] {
+  return Array.from(screen.getByTestId("references-list").children)
+    .map((element) => element.getAttribute("data-testid") ?? "")
+    .filter((testId) => testId.startsWith("reference-"))
+    .map((testId) => testId.replace("reference-", ""));
+}
+
 describe("ReferencesPanel", () => {
   it("lists every entry from the .bib fixture", () => {
     render(<ReferencesPanel bibText={SAMPLE} />);
@@ -146,5 +180,36 @@ describe("ReferencesPanel", () => {
     render(<ReferencesPanel bibText={SAMPLE} />);
     expect(screen.queryByTestId("references-incomplete-aggregate")).toBeNull();
     expect(screen.queryByTestId("reference-incomplete-freire1970")).toBeNull();
+  });
+
+  it("keeps incomplete entries first without changing the chosen sort within groups", () => {
+    render(<ReferencesPanel bibText={MIXED_COMPLETENESS} />);
+
+    expect(renderedReferenceKeys()).toEqual([
+      "incompleteOld",
+      "incompleteNew",
+      "completeFirst",
+      "completeLast",
+    ]);
+    expect(screen.getByTestId("references-group-incomplete").textContent).toBe(
+      "Faltam dados nestas",
+    );
+    expect(screen.getByTestId("references-group-complete").textContent).toBe("Completas");
+
+    fireEvent.click(screen.getByTestId("references-sort-author"));
+    expect(renderedReferenceKeys()).toEqual([
+      "incompleteNew",
+      "incompleteOld",
+      "completeLast",
+      "completeFirst",
+    ]);
+
+    fireEvent.click(screen.getByTestId("references-sort-year"));
+    expect(renderedReferenceKeys()).toEqual([
+      "incompleteOld",
+      "incompleteNew",
+      "completeLast",
+      "completeFirst",
+    ]);
   });
 });

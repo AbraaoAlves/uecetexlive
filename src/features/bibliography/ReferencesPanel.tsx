@@ -16,7 +16,7 @@ import {
   updateEntry,
 } from "@papyru/bibliography";
 import { ABNT_CITATION_PROFILE } from "@papyru/latex-mapping";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { strings } from "@/lib/strings";
 import { cn } from "@/lib/utils";
 import { AddReferenceDialog, type EditingReference } from "./AddReferenceDialog";
@@ -215,14 +215,20 @@ export function ReferencesPanel({
   const incompleteCount = rows.filter((r) => r.missingFieldLabels.length > 0).length;
 
   const sortedRows = useMemo(() => {
-    if (sort === "file") return rows;
-    const copy = [...rows];
-    copy.sort((a, b) =>
-      sort === "author"
-        ? (a.authorsLabel ?? "").localeCompare(b.authorsLabel ?? "")
-        : a.yearLabel.localeCompare(b.yearLabel),
-    );
-    return copy;
+    const ordered =
+      sort === "file"
+        ? rows
+        : [...rows].sort((a, b) =>
+            sort === "author"
+              ? (a.authorsLabel ?? "").localeCompare(b.authorsLabel ?? "")
+              : a.yearLabel.localeCompare(b.yearLabel),
+          );
+    const incomplete: ListRow[] = [];
+    const complete: ListRow[] = [];
+    for (const row of ordered) {
+      (row.missingFieldLabels.length > 0 ? incomplete : complete).push(row);
+    }
+    return [...incomplete, ...complete];
   }, [rows, sort]);
 
   if (bibText === null) {
@@ -386,107 +392,124 @@ export function ReferencesPanel({
                 </div>
               )}
               <ul data-testid="references-list">
-                {sortedRows.map((row) => (
-                  <li
-                    key={row.key}
-                    ref={(el) => {
-                      if (el) rowRefs.current.set(row.key, el);
-                      else rowRefs.current.delete(row.key);
-                    }}
-                    tabIndex={-1}
-                    className="border-b px-3 py-2 text-sm"
-                    data-testid={`reference-${row.key}`}
-                  >
-                    <div className="flex items-center gap-1.5 text-ink-muted text-xs">
-                      <EntryTypeIcon type={row.entry.entryType} />
-                      <span>{entryTypeLabelPt(row.entry.entryType)}</span>
-                    </div>
-                    <div className="font-medium">{row.titleLabel}</div>
-                    {row.missingFieldLabels.length > 0 && (
-                      <div
-                        className="mt-0.5 text-warning text-xs"
-                        data-testid={`reference-incomplete-${row.key}`}
+                {sortedRows.map((row, index) => (
+                  <Fragment key={row.key}>
+                    {incompleteCount > 0 && index === 0 && (
+                      <li
+                        className="border-b bg-warning/5 px-3 py-1.5 font-medium text-ink-muted text-xs"
+                        data-testid="references-group-incomplete"
                       >
-                        {strings.references.incompleteMissingPrefix}{" "}
-                        {row.missingFieldLabels.join(", ")}.{" "}
-                        {onWriteBib && isKnownEntryType(row.entry.entryType) && (
-                          <button
-                            type="button"
-                            className="underline hover:no-underline"
-                            onClick={() =>
-                              setEditing({ citationKey: row.key, entry: row.entry })
-                            }
-                          >
-                            {strings.references.incompleteAction}
-                          </button>
-                        )}
-                      </div>
+                        {strings.references.incompleteGroupLabel}
+                      </li>
                     )}
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-ink-muted text-xs">
-                        <span>
-                          {row.authorsLabel ?? strings.references.unknownAuthor}
-                        </span>{" "}
-                        · <span>{row.yearLabel}</span>
-                      </span>
-                      <span className="flex shrink-0 items-center gap-2 text-xs">
-                        {onInsertCitation ? (
-                          <button
-                            type="button"
-                            data-testid={`reference-insert-${row.key}`}
-                            className="text-accent underline hover:no-underline"
-                            onClick={() => onInsertCitation(row.key)}
-                          >
-                            {strings.references.insertCitation}
-                          </button>
-                        ) : (
-                          // Sem um editor de texto montado ao lado não dá para
-                          // saber onde está o cursor — inserir chutaria o
-                          // arquivo. Copiar não depende de saber isso, e o
-                          // caminho de inserir de verdade é o menu "/" de
-                          // dentro do editor visual.
-                          <button
-                            type="button"
-                            data-testid={`reference-copy-${row.key}`}
-                            className="text-accent underline hover:no-underline"
-                            onClick={() => {
-                              const command = `\\${citeCommand}{${row.key}}`;
-                              void navigator.clipboard
-                                ?.writeText(command)
-                                .then(() => setCopyState({ key: row.key, ok: true }))
-                                .catch(() => setCopyState({ key: row.key, ok: false }));
-                            }}
-                          >
-                            {copyState?.key === row.key && copyState.ok
-                              ? strings.references.copiedCitation
-                              : strings.references.copyCitation}
-                          </button>
-                        )}
-                        {onWriteBib && isKnownEntryType(row.entry.entryType) && (
-                          <button
-                            type="button"
-                            data-testid={`reference-edit-${row.key}`}
-                            className="text-ink-muted underline hover:no-underline"
-                            onClick={() =>
-                              setEditing({ citationKey: row.key, entry: row.entry })
-                            }
-                          >
-                            {strings.references.editButton}
-                          </button>
-                        )}
-                        {onWriteBib && (
-                          <button
-                            type="button"
-                            data-testid={`reference-remove-${row.key}`}
-                            className="text-danger underline hover:no-underline"
-                            onClick={() => openRemoveConfirm(row.key)}
-                          >
-                            {strings.references.removeButton}
-                          </button>
-                        )}
-                      </span>
-                    </div>
-                  </li>
+                    {incompleteCount > 0 && index === incompleteCount && (
+                      <li
+                        className="border-b bg-surface px-3 py-1.5 font-medium text-ink-muted text-xs"
+                        data-testid="references-group-complete"
+                      >
+                        {strings.references.completeGroupLabel}
+                      </li>
+                    )}
+                    <li
+                      ref={(el) => {
+                        if (el) rowRefs.current.set(row.key, el);
+                        else rowRefs.current.delete(row.key);
+                      }}
+                      tabIndex={-1}
+                      className="border-b px-3 py-2 text-sm"
+                      data-testid={`reference-${row.key}`}
+                    >
+                      <div className="flex items-center gap-1.5 text-ink-muted text-xs">
+                        <EntryTypeIcon type={row.entry.entryType} />
+                        <span>{entryTypeLabelPt(row.entry.entryType)}</span>
+                      </div>
+                      <div className="font-medium">{row.titleLabel}</div>
+                      {row.missingFieldLabels.length > 0 && (
+                        <div
+                          className="mt-0.5 text-warning text-xs"
+                          data-testid={`reference-incomplete-${row.key}`}
+                        >
+                          {strings.references.incompleteMissingPrefix}{" "}
+                          {row.missingFieldLabels.join(", ")}.{" "}
+                          {onWriteBib && isKnownEntryType(row.entry.entryType) && (
+                            <button
+                              type="button"
+                              className="underline hover:no-underline"
+                              onClick={() =>
+                                setEditing({ citationKey: row.key, entry: row.entry })
+                              }
+                            >
+                              {strings.references.incompleteAction}
+                            </button>
+                          )}
+                        </div>
+                      )}
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-ink-muted text-xs">
+                          <span>
+                            {row.authorsLabel ?? strings.references.unknownAuthor}
+                          </span>{" "}
+                          · <span>{row.yearLabel}</span>
+                        </span>
+                        <span className="flex shrink-0 items-center gap-2 text-xs">
+                          {onInsertCitation ? (
+                            <button
+                              type="button"
+                              data-testid={`reference-insert-${row.key}`}
+                              className="text-accent underline hover:no-underline"
+                              onClick={() => onInsertCitation(row.key)}
+                            >
+                              {strings.references.insertCitation}
+                            </button>
+                          ) : (
+                            // Sem um editor de texto montado ao lado não dá para
+                            // saber onde está o cursor — inserir chutaria o
+                            // arquivo. Copiar não depende de saber isso, e o
+                            // caminho de inserir de verdade é o menu "/" de
+                            // dentro do editor visual.
+                            <button
+                              type="button"
+                              data-testid={`reference-copy-${row.key}`}
+                              className="text-accent underline hover:no-underline"
+                              onClick={() => {
+                                const command = `\\${citeCommand}{${row.key}}`;
+                                void navigator.clipboard
+                                  ?.writeText(command)
+                                  .then(() => setCopyState({ key: row.key, ok: true }))
+                                  .catch(() => setCopyState({ key: row.key, ok: false }));
+                              }}
+                            >
+                              {copyState?.key === row.key && copyState.ok
+                                ? strings.references.copiedCitation
+                                : strings.references.copyCitation}
+                            </button>
+                          )}
+                          {onWriteBib && isKnownEntryType(row.entry.entryType) && (
+                            <button
+                              type="button"
+                              data-testid={`reference-edit-${row.key}`}
+                              className="text-ink-muted underline hover:no-underline"
+                              onClick={() =>
+                                setEditing({ citationKey: row.key, entry: row.entry })
+                              }
+                            >
+                              {strings.references.editButton}
+                            </button>
+                          )}
+                          {onWriteBib && (
+                            <button
+                              type="button"
+                              data-testid={`reference-remove-${row.key}`}
+                              className="text-danger underline hover:no-underline"
+                              onClick={() => openRemoveConfirm(row.key)}
+                            >
+                              {strings.references.removeButton}
+                            </button>
+                          )}
+                        </span>
+                      </div>
+                    </li>
+                  </Fragment>
                 ))}
               </ul>
               {failures.map((chunk, i) => (
