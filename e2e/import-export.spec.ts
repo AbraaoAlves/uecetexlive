@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { expect, test } from "@playwright/test";
+import { strToU8, zipSync } from "fflate";
 import { dismissWelcome } from "./helpers";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -68,6 +69,43 @@ test("export → wipe → import round-trips the VFS and stays compilable", asyn
     { timeout: 200_000 },
   );
   expect(await page.getByTestId("compile-button").getAttribute("data-status")).toBe("ok");
+});
+
+test("import opens the entry resolved from a zip without documento.tex", async ({
+  page,
+}) => {
+  const source =
+    "\\documentclass{article}\\begin{document}Entrada alternativa\\end{document}";
+  const zip = zipSync({ "main.tex": strToU8(source) });
+
+  await page.goto("/");
+  await dismissWelcome(page);
+  await page.getByTestId("menu-button").click();
+  await page.getByTestId("menu-import-zip").click();
+  await page.getByTestId("zip-input").setInputFiles({
+    name: "projeto-minimo.zip",
+    mimeType: "application/zip",
+    buffer: Buffer.from(zip),
+  });
+  await expect(page.getByTestId("import-dialog")).toContainText("main.tex");
+  await page.getByTestId("import-confirm").click();
+
+  await expect(page.getByTestId("source-editor-value")).toHaveValue(
+    /Entrada alternativa/,
+  );
+
+  await page.getByTestId("menu-button").click();
+  await page.getByTestId("menu-open-guide").click();
+  await page.getByTestId("wizard-fs-step-ficha").click();
+  await page.getByTestId("ficha-input").setInputFiles({
+    name: "ficha.pdf",
+    mimeType: "application/pdf",
+    buffer: Buffer.from("%PDF-1.7\n%%EOF"),
+  });
+  await expect(page.getByTestId("ficha-state")).toHaveText("Ficha enviada por você.");
+  await expect(page.getByTestId("source-editor-value")).toHaveValue(
+    /Entrada alternativa/,
+  );
 });
 
 test("import .bbl activates the Tier-4 precompiled bibliography path", async ({

@@ -765,7 +765,7 @@ function ShellInner() {
     (bytes: Uint8Array) => {
       if (!project) return;
       if (fichaFile) updateFileBytes(FICHA_PATH, bytes);
-      else createFile(FICHA_PATH, bytes);
+      else createFile(FICHA_PATH, bytes, { open: false });
     },
     [project, fichaFile, updateFileBytes, createFile],
   );
@@ -963,7 +963,7 @@ function ShellInner() {
       projectFromFiles(outcome.files, "uecetex2", UECETEX2_IMPORT_OPTS),
     );
     replaceProject(imported);
-    openFile("documento.tex");
+    openFile(imported.entry);
     setPdfImport(null);
     pdfImportResult.current = null;
     const importedTexSources: Record<string, string> = {};
@@ -1002,9 +1002,10 @@ function ShellInner() {
   const confirmImport = () => {
     if (!importState) return;
     if (importState.kind === "zip-ok") {
-      replaceProject(importState.payload as never);
+      const imported = importState.payload as Parameters<typeof replaceProject>[0];
+      replaceProject(imported);
       void clearImportReport();
-      openFile("documento.tex");
+      openFile(imported.entry);
     } else if (importState.kind === "bbl-ok") {
       setPrecompiledBbl(importState.payload as Uint8Array);
     }

@@ -8,7 +8,7 @@
 
 import type { EmitReport } from "@papyru/inverse-core";
 import { AlertTriangle, Loader2 } from "lucide-react";
-import { useEffect, useRef } from "react";
+import { type KeyboardEvent as ReactKeyboardEvent, useEffect, useRef } from "react";
 import { strings } from "@/lib/strings";
 import type { ImportStage } from "./protocol";
 import { reportCounts, reportPendencies } from "./report-summary";
@@ -36,6 +36,24 @@ const STAGE_LABEL: Record<ImportStage, string> = {
 };
 
 const TITLE_ID = "import-pdf-title";
+
+function trapTabKey(event: ReactKeyboardEvent<HTMLDivElement>) {
+  if (event.key !== "Tab") return;
+  const focusable = event.currentTarget.querySelectorAll<HTMLElement>(
+    'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+  );
+  const first = focusable[0];
+  const last = focusable[focusable.length - 1];
+  if (!first || !last) {
+    event.preventDefault();
+  } else if (event.shiftKey && document.activeElement === first) {
+    event.preventDefault();
+    last.focus();
+  } else if (!event.shiftKey && document.activeElement === last) {
+    event.preventDefault();
+    first.focus();
+  }
+}
 
 export function ImportPdfDialog({
   state,
@@ -66,7 +84,7 @@ export function ImportPdfDialog({
         tabIndex={-1}
         className="flex max-h-[80vh] w-full max-w-lg flex-col overflow-hidden rounded-lg border bg-surface-elevated p-5 shadow-xl outline-none"
         onClick={(e) => e.stopPropagation()}
-        onKeyDown={() => {}}
+        onKeyDown={trapTabKey}
         role="document"
       >
         <div className="flex items-center gap-2">
@@ -151,7 +169,9 @@ export function ImportPdfDialog({
             className="rounded px-3 py-1.5 text-ink-muted text-sm hover:bg-surface disabled:opacity-40"
             onClick={state.kind === "error" && onRetry ? onRetry : onClose}
           >
-            {state.kind === "error" ? strings.importPdf.retry : strings.importPdf.cancel}
+            {state.kind === "error" && onRetry
+              ? strings.importPdf.retry
+              : strings.importPdf.cancel}
           </button>
           {state.kind === "low-confidence" && onForce && (
             <button
