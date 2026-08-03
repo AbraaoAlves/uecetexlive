@@ -82,4 +82,29 @@ describe("ImportPdfDialog", () => {
     fireEvent.keyDown(confirm, { key: "Tab" });
     expect(document.activeElement).toBe(cancel);
   });
+
+  it("anuncia o andamento e os resultados da importação", () => {
+    const { rerender } = render(
+      <ImportPdfDialog
+        state={{ kind: "running", stage: "reconhecendo", pct: 0.42 }}
+        onConfirm={vi.fn()}
+        onClose={vi.fn()}
+      />,
+    );
+
+    const status = screen.getByRole("status");
+    expect(status.getAttribute("aria-live")).toBe("polite");
+    const progress = screen.getByRole("progressbar");
+    expect(progress.getAttribute("aria-valuenow")).toBe("42");
+
+    rerender(
+      <ImportPdfDialog
+        state={{ kind: "error", message: "Falhou" }}
+        onConfirm={vi.fn()}
+        onClose={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByRole("alert").textContent).toContain("Falhou");
+  });
 });

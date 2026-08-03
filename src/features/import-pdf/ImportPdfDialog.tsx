@@ -104,11 +104,22 @@ export function ImportPdfDialog({
 
         {state.kind === "running" && (
           <div className="mt-4" data-testid="import-pdf-running">
-            <p className="flex items-center gap-2 text-sm">
+            <p
+              role="status"
+              aria-live="polite"
+              className="flex items-center gap-2 text-sm"
+            >
               <Loader2 className="size-4 animate-spin" />
               {STAGE_LABEL[state.stage]}
             </p>
-            <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-surface">
+            <div
+              role="progressbar"
+              aria-label={STAGE_LABEL[state.stage]}
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-valuenow={Math.round(state.pct * 100)}
+              className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-surface"
+            >
               <div
                 className="h-full bg-accent transition-[width]"
                 style={{ width: `${Math.round(state.pct * 100)}%` }}
@@ -119,7 +130,12 @@ export function ImportPdfDialog({
         )}
 
         {state.kind === "report" && (
-          <div className="mt-4 min-h-0 overflow-y-auto" data-testid="import-pdf-report">
+          <div
+            aria-live="polite"
+            aria-atomic="true"
+            className="mt-4 min-h-0 overflow-y-auto"
+            data-testid="import-pdf-report"
+          >
             <div className="font-medium text-[11px] text-ink-subtle uppercase tracking-wider">
               {strings.importPdf.reportTitle}
             </div>
@@ -150,7 +166,7 @@ export function ImportPdfDialog({
         )}
 
         {state.kind === "low-confidence" && (
-          <div className="mt-4" data-testid="import-pdf-low-confidence">
+          <div role="alert" className="mt-4" data-testid="import-pdf-low-confidence">
             <p className="flex items-start gap-2 text-sm text-warning">
               <AlertTriangle className="mt-0.5 size-4 shrink-0" />
               {strings.importPdf.lowConfidence}
@@ -159,7 +175,7 @@ export function ImportPdfDialog({
         )}
 
         {state.kind === "error" && (
-          <div className="mt-4" data-testid="import-pdf-error">
+          <div role="alert" className="mt-4" data-testid="import-pdf-error">
             <p className="flex items-start gap-2 text-danger text-sm">
               <AlertTriangle className="mt-0.5 size-4 shrink-0" />
               {state.message}
