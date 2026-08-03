@@ -1,5 +1,5 @@
 import { CheckCircle2, HelpCircle, ImageOff, TriangleAlert } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { strings } from "@/lib/strings";
 import type {
   ComplianceAction,
@@ -120,11 +120,13 @@ function ComplianceCheckRow({
   const items = check.items ?? [];
   const hasItems = check.status === "warn" && items.length > 0;
   const [expanded, setExpanded] = useState(() => items.length <= COLLAPSE_AFTER);
-  const containsCurrentItem =
-    currentItemId !== null &&
-    currentItemId !== undefined &&
-    items.some((item) => item.id === currentItemId);
-  const isExpanded = expanded || containsCurrentItem;
+  const activeItemId = items.some((item) => item.id === currentItemId)
+    ? currentItemId
+    : null;
+  useEffect(() => {
+    if (activeItemId) setExpanded(true);
+  }, [activeItemId]);
+  const isExpanded = expanded;
   const itemsId = `compliance-items-${check.id}`;
   const itemPrefix = `${check.id}-`;
 

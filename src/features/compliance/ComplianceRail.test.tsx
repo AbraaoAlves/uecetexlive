@@ -128,5 +128,12 @@ describe("ComplianceRail", () => {
       screen.getByTestId("compliance-expand-importPdf").getAttribute("aria-expanded"),
     ).toBe("true");
     expect(screen.getByTestId("compliance-item-importPdf-c")).toBeTruthy();
+
+    fireEvent.click(screen.getByTestId("compliance-expand-importPdf"));
+
+    expect(
+      screen.getByTestId("compliance-expand-importPdf").getAttribute("aria-expanded"),
+    ).toBe("false");
+    expect(screen.queryByTestId("compliance-item-importPdf-c")).toBeNull();
   });
 });
