@@ -6,7 +6,7 @@ import type { ComplianceCheck } from "./compliance-checklist";
 afterEach(cleanup);
 
 describe("ComplianceRail", () => {
-  it("resume quando não há pendências", () => {
+  it("resume quando não há pendências e deixa os itens aprovados sob demanda", () => {
     const checks: ComplianceCheck[] = [
       { id: "pretextual", status: "ok", count: 0 },
       { id: "abstract", status: "ok", count: 0 },
@@ -17,6 +17,9 @@ describe("ComplianceRail", () => {
     expect(screen.getByTestId("compliance-rail-summary").textContent).toContain(
       "Tudo certo",
     );
+    expect(screen.queryByTestId("compliance-check-pretextual")).toBeNull();
+
+    fireEvent.click(screen.getByTestId("compliance-show-ok"));
     expect(
       screen.getByTestId("compliance-check-pretextual").getAttribute("data-status"),
     ).toBe("ok");

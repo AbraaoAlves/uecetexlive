@@ -344,6 +344,8 @@ export const strings = {
     railSummaryOne: "1 item a corrigir",
     railSummaryMany: "{n} itens a corrigir",
     allClearRail: "Tudo certo",
+    showOkItems: "ver o que está certo",
+    hideOkItems: "ocultar itens corretos",
     close: "Fechar",
     fixAction: "corrigir",
     nextItem: "próximo",
