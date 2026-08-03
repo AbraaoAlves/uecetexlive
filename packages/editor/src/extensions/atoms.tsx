@@ -3,7 +3,19 @@
  * crossref, math (KaTeX), figure, table projection, code include, footnote.
  */
 
-import { editCell, parseTable, serializeTable, tableRows } from "@papyru/latex-mapping";
+import {
+  editCaption,
+  editCell,
+  editFonte,
+  insertRow,
+  parseTable,
+  removeRow,
+  serializeTable,
+  type TableModel,
+  tableCaption,
+  tableFonte,
+  tableRows,
+} from "@papyru/latex-mapping";
 import { mergeAttributes, Node } from "@tiptap/core";
 import {
   type NodeViewProps,
@@ -414,6 +426,11 @@ function TableView({ node, editor, getPos, updateAttributes }: NodeViewProps) {
   }
 
   const rows = tableRows(model);
+  const caption = tableCaption(model);
+  const fonte = tableFonte(model);
+  const apply = (next: TableModel) =>
+    updateAttributes({ rawSource: serializeTable(next) });
+
   return (
     <NodeViewWrapper data-testid="table-node">
       <div className="my-2 rounded-md border bg-surface p-3">
@@ -430,6 +447,20 @@ function TableView({ node, editor, getPos, updateAttributes }: NodeViewProps) {
             {strings.editor.editAsLatex}
           </button>
         </div>
+        {caption !== null && (
+          <input
+            data-testid="table-caption"
+            aria-label={strings.editor.tableCaptionLabel}
+            placeholder={strings.editor.tableCaptionLabel}
+            className="mb-2 w-full rounded-sm border bg-transparent px-2 py-1 text-sm outline-none focus:bg-accent-soft/40"
+            defaultValue={caption}
+            key={`caption:${caption}`}
+            onBlur={(e) => {
+              if (e.target.value === caption) return;
+              apply(editCaption(model, e.target.value));
+            }}
+          />
+        )}
         <div className="overflow-x-auto">
           <table className="w-full border-collapse text-sm" data-testid="table-grid">
             <tbody>
@@ -437,30 +468,115 @@ function TableView({ node, editor, getPos, updateAttributes }: NodeViewProps) {
                 // biome-ignore lint/suspicious/noArrayIndexKey: row order is the table's identity
                 <tr key={r}>
                   {row.cells.map((cell, c) => (
-                    // biome-ignore lint/suspicious/noArrayIndexKey: column order is stable
-                    <td key={c} className="border p-0">
-                      <input
-                        data-testid={`table-cell-${r}-${c}`}
-                        className="w-full min-w-24 bg-transparent px-2 py-1 outline-none focus:bg-accent-soft/40"
-                        defaultValue={cell}
-                        onBlur={(e) => {
-                          if (e.target.value === cell) return;
-                          updateAttributes({
-                            rawSource: serializeTable(
-                              editCell(model, r, c, e.target.value),
-                            ),
-                          });
-                        }}
+                    // A chave carrega o conteúdo de propósito: os campos são não
+                    // controlados, e sem isso uma linha inserida ou removida
+                    // deixaria na tela o texto da linha que ocupava aquele lugar.
+                    // biome-ignore lint/suspicious/noArrayIndexKey: a posição faz parte da identidade da célula, e o conteúdo junto é o que força o campo a se refazer
+                    <td key={`${r}:${c}:${cell}`} className="border p-0 align-top">
+                      <TableCellField
+                        testId={`table-cell-${r}-${c}`}
+                        label={strings.editor.tableCellLabel
+                          .replace("{row}", String(r + 1))
+                          .replace("{col}", String(c + 1))}
+                        value={cell}
+                        onCommit={(value) => apply(editCell(model, r, c, value))}
                       />
                     </td>
                   ))}
+                  <td className="w-0 whitespace-nowrap border-0 pl-1 align-top">
+                    <button
+                      type="button"
+                      data-testid={`table-add-row-${r}`}
+                      aria-label={strings.editor.tableAddRow}
+                      title={strings.editor.tableAddRow}
+                      className="px-1 text-ink-subtle text-xs hover:text-accent"
+                      onClick={() => apply(insertRow(model, r))}
+                    >
+                      +
+                    </button>
+                    {rows.length > 1 && (
+                      <button
+                        type="button"
+                        data-testid={`table-remove-row-${r}`}
+                        aria-label={strings.editor.tableRemoveRow}
+                        title={strings.editor.tableRemoveRow}
+                        className="px-1 text-ink-subtle text-xs hover:text-accent"
+                        onClick={() => apply(removeRow(model, r))}
+                      >
+                        −
+                      </button>
+                    )}
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
+        {fonte !== null && (
+          <input
+            data-testid="table-fonte"
+            aria-label={strings.editor.tableFonteLabel}
+            placeholder={strings.editor.tableFonteLabel}
+            className="mt-2 w-full rounded-sm border bg-transparent px-2 py-1 text-sm outline-none focus:bg-accent-soft/40"
+            defaultValue={fonte}
+            key={`fonte:${fonte}`}
+            onBlur={(e) => {
+              if (e.target.value === fonte) return;
+              apply(editFonte(model, e.target.value));
+            }}
+          />
+        )}
       </div>
     </NodeViewWrapper>
+  );
+}
+
+/**
+ * Célula da grade. As tabelas vindas de PDF têm células com centenas de
+ * caracteres — num campo de uma linha só o texto sai da vista. Aqui o campo
+ * cresce com o conteúdo, mas o que é gravado continua sendo **uma linha**:
+ * dentro de uma célula, uma quebra viraria `\\` e terminaria a linha da tabela.
+ */
+function TableCellField({
+  testId,
+  label,
+  value,
+  onCommit,
+}: {
+  testId: string;
+  label: string;
+  value: string;
+  onCommit: (value: string) => void;
+}) {
+  const growToFit = (element: HTMLTextAreaElement | null) => {
+    if (!element) return;
+    element.style.height = "auto";
+    element.style.height = `${element.scrollHeight}px`;
+  };
+  return (
+    <textarea
+      ref={growToFit}
+      rows={1}
+      data-testid={testId}
+      aria-label={label}
+      className="w-full min-w-24 resize-none overflow-hidden bg-transparent px-2 py-1 outline-none focus:bg-accent-soft/40"
+      defaultValue={value}
+      onInput={(event) => growToFit(event.currentTarget)}
+      onKeyDown={(event) => {
+        if (event.key === "Enter") event.preventDefault();
+      }}
+      onBlur={(event) => {
+        // Colar texto de várias linhas é o caminho que sobra para a quebra
+        // entrar; ela vira espaço antes de chegar ao LaTeX.
+        const flat = event.target.value.replace(/[\r\n]+/g, " ").trim();
+        if (flat !== event.target.value) {
+          event.target.value = flat;
+          growToFit(event.target);
+        }
+        if (flat === value) return;
+        onCommit(flat);
+      }}
+    />
   );
 }
 

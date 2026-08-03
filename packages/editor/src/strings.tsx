@@ -26,6 +26,11 @@ export interface EditorStrings {
     tableLabel: string;
     editAsLatex: string;
     figureFonteLabel: string;
+    tableCaptionLabel: string;
+    tableFonteLabel: string;
+    tableCellLabel: string;
+    tableAddRow: string;
+    tableRemoveRow: string;
     uploadImage: string;
     uploadImageError: string;
   };
@@ -84,6 +89,11 @@ export const DEFAULT_EDITOR_STRINGS: EditorStrings = {
     tableLabel: "Tabela",
     editAsLatex: "editar como LaTeX",
     figureFonteLabel: "Indicação da fonte da figura",
+    tableCaptionLabel: "Legenda da tabela",
+    tableFonteLabel: "Indicação da fonte da tabela",
+    tableCellLabel: "Linha {row}, coluna {col}",
+    tableAddRow: "Inserir linha abaixo desta",
+    tableRemoveRow: "Remover esta linha",
     uploadImage: "Enviar imagem ou PDF do computador…",
     uploadImageError: "Não foi possível enviar — use PNG, JPG ou PDF de até 10 MB.",
   },

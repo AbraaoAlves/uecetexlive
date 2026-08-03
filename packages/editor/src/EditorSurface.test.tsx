@@ -225,6 +225,106 @@ describe("EditorSurface citation picker", () => {
   });
 });
 
+/**
+ * A forma que o importador de PDF escreve — uma coluna `p{}` medida por coluna,
+ * ou seja, chave dentro do cabeçalho de colunas. Fixture anônima, escrita à mão.
+ */
+const IMPORTED_QUADRO = [
+  "\\begin{quadro}[htb]",
+  "\\centering",
+  "\\Caption{\\label{qua:criterios} Critérios comparados}",
+  "\\UECEqua{}{",
+  "\\begin{tabular}{p{0.4800\\dimexpr\\textwidth-4\\tabcolsep\\relax}p{0.4800\\dimexpr\\textwidth-4\\tabcolsep\\relax}}",
+  "\\hline",
+  "Critério & Resultado \\\\",
+  "\\hline",
+  "Cobertura & Total \\\\",
+  "\\hline",
+  "Suporte & Parcial \\\\",
+  "\\hline",
+  "\\end{tabular}",
+  "}{",
+  "\\Fonte{Elaborado pelo autor}",
+  "}",
+  "\\end{quadro}",
+].join("\n");
+
+describe("EditorSurface tables", () => {
+  it("mostra como grade a tabela vinda de PDF, não como código", async () => {
+    renderSurface(makeResources(), IMPORTED_QUADRO);
+
+    expect(await screen.findByTestId("table-grid")).toBeTruthy();
+    expect((screen.getByTestId("table-cell-0-0") as HTMLTextAreaElement).value).toBe(
+      "Critério",
+    );
+    expect((screen.getByTestId("table-cell-2-1") as HTMLTextAreaElement).value).toBe(
+      "Parcial",
+    );
+  });
+
+  it("guarda uma célula longa numa linha só do LaTeX", async () => {
+    const onChange = vi.fn();
+    const longo = `${"Texto de célula bem comprido, ".repeat(12)}fim.`;
+    renderSurface(makeResources(), IMPORTED_QUADRO, onChange);
+
+    const cell = (await screen.findByTestId("table-cell-1-0")) as HTMLTextAreaElement;
+    // Enter não pode entrar: dentro de uma célula, a quebra viraria `\\`.
+    fireEvent.keyDown(cell, { key: "Enter" });
+    fireEvent.change(cell, { target: { value: `${longo}\ncom quebra colada` } });
+    fireEvent.blur(cell);
+
+    await waitFor(() => expect(onChange).toHaveBeenCalled());
+    const emitted = onChange.mock.lastCall?.[0] as string;
+    const row = emitted
+      .split("\n")
+      .find((line) => line.includes("Texto de célula bem comprido"));
+    expect(row).toBe(`${longo} com quebra colada & Total \\\\`);
+    expect(emitted).toContain("Suporte & Parcial \\\\");
+  });
+
+  it("insere e remove linha mantendo o resto verbatim", async () => {
+    const onChange = vi.fn();
+    renderSurface(makeResources(), IMPORTED_QUADRO, onChange);
+
+    fireEvent.click(await screen.findByTestId("table-add-row-1"));
+    await waitFor(() => expect(onChange).toHaveBeenCalled());
+    expect(onChange.mock.lastCall?.[0]).toContain(
+      ["Cobertura & Total \\\\", "\\hline", " &  \\\\", "\\hline"].join("\n"),
+    );
+
+    onChange.mockClear();
+    fireEvent.click(screen.getByTestId("table-remove-row-0"));
+    await waitFor(() => expect(onChange).toHaveBeenCalled());
+    const emitted = onChange.mock.lastCall?.[0] as string;
+    expect(emitted).not.toContain("Critério & Resultado");
+    expect(emitted).toContain("Cobertura & Total \\\\");
+    expect(emitted).toContain("\\Fonte{Elaborado pelo autor}");
+  });
+
+  it("edita legenda e fonte da tabela sem perder o rótulo", async () => {
+    const onChange = vi.fn();
+    renderSurface(makeResources(), IMPORTED_QUADRO, onChange);
+
+    const caption = await screen.findByTestId("table-caption");
+    fireEvent.change(caption, { target: { value: "Critérios revisados" } });
+    fireEvent.blur(caption);
+    await waitFor(() =>
+      expect(onChange).toHaveBeenLastCalledWith(
+        expect.stringContaining("\\Caption{\\label{qua:criterios} Critérios revisados}"),
+      ),
+    );
+
+    const fonte = screen.getByTestId("table-fonte");
+    fireEvent.change(fonte, { target: { value: "Pesquisa direta" } });
+    fireEvent.blur(fonte);
+    await waitFor(() =>
+      expect(onChange).toHaveBeenLastCalledWith(
+        expect.stringContaining("\\Fonte{Pesquisa direta}"),
+      ),
+    );
+  });
+});
+
 describe("EditorSurface figures", () => {
   it("keeps the UECE source after editing caption and fonte", async () => {
     const onChange = vi.fn();

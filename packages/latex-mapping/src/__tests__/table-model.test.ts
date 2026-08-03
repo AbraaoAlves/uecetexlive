@@ -2,9 +2,15 @@ import { describe, expect, it } from "vitest";
 import ftSrc from "../../../../public/templates/uecetex2/files/elementos-textuais/fundamentacao-teorica.tex?raw";
 import {
   columnCount,
+  editCaption,
   editCell,
+  editFonte,
+  insertRow,
   parseTable,
+  removeRow,
   serializeTable,
+  tableCaption,
+  tableFonte,
   tableGrid,
 } from "../table-model";
 
@@ -148,6 +154,79 @@ describe("parseTable / serializeTable", () => {
 
   it("returns null when the colspec group never closes", () => {
     expect(parseTable("\\begin{tabular}{p{3cm\nA & B \\\\\n\\end{tabular}")).toBeNull();
+  });
+
+  it("insere linha entre traços e mantém verbatim o que não foi tocado", () => {
+    const model = parseTable(IMPORTED_QUADRO) as never;
+    const out = serializeTable(insertRow(model, 1));
+
+    expect(out).toContain(
+      [
+        "Cobertura & Total \\\\",
+        "\\hline",
+        " &  \\\\",
+        "\\hline",
+        "Suporte & Parcial \\\\",
+      ].join("\n"),
+    );
+    // Cabeçalho, legenda e fonte saem exatamente como entraram.
+    expect(out).toContain("Critério & Resultado \\\\");
+    expect(out).toContain("\\Caption{\\label{qua:criterios} Critérios comparados}");
+    expect(out).toContain("\\Fonte{Elaborado pelo autor}");
+    expect(tableGrid(parseTable(out) as never)).toHaveLength(4);
+  });
+
+  it("insere depois da última linha sem passar do traço de fechamento", () => {
+    const out = serializeTable(insertRow(parseTable(SIMPLE) as never, 2));
+
+    expect(out).toContain(
+      ["E2 & Partial & One \\\\", "\t &  &  \\\\", "\t\\bottomrule"].join("\n"),
+    );
+    expect(out.endsWith("\\end{tabular}")).toBe(true);
+  });
+
+  it("remove a linha e o traço que sobraria, preservando o fechamento", () => {
+    const semMeio = serializeTable(removeRow(parseTable(IMPORTED_QUADRO) as never, 1));
+    expect(tableGrid(parseTable(semMeio) as never)).toEqual([
+      ["Critério", "Resultado"],
+      ["Suporte", "Parcial"],
+    ]);
+    expect(semMeio).toContain("\\hline\n\\end{tabular}");
+
+    const semUltima = serializeTable(removeRow(parseTable(SIMPLE) as never, 2));
+    expect(tableGrid(parseTable(semUltima) as never)).toEqual([
+      ["Ranking", "Coverage", "Support"],
+      ["E1", "Complete", "Both"],
+    ]);
+    expect(semUltima).toContain("\\bottomrule");
+  });
+
+  it("não deixa a tabela sem nenhuma linha de conteúdo", () => {
+    const model = parseTable("\\begin{tabular}{ll}\nA & B \\\\\n\\end{tabular}") as never;
+    expect(removeRow(model, 0)).toBe(model);
+  });
+
+  it("edita legenda e fonte sem perder o rótulo nem o resto do bloco", () => {
+    const model = parseTable(IMPORTED_QUADRO) as never;
+
+    expect(tableCaption(model)).toBe("Critérios comparados");
+    expect(tableFonte(model)).toBe("Elaborado pelo autor");
+
+    const out = serializeTable(
+      editFonte(editCaption(model, "Critérios revisados"), "Pesquisa direta"),
+    );
+    expect(out).toContain("\\Caption{\\label{qua:criterios} Critérios revisados}");
+    expect(out).toContain("\\Fonte{Pesquisa direta}");
+    expect(out).toContain("Cobertura & Total \\\\");
+    expect(tableCaption(parseTable(out) as never)).toBe("Critérios revisados");
+  });
+
+  it("não inventa legenda nem fonte onde não existem", () => {
+    const model = parseTable(SIMPLE) as never;
+    expect(tableCaption(model)).toBeNull();
+    expect(tableFonte(model)).toBeNull();
+    expect(serializeTable(editCaption(model, "X"))).toBe(SIMPLE);
+    expect(serializeTable(editFonte(model, "Y"))).toBe(SIMPLE);
   });
 
   it("parses every real template UECEtab/tabular byte-exact", () => {
