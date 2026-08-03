@@ -15,6 +15,14 @@ export interface IncludeEntry {
 
 export interface IncludeGraph {
   inputs: IncludeEntry[];
+  /**
+   * Ordem em que o trabalho é lido: o arquivo de entrada, cada `\input` na
+   * ordem em que aparece e, logo depois de cada um, o que ele próprio inclui.
+   * `inputs` só enxerga o primeiro nível — uma seção incluída por um capítulo
+   * não está lá, e listá-la fora de lugar levaria o aluno às correções em
+   * ordem que não é a da leitura.
+   */
+  readingOrder: string[];
   labels: string[];
   bibliography: string | null;
   bibliographyStyle: string | null;
@@ -138,6 +146,7 @@ export function buildIncludeGraph(
   entry: string,
 ): IncludeGraph {
   const inputs: IncludeEntry[] = [];
+  const readingOrder: string[] = [];
   const labels: string[] = [];
   let bibliography: string | null = null;
   let bibliographyStyle: string | null = null;
@@ -149,6 +158,7 @@ export function buildIncludeGraph(
     visited.add(vfsPath);
     const source = files[vfsPath];
     if (source === undefined) return;
+    readingOrder.push(vfsPath);
 
     const scan = scanSource(source);
     labels.push(...scan.labels);
@@ -168,5 +178,5 @@ export function buildIncludeGraph(
 
   visitFile(entry, true);
 
-  return { inputs, labels, bibliography, bibliographyStyle };
+  return { inputs, readingOrder, labels, bibliography, bibliographyStyle };
 }

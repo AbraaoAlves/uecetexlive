@@ -151,6 +151,7 @@ const EditorSurface = lazy(() =>
 const DERIVED_MS = 300;
 const EMPTY_GRAPH: IncludeGraph = {
   inputs: [],
+  readingOrder: [],
   labels: [],
   bibliography: null,
   bibliographyStyle: null,
@@ -367,10 +368,9 @@ function ShellInner() {
     () => (entryPath ? buildIncludeGraph(derivedTexSources, entryPath) : EMPTY_GRAPH),
     [derivedTexSources, entryPath],
   );
-  const texOrder = useMemo(
-    () => graph.inputs.flatMap((input) => (input.resolved ? [input.resolved] : [])),
-    [graph],
-  );
+  // A ordem de leitura inteira, não só os `\input` de primeiro nível: uma seção
+  // incluída por um capítulo tem de aparecer logo depois dele, e não no fim.
+  const texOrder = graph.readingOrder;
   // Same normalization as @papyru/editor's useEditorResources: \bibliography{X}
   // may omit the .bib extension.
   const bibPath = graph.bibliography

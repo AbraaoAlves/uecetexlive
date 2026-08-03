@@ -47,6 +47,23 @@ describe("buildIncludeGraph", () => {
     expect(graph.labels).toEqual(["root", "sec:x", "deep:one"]);
   });
 
+  it("puts a nested include right after the chapter that includes it", () => {
+    const graph = buildIncludeGraph(
+      {
+        "main.tex": "\\input{cap1}\\input{cap2}",
+        "cap1.tex": "\\input{secao}",
+        "cap2.tex": "",
+        "secao.tex": "",
+        "solto.tex": "",
+      },
+      "main.tex",
+    );
+
+    // `inputs` só conhece o primeiro nível; a ordem de leitura desce junto.
+    expect(graph.inputs.map((input) => input.resolved)).toEqual(["cap1.tex", "cap2.tex"]);
+    expect(graph.readingOrder).toEqual(["main.tex", "cap1.tex", "secao.tex", "cap2.tex"]);
+  });
+
   it("harvests bibliography target and style", () => {
     const graph = buildIncludeGraph(
       {
@@ -70,6 +87,7 @@ describe("buildIncludeGraph", () => {
   it("survives a missing entry file", () => {
     const graph = buildIncludeGraph({}, "main.tex");
     expect(graph.inputs).toEqual([]);
+    expect(graph.readingOrder).toEqual([]);
   });
 
   it("parses the real vendored documento.tex", () => {
