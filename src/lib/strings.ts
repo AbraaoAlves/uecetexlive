@@ -336,5 +336,8 @@ export const strings = {
     importPdfOk: "A importação do PDF não deixou nada pendente.",
     importPdfWarnOne: "1 trecho do PDF importado precisa da sua revisão.",
     importPdfWarnMany: "{n} trechos do PDF importado precisam da sua revisão.",
+    importUnclassifiedLabel: "Trecho sem capítulo",
+    importUnclassifiedHelp:
+      "Reescreva este trecho no capítulo certo, consultando o PDF original.",
   },
 } as const;

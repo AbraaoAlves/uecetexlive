@@ -84,6 +84,8 @@ export interface ComplianceInput {
    * tem de refazer — e ela precisa sobreviver ao recarregamento.
    */
   importPendencies?: number;
+  /** Trechos do PDF que não chegaram a nenhum arquivo do projeto. */
+  importUnclassified?: readonly { excerpt: string; page: number }[];
 }
 
 /** Shipped template defaults — a field still equal to these was never touched. */
@@ -331,6 +333,14 @@ function checkUncitedEntries(
 }
 
 export function computeComplianceChecklist(input: ComplianceInput): ComplianceCheck[] {
+  const unclassifiedItems: ComplianceItem[] | undefined = input.importUnclassified?.map(
+    ({ excerpt, page }) => ({
+      id: `importPdf:nao-classificado:${excerpt}`,
+      label: strings.compliance.importUnclassifiedLabel,
+      detail: `${excerpt} — p. ${page}. ${strings.compliance.importUnclassifiedHelp}`,
+    }),
+  );
+  const importCount = unclassifiedItems?.length ?? input.importPendencies;
   return [
     checkPretextual(input.meta, input.workType),
     checkAbstract(input.meta),
@@ -338,13 +348,14 @@ export function computeComplianceChecklist(input: ComplianceInput): ComplianceCh
     checkFiguresAcrossProject(input.texSources),
     checkOrphanCitations(input.texSources, input.citeCommands, input.bibText),
     checkUncitedEntries(input.texSources, input.citeCommands, input.bibText),
-    ...(input.importPendencies === undefined
+    ...(importCount === undefined
       ? []
       : [
           {
             id: "importPdf" as const,
-            status: (input.importPendencies > 0 ? "warn" : "ok") as "ok" | "warn",
-            count: input.importPendencies,
+            status: (importCount > 0 ? "warn" : "ok") as "ok" | "warn",
+            count: importCount,
+            ...(unclassifiedItems ? { items: unclassifiedItems } : {}),
           },
         ]),
   ];

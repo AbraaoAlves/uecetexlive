@@ -256,6 +256,22 @@ describe("computeComplianceChecklist", () => {
     expect(uncited?.count).toBe(1);
   });
 
+  it("keeps an unclassified PDF excerpt honest about having no destination", () => {
+    const checks = computeComplianceChecklist(
+      baseInput({
+        importUnclassified: [
+          { excerpt: "Linha que não entrou em capítulo algum", page: 12 },
+        ],
+      }),
+    );
+    const item = checks.find((check) => check.id === "importPdf")?.items?.[0];
+
+    expect(item?.action).toBeUndefined();
+    expect(item?.detail).toContain("Linha que não entrou em capítulo algum");
+    expect(item?.detail).toContain("p. 12");
+    expect(item?.detail).toContain("Reescreva este trecho no capítulo certo");
+  });
+
   it("every check carries an action to jump to the fix", () => {
     const checks = computeComplianceChecklist(baseInput({ meta: EMPTY_META }));
     for (const check of checks) {
