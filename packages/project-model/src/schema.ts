@@ -67,6 +67,8 @@ export const UiSettingsSchema = z.object({
   /** "Avançado" toggle — unlocks documento.tex/lib and shows structural files. */
   advancedMode: z.boolean().default(false),
   railCollapsed: z.boolean().default(false),
+  /** Largura escolhida para o painel lateral, em pixels. */
+  railWidth: z.number().int().min(280).max(520).default(336),
   /** Rail sections the student folded (RailSection names, e.g. "chapters"). */
   collapsedSections: z.array(z.string()).default([]),
   /** First-run metadata wizard already shown/dismissed. */

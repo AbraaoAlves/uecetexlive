@@ -24,13 +24,20 @@ import type { BibEntry, BodyNode, SemanticDoc, TableNode } from "./semantic.js";
 // ---------------------------------------------------------------------------
 
 export function escapeLatex(s: string): string {
-  return s
-    .replace(/\\/g, "\\textbackslash{}")
-    .replace(/([{}])/g, "\\$1")
-    .replace(/\\textbackslash\\{\\}/g, "\\textbackslash{}")
-    .replace(/([#$%&_])/g, "\\$1")
-    .replace(/~/g, "\\textasciitilde{}")
-    .replace(/\^/g, "\\textasciicircum{}");
+  return (
+    s
+      .replace(/\\/g, "\\textbackslash{}")
+      .replace(/([{}])/g, "\\$1")
+      .replace(/\\textbackslash\\{\\}/g, "\\textbackslash{}")
+      .replace(/([#$%&_])/g, "\\$1")
+      .replace(/~/g, "\\textasciitilde{}")
+      .replace(/\^/g, "\\textasciicircum{}")
+      // A extração do PDF preserva a seta como Unicode; a declaração `utf8`
+      // carregada pelo modelo não conhece U+2194 no pdfTeX e interrompe a
+      // compilação. Converter só depois de escapar impede que os `$` e a barra
+      // deste comando virem texto literal.
+      .replace(/↔/g, "$\\leftrightarrow$")
+  );
 }
 
 import { slug, toAsciiWithTexAccents } from "./text-util.js";

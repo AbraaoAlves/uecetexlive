@@ -28,3 +28,32 @@ test("rail collapses via toggle, reopens via Mod+B, persists collapsed", async (
   await page.getByTestId("rail-toggle").click();
   await expect(page.getByTestId("rail-section-chapters")).toBeVisible();
 });
+
+test("rail is resizable with the keyboard and keeps the chosen width", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await dismissWelcome(page);
+
+  const rail = page.getByTestId("project-rail");
+  const handle = page.getByTestId("rail-resize-handle");
+  const before = await rail.evaluate((element) =>
+    Math.round(element.getBoundingClientRect().width),
+  );
+
+  await handle.focus();
+  await page.keyboard.press("ArrowRight");
+  await expect(handle).toHaveAttribute("aria-valuenow", String(before + 16));
+  await expect
+    .poll(() =>
+      rail.evaluate((element) => Math.round(element.getBoundingClientRect().width)),
+    )
+    .toBe(before + 16);
+
+  await page.reload();
+  await expect(page.getByTestId("app-shell")).toBeVisible();
+  await expect(page.getByTestId("rail-resize-handle")).toHaveAttribute(
+    "aria-valuenow",
+    String(before + 16),
+  );
+});

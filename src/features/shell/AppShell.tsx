@@ -147,6 +147,13 @@ const EditorSurface = lazy(() =>
   })),
 );
 
+const MIN_RAIL_WIDTH = 280;
+const MAX_RAIL_WIDTH = 520;
+
+function clampRailWidth(width: number): number {
+  return Math.min(MAX_RAIL_WIDTH, Math.max(MIN_RAIL_WIDTH, Math.round(width)));
+}
+
 /** Settle window for keystroke-heavy derivations (graph, total word count). */
 const DERIVED_MS = 300;
 const EMPTY_GRAPH: IncludeGraph = {
@@ -208,7 +215,7 @@ interface NavRequest {
 }
 
 /**
- * Three-pane shell (§6.1): rail 240px / editor flex / preview 45%.
+ * Three-pane shell (§6.1): rail ajustável / editor flex / preview 45%.
  */
 export function AppShell() {
   return (
@@ -235,6 +242,77 @@ function ShellInner() {
   const { ui, setUi, ready: uiReady } = useUiSettings();
   const advanced = ui.advancedMode;
   const railCollapsed = ui.railCollapsed;
+  const [railWidth, setRailWidth] = useState(ui.railWidth);
+  const railWidthRef = useRef(railWidth);
+  const railResizeRef = useRef<{
+    pointerId: number;
+    startX: number;
+    startWidth: number;
+  } | null>(null);
+
+  useEffect(() => {
+    if (railResizeRef.current) return;
+    railWidthRef.current = ui.railWidth;
+    setRailWidth(ui.railWidth);
+  }, [ui.railWidth]);
+
+  const updateRailWidth = useCallback((nextWidth: number) => {
+    const next = clampRailWidth(nextWidth);
+    railWidthRef.current = next;
+    setRailWidth(next);
+    return next;
+  }, []);
+
+  const handleRailResizeStart = useCallback(
+    (event: React.PointerEvent<HTMLDivElement>) => {
+      event.preventDefault();
+      event.currentTarget.setPointerCapture(event.pointerId);
+      railResizeRef.current = {
+        pointerId: event.pointerId,
+        startX: event.clientX,
+        startWidth: railWidthRef.current,
+      };
+    },
+    [],
+  );
+
+  const handleRailResizeMove = useCallback(
+    (event: React.PointerEvent<HTMLDivElement>) => {
+      const resize = railResizeRef.current;
+      if (!resize || resize.pointerId !== event.pointerId) return;
+      updateRailWidth(resize.startWidth + event.clientX - resize.startX);
+    },
+    [updateRailWidth],
+  );
+
+  const handleRailResizeEnd = useCallback(
+    (event: React.PointerEvent<HTMLDivElement>) => {
+      const resize = railResizeRef.current;
+      if (!resize || resize.pointerId !== event.pointerId) return;
+      railResizeRef.current = null;
+      if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+        event.currentTarget.releasePointerCapture(event.pointerId);
+      }
+      setUi({ railWidth: railWidthRef.current });
+    },
+    [setUi],
+  );
+
+  const handleRailResizeKey = useCallback(
+    (event: React.KeyboardEvent<HTMLDivElement>) => {
+      const widthForKey: Record<string, number> = {
+        ArrowLeft: railWidthRef.current - 16,
+        ArrowRight: railWidthRef.current + 16,
+        Home: MIN_RAIL_WIDTH,
+        End: MAX_RAIL_WIDTH,
+      };
+      const next = widthForKey[event.key];
+      if (next === undefined) return;
+      event.preventDefault();
+      setUi({ railWidth: updateRailWidth(next) });
+    },
+    [setUi, updateRailWidth],
+  );
   useTheme(ui.theme, uiReady);
   const { latestCommit: templateUpdateCommit } = useTemplateUpdateNotice(
     project?.templateCommit,
@@ -1350,16 +1428,20 @@ function ShellInner() {
       <div className="flex min-h-0 flex-1">
         <aside
           className={cn(
-            "shrink-0 overflow-hidden border-r bg-surface transition-[width] duration-200 motion-reduce:transition-none",
-            railCollapsed ? "w-0 border-r-0" : "w-60",
+            "relative shrink-0 overflow-visible border-r bg-surface transition-[width] duration-200 motion-reduce:transition-none",
+            railCollapsed && "border-r-0",
           )}
+          style={{ width: railCollapsed ? 0 : railWidth }}
           data-testid="project-rail"
           aria-hidden={railCollapsed}
           inert={railCollapsed || undefined}
         >
           {/* Largura fixa por dentro para o conteúdo não se reorganizar
               enquanto o <aside> anima a abertura/fecho. */}
-          <div className="flex h-full w-60 flex-col overflow-hidden">
+          <div
+            className="flex h-full flex-col overflow-hidden"
+            style={{ width: railWidth }}
+          >
             <Tabs.Root
               value={ui.railTab}
               onValueChange={(value) => {
@@ -1444,6 +1526,25 @@ function ShellInner() {
               </Tabs.Content>
             </Tabs.Root>
           </div>
+          {!railCollapsed && (
+            <div
+              role="separator"
+              aria-orientation="vertical"
+              aria-label="Redimensionar painel lateral"
+              aria-valuemin={MIN_RAIL_WIDTH}
+              aria-valuemax={MAX_RAIL_WIDTH}
+              aria-valuenow={railWidth}
+              aria-valuetext={`${railWidth} pixels`}
+              tabIndex={0}
+              data-testid="rail-resize-handle"
+              className="absolute top-0 right-[-4px] z-10 h-full w-2 cursor-col-resize touch-none outline-none after:absolute after:top-0 after:left-[3px] after:h-full after:w-px after:bg-transparent hover:after:bg-accent focus-visible:after:bg-accent"
+              onPointerDown={handleRailResizeStart}
+              onPointerMove={handleRailResizeMove}
+              onPointerUp={handleRailResizeEnd}
+              onPointerCancel={handleRailResizeEnd}
+              onKeyDown={handleRailResizeKey}
+            />
+          )}
         </aside>
         <main className="flex min-w-0 flex-1 flex-col" data-testid="editor-pane">
           {visualMode !== null && (

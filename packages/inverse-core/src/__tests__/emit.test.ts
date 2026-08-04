@@ -16,10 +16,19 @@ import {
   emitBib,
   emitFiles,
   emitPretextual,
+  escapeLatex,
   selectWorkType,
   workTypeFromPreamble,
 } from "../emit.js";
 import { toAsciiWithTexAccents } from "../text-util.js";
+
+describe("escapeLatex", () => {
+  test("converte a seta bidirecional em LaTeX compatível com pdfTeX", () => {
+    expect(escapeLatex("mapeamento LaTeX↔editor")).toBe(
+      "mapeamento LaTeX$\\leftrightarrow$editor",
+    );
+  });
+});
 
 describe("emitPretextual", () => {
   test("rótulo embutido no fim do parágrafo vira macro", () => {

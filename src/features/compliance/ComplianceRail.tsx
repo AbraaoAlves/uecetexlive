@@ -27,16 +27,19 @@ export function ComplianceRail({ checks, onNext, ...props }: ComplianceRailProps
 
   return (
     <section className="flex h-full min-h-0 flex-col" data-testid="compliance-rail">
-      <header className="shrink-0 border-b px-3 py-2">
-        <h2 className="font-medium text-sm">{strings.rail.complianceTab}</h2>
-        <p className="text-ink-subtle text-xs" data-testid="compliance-rail-summary">
+      <header className="shrink-0 border-b px-4 py-3">
+        <h2 className="font-medium text-base">{strings.rail.complianceTab}</h2>
+        <p
+          className="mt-0.5 text-ink-subtle text-sm"
+          data-testid="compliance-rail-summary"
+        >
           {summary}
         </p>
         {!allClear && onNext && (
           <button
             type="button"
             data-testid="compliance-next-all"
-            className="mt-1 text-accent text-xs underline hover:no-underline"
+            className="mt-2 rounded bg-accent-soft px-2.5 py-1 text-accent text-sm font-medium hover:bg-accent/15"
             onClick={onNext}
           >
             {strings.compliance.nextOverall}
@@ -46,7 +49,7 @@ export function ComplianceRail({ checks, onNext, ...props }: ComplianceRailProps
           <button
             type="button"
             data-testid="compliance-show-ok"
-            className="mt-1 text-accent text-xs underline hover:no-underline"
+            className="mt-2 rounded bg-accent-soft px-2.5 py-1 text-accent text-sm font-medium hover:bg-accent/15"
             onClick={() => setShowOkChecks((shown) => !shown)}
           >
             {showOkChecks
@@ -56,7 +59,7 @@ export function ComplianceRail({ checks, onNext, ...props }: ComplianceRailProps
         )}
       </header>
       {(!allClear || showOkChecks) && (
-        <div className="min-h-0 flex-1 overflow-y-auto px-3 py-3">
+        <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
           <ComplianceList checks={checks} {...props} />
         </div>
       )}

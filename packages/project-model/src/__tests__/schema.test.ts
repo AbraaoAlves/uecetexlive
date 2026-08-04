@@ -79,6 +79,7 @@ describe("UiSettingsSchema", () => {
     expect(UiSettingsSchema.parse({})).toEqual({
       advancedMode: false,
       railCollapsed: false,
+      railWidth: 336,
       collapsedSections: [],
       welcomeSeen: false,
       dismissedTemplateCommit: null,

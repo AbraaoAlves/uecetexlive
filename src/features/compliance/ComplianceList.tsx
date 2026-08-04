@@ -134,53 +134,59 @@ function ComplianceCheckRow({
     <li
       data-testid={`compliance-check-${check.id}`}
       data-status={check.status}
-      className="flex flex-col gap-2"
+      className={`flex flex-col rounded-lg border bg-surface-elevated p-3.5 shadow-sm ${
+        check.status === "ok" ? "border-success/30" : "border-warning/40"
+      }`}
     >
       <div className="flex items-start gap-2.5">
         {check.status === "ok" ? (
-          <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-success" />
+          <CheckCircle2 className="mt-0.5 size-4.5 shrink-0 text-success" />
         ) : (
-          <TriangleAlert className="mt-0.5 size-4 shrink-0 text-warning" />
+          <TriangleAlert className="mt-0.5 size-4.5 shrink-0 text-warning" />
         )}
-        <span className="min-w-0 flex-1 text-sm">{messageFor(check)}</span>
-        {hasItems && (
+        <span className="min-w-0 flex-1 text-[15px] leading-5">{messageFor(check)}</span>
+      </div>
+      {hasItems && (
+        <div className="mt-2 flex justify-end">
           <button
             type="button"
             data-testid={`compliance-expand-${check.id}`}
             aria-expanded={isExpanded}
             aria-controls={itemsId}
-            className="shrink-0 text-accent text-xs underline hover:no-underline"
+            className="rounded px-2 py-1 text-accent text-sm underline underline-offset-2 hover:bg-accent-soft hover:no-underline"
             onClick={() => setExpanded((value) => !value)}
           >
             {isExpanded
               ? strings.compliance.collapseItems
               : strings.compliance.expandItems}
           </button>
-        )}
-        {check.status === "warn" && check.action && !hasItems && (
+        </div>
+      )}
+      {check.status === "warn" && check.action && !hasItems && (
+        <div className="mt-2 flex justify-end">
           <button
             type="button"
             data-testid={`compliance-goto-${check.id}`}
             aria-label={`${strings.compliance.gotoItem}: ${messageFor(check)}`}
-            className="shrink-0 text-accent text-sm underline hover:no-underline"
+            className="rounded px-2 py-1 text-accent text-sm underline underline-offset-2 hover:bg-accent-soft hover:no-underline"
             onClick={() => onAction(check.action as ComplianceAction)}
           >
             {strings.compliance.gotoItem}
           </button>
-        )}
-      </div>
+        </div>
+      )}
       {check.id === "importPdf" &&
         onReviewAction &&
         items.some((item) => item.reviewAction) && (
           <p
-            className="ml-6 text-ink-subtle text-xs"
+            className="mt-2 text-ink-subtle text-xs leading-4"
             data-testid="compliance-marker-hint"
           >
             {strings.compliance.markerHint}
           </p>
         )}
       {hasItems && isExpanded && (
-        <ul id={itemsId} className="ml-6 flex flex-col gap-1.5">
+        <ul id={itemsId} className="mt-3 flex flex-col gap-2">
           {items.map((item) => {
             const danger = item.reason === "sem-legenda-e-fonte";
             const visited = visitedItemIds?.has(item.id) ?? false;
@@ -201,66 +207,72 @@ function ComplianceCheckRow({
                 ]
                   .filter(Boolean)
                   .join(". ")}
-                className={`flex items-start gap-2 rounded border px-2.5 py-2 ${
-                  danger ? "border-danger/30 text-danger" : "text-ink-muted"
+                className={`rounded-md border bg-surface px-3 py-2.5 ${
+                  danger ? "border-danger/30 text-danger" : "border-warning/25"
                 } ${currentItemId === item.id ? "ring-2 ring-accent" : ""} ${
                   visited ? "opacity-70" : ""
                 }`}
               >
-                <ComplianceItemIcon item={item} />
-                <span className="min-w-0 flex-1">
-                  <span className={"block line-clamp-2 text-sm"}>{item.label}</span>
-                  {visited && (
-                    <span
-                      className="mt-0.5 flex items-center gap-1 text-xs text-ink-subtle"
-                      data-testid={`compliance-item-visited-${itemPrefix}${item.id}`}
-                    >
-                      <span role="img" aria-label={strings.compliance.visitedItem}>
-                        <CheckCircle2 aria-hidden="true" className="size-3" />
+                <div className="flex items-start gap-2">
+                  <ComplianceItemIcon item={item} />
+                  <span className="min-w-0 flex-1">
+                    <span className="block line-clamp-3 text-[15px] leading-5 text-ink">
+                      {item.label}
+                    </span>
+                    {visited && (
+                      <span
+                        className="mt-1 flex items-center gap-1 text-xs text-ink-subtle"
+                        data-testid={`compliance-item-visited-${itemPrefix}${item.id}`}
+                      >
+                        <span role="img" aria-label={strings.compliance.visitedItem}>
+                          <CheckCircle2 aria-hidden="true" className="size-3" />
+                        </span>
+                        <span>{strings.compliance.visitedItem}</span>
                       </span>
-                      <span>{strings.compliance.visitedItem}</span>
-                    </span>
-                  )}
-                  {item.detail && (
-                    <span
-                      title={item.detail}
-                      className="block truncate text-xs opacity-90"
-                    >
-                      {item.detail}
-                    </span>
-                  )}
-                </span>
-                {item.action ? (
-                  <button
-                    type="button"
-                    data-testid={`compliance-goto-${check.id}-${item.id}`}
-                    aria-label={`${strings.compliance.gotoItem}: ${item.label}`}
-                    className="shrink-0 text-accent text-xs underline hover:no-underline"
-                    onClick={() => {
-                      onItemAction?.(item);
-                      onAction(item.action as ComplianceAction);
-                    }}
-                  >
-                    {strings.compliance.gotoItem}
-                  </button>
-                ) : (
-                  <span className="shrink-0 text-ink-subtle text-xs">
-                    {strings.compliance.notNavigable}
+                    )}
+                    {item.detail && (
+                      <span
+                        title={item.detail}
+                        className="mt-1 block break-words text-xs leading-4 text-ink-muted"
+                      >
+                        {item.detail}
+                      </span>
+                    )}
                   </span>
-                )}
-                {item.reviewAction && onReviewAction && (
-                  <button
-                    type="button"
-                    data-testid={`compliance-item-review-${item.id}`}
-                    aria-label={`${strings.compliance.markerReviewedAction}: ${item.label}`}
-                    className="shrink-0 text-accent text-xs underline hover:no-underline"
-                    onClick={() =>
-                      onReviewAction(item.reviewAction as ComplianceReviewAction)
-                    }
-                  >
-                    {strings.compliance.markerReviewedAction}
-                  </button>
-                )}
+                </div>
+                <div className="mt-2 flex flex-wrap justify-end gap-x-3 gap-y-1 border-t pt-2 text-sm">
+                  {item.action ? (
+                    <button
+                      type="button"
+                      data-testid={`compliance-goto-${check.id}-${item.id}`}
+                      aria-label={`${strings.compliance.gotoItem}: ${item.label}`}
+                      className="rounded px-1.5 py-0.5 text-accent underline underline-offset-2 hover:bg-accent-soft hover:no-underline"
+                      onClick={() => {
+                        onItemAction?.(item);
+                        onAction(item.action as ComplianceAction);
+                      }}
+                    >
+                      {strings.compliance.gotoItem}
+                    </button>
+                  ) : (
+                    <span className="px-1.5 py-0.5 text-ink-subtle text-xs">
+                      {strings.compliance.notNavigable}
+                    </span>
+                  )}
+                  {item.reviewAction && onReviewAction && (
+                    <button
+                      type="button"
+                      data-testid={`compliance-item-review-${item.id}`}
+                      aria-label={`${strings.compliance.markerReviewedAction}: ${item.label}`}
+                      className="rounded px-1.5 py-0.5 text-accent underline underline-offset-2 hover:bg-accent-soft hover:no-underline"
+                      onClick={() =>
+                        onReviewAction(item.reviewAction as ComplianceReviewAction)
+                      }
+                    >
+                      {strings.compliance.markerReviewedAction}
+                    </button>
+                  )}
+                </div>
               </li>
             );
           })}
@@ -279,7 +291,7 @@ export function ComplianceList({
   visitedItemIds,
 }: ComplianceListProps) {
   return (
-    <ul className="flex flex-col gap-3">
+    <ul className="flex flex-col gap-4">
       {checks.map((check) => (
         <ComplianceCheckRow
           key={check.id}
