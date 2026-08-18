@@ -120,7 +120,7 @@ origem quando fechada.
 
 **Decisão.** A conformidade vive como aba permanente do painel lateral, ao
 lado do texto. As ações abrem o destino no editor, nas referências ou nos
-dados do trabalho sem trocar a aba; cada pendência visitada permanece visível
+guia do trabalho sem trocar a aba; cada pendência visitada permanece visível
 até que deixe de existir.
 
 **Consequências.** A lista acompanha a correção e pode orientar o próximo

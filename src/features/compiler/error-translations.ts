@@ -100,7 +100,7 @@ const MATCHERS: Matcher[] = [
     test: (m) => /There's no line here to end/i.test(m),
     translate: (d) => ({
       message: /imprimirfolhadeaprovacao/i.test(d.rawLogExcerpt)
-        ? 'A folha de aprovação tem um campo em branco entre dois preenchidos. Abra "Dados do Trabalho" e preencha o centro/faculdade de cada membro da banca — ou apague o membro inteiro, se ele não existir.'
+        ? 'A folha de aprovação tem um campo em branco entre dois preenchidos. Abra o "Guia do trabalho" e preencha o centro/faculdade de cada membro da banca — ou apague o membro inteiro, se ele não existir.'
         : "Há uma quebra de linha num ponto sem linha para terminar — em geral um campo vazio entre duas quebras seguidas. Preencha o campo ou remova uma das quebras.",
     }),
   },

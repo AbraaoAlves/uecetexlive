@@ -1,8 +1,7 @@
 /**
- * Um campo do assistente "Dados do Trabalho".
+ * Um campo do guia do trabalho.
  *
- * Vive fora do modal porque o guia em tela cheia usa exatamente o mesmo
- * componente — catálogo único de campos, duas apresentações.
+ * Vive separado do guia para manter os campos e suas regras reutilizáveis.
  *
  * Campos de texto gravam no blur (filosofia de salvamento automático, sem
  * botão Salvar); seleções e opções gravam na mudança. Campo cuja macro não

@@ -188,8 +188,6 @@ export const strings = {
     equation: "Inserir equação",
   },
   metadata: {
-    title: "Dados do Trabalho",
-    railEntry: "Dados do Trabalho",
     stepsLabel: "Etapas",
     pendingHint: "Preencha o título e os dados do seu trabalho",
     missingMacro:

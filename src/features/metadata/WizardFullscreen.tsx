@@ -1,10 +1,9 @@
 /**
- * Guia "Dados do Trabalho" em tela cheia (item 6).
+ * Guia do trabalho em tela cheia.
  *
- * Mesmo catálogo de campos do modal — o modal é a edição rápida de quem já
- * conhece o trabalho; o guia é o primeiro uso, e vai além dos metadados: leva
- * o aluno pelos elementos opcionais e pela ficha catalográfica, coisas que
- * antes exigiam abrir o `documento.tex`, e termina gerando o PDF.
+ * Reúne os metadados, os elementos opcionais e a ficha catalográfica, sem
+ * exigir que o aluno abra o `documento.tex`; termina oferecendo a geração do
+ * PDF.
  *
  * Overlay dentro do AppShell, não rota própria: o estado do projeto já vive
  * todo lá, e assim nenhum store precisa ser extraído.

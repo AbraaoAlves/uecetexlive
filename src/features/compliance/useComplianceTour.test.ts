@@ -52,13 +52,13 @@ describe("useComplianceTour", () => {
         id: "pretextual",
         status: "warn",
         count: 4,
-        action: { kind: "openMetadata" },
+        action: { kind: "openGuide" },
       },
       {
         id: "abstract",
         status: "warn",
         count: 1,
-        action: { kind: "openMetadata" },
+        action: { kind: "openGuide" },
       },
       {
         id: "references",

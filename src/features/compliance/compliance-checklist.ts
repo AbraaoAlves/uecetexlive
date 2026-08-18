@@ -25,7 +25,7 @@ export type CheckId =
   | "importPdf";
 
 export type ComplianceAction =
-  | { kind: "openMetadata" }
+  | { kind: "openGuide" }
   /**
    * intent "focus": the key exists in the .bib — scroll to it and edit.
    * intent "search": the key was cited but has no entry, so there is no row to
@@ -140,7 +140,7 @@ function checkPretextual(
     id: "pretextual",
     status: unfilled.length === 0 ? "ok" : "warn",
     count: unfilled.length,
-    action: { kind: "openMetadata" },
+    action: { kind: "openGuide" },
   };
 }
 
@@ -161,7 +161,7 @@ function checkAbstract(meta: ReadonlyMap<string, MetadataField>): ComplianceChec
     id: "abstract",
     status: missing ? "warn" : "ok",
     count: missing ? 1 : 0,
-    action: { kind: "openMetadata" },
+    action: { kind: "openGuide" },
   };
 }
 

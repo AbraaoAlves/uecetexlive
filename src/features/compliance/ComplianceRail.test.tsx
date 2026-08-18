@@ -67,8 +67,8 @@ describe("ComplianceRail", () => {
     // A ordem de correção é aplicada por quem monta a lista — a mesma que
     // alimenta o "corrigir o próximo". O rail não pode ter uma opinião própria.
     const checks: ComplianceCheck[] = [
-      { id: "figures", status: "warn", count: 1, action: { kind: "openMetadata" } },
-      { id: "pretextual", status: "warn", count: 1, action: { kind: "openMetadata" } },
+      { id: "figures", status: "warn", count: 1, action: { kind: "openGuide" } },
+      { id: "pretextual", status: "warn", count: 1, action: { kind: "openGuide" } },
     ];
 
     render(<ComplianceRail checks={checks} onAction={vi.fn()} />);
@@ -86,7 +86,7 @@ describe("ComplianceRail", () => {
         id: "pretextual",
         status: "warn",
         count: 1,
-        action: { kind: "openMetadata" },
+        action: { kind: "openGuide" },
       },
     ];
 

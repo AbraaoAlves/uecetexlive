@@ -64,7 +64,6 @@ import {
   runPdfImport,
 } from "@/features/import-pdf/run-import";
 import { fetchTemplateFiles } from "@/features/import-pdf/template-files";
-import { MetadataWizard } from "@/features/metadata/MetadataWizard";
 import { WelcomeDialog } from "@/features/metadata/WelcomeDialog";
 import { WizardFullscreen } from "@/features/metadata/WizardFullscreen";
 import {
@@ -322,7 +321,6 @@ function ShellInner() {
   useStoragePersistence();
   const { showReminder: showBackupReminder, resetReminder: resetBackupReminder } =
     useBackupReminder(ui, setUi, uiReady);
-  const [metadataOpen, setMetadataOpen] = useState(false);
   const [guideOpen, setGuideOpen] = useState(false);
   const [newChapterOpen, setNewChapterOpen] = useState(false);
   const [previewTab, setPreviewTab] = useState<"pdf" | "log">("pdf");
@@ -660,7 +658,7 @@ function ShellInner() {
     return merged;
   }, [entrySource, resumoField, abstractField]);
   const workTitle = meta.get("titulo")?.value.trim() ?? "";
-  const metadataPending = workTitle === "" || workTitle === TEMPLATE_PLACEHOLDER_TITLE;
+  const guidePending = workTitle === "" || workTitle === TEMPLATE_PLACEHOLDER_TITLE;
 
   // 3.2 — not a per-keystroke hot path (opened deliberately from the rail),
   // so it can key on the debounced source map like the include graph does.
@@ -726,8 +724,8 @@ function ShellInner() {
 
   const handleComplianceAction = useCallback(
     (action: ComplianceAction) => {
-      if (action.kind === "openMetadata") {
-        setMetadataOpen(true);
+      if (action.kind === "openGuide") {
+        setGuideOpen(true);
       } else if (action.kind === "openReferences") {
         // ADR-08: referências vivem na área de edição. A guarda é o arquivo,
         // não o caminho: o \bibliography{} pode apontar para um .bib que não
@@ -1117,7 +1115,6 @@ function ShellInner() {
   };
 
   const handleSelect = (path: string) => {
-    setMetadataOpen(false);
     const exists = project?.files.some((f) => f.path === path);
     if (exists) {
       openFile(path);
@@ -1151,7 +1148,6 @@ function ShellInner() {
       : plan.source;
     updateFileText(project.entry, source);
     setNewChapterOpen(false);
-    setMetadataOpen(false);
     createFile(plan.path, textToBytes(plan.content));
   };
 
@@ -1503,9 +1499,9 @@ function ShellInner() {
                         : [...ui.collapsedSections, section],
                     })
                   }
-                  onOpenMetadata={() => setMetadataOpen(true)}
-                  metadataActive={metadataOpen}
-                  metadataPending={metadataPending}
+                  onOpenGuide={() => setGuideOpen(true)}
+                  guideActive={guideOpen}
+                  guidePending={guidePending}
                   onOpenCompliance={() => setUi({ railTab: "compliance" })}
                 />
               </Tabs.Content>
@@ -1708,14 +1704,6 @@ function ShellInner() {
           </div>
         </section>
       </div>
-      {metadataOpen && (
-        <MetadataWizard
-          fields={meta}
-          onApply={applyWorkMetadata}
-          onClose={() => setMetadataOpen(false)}
-          persisted={saveState === "saved"}
-        />
-      )}
       {newChapterOpen && (
         <NewChapterDialog
           onCreate={createChapter}

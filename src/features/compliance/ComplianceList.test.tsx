@@ -141,7 +141,7 @@ describe("ComplianceList", () => {
         id: "abstract",
         status: "warn",
         count: 1,
-        action: { kind: "openMetadata" },
+        action: { kind: "openGuide" },
       },
     ];
 

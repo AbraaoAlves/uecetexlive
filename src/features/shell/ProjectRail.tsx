@@ -42,11 +42,11 @@ export interface ProjectRailProps {
   /** Folded section headers; controlled (persisted in UiSettings) when given. */
   collapsedSections?: readonly string[];
   onToggleSection?: (section: RailSection) => void;
-  /** Opens the "Dados do Trabalho" wizard (F2). */
-  onOpenMetadata?: () => void;
-  metadataActive?: boolean;
+  /** Opens the full-screen work guide. */
+  onOpenGuide?: () => void;
+  guideActive?: boolean;
   /** Title still the template placeholder — nudge the student. */
-  metadataPending?: boolean;
+  guidePending?: boolean;
   /** Seleciona o painel de conformidade. */
   onOpenCompliance?: () => void;
   /** Inclui ou tira do PDF a página opcional do arquivo (M2). */
@@ -87,9 +87,9 @@ export function ProjectRail({
   onShowHidden,
   collapsedSections,
   onToggleSection,
-  onOpenMetadata,
-  metadataActive = false,
-  metadataPending = false,
+  onOpenGuide,
+  guideActive = false,
+  guidePending = false,
   onOpenCompliance,
   onToggleImprimir,
 }: ProjectRailProps) {
@@ -129,23 +129,23 @@ export function ProjectRail({
           }}
         />
       )}
-      {onOpenMetadata && (
+      {onOpenGuide && (
         <button
           type="button"
-          data-testid="rail-metadata"
-          onClick={onOpenMetadata}
+          data-testid="rail-guide"
+          onClick={onOpenGuide}
           className={cn(
             "mb-1 flex w-full items-center gap-2 px-3 py-1.5 text-left font-medium hover:bg-accent-soft/60",
-            metadataActive && "bg-accent-soft text-accent-strong",
+            guideActive && "bg-accent-soft text-accent-strong",
           )}
         >
           <ClipboardList className="size-3.5 shrink-0" />
-          <span className="truncate">{strings.metadata.railEntry}</span>
-          {metadataPending && (
+          <span className="truncate">{strings.metadata.guideTitle}</span>
+          {guidePending && (
             <Tooltip content={strings.metadata.pendingHint}>
               <span
                 className="ml-auto size-1.5 shrink-0 rounded-full bg-warning"
-                data-testid="metadata-pending-dot"
+                data-testid="guide-pending-dot"
               />
             </Tooltip>
           )}

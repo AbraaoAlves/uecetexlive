@@ -477,10 +477,10 @@ describe("effectiveItems / pendingItemCount", () => {
 
   it("stands in for a warning check that cannot enumerate", () => {
     const items = effectiveItems(
-      check({ id: "pretextual", count: 5, action: { kind: "openMetadata" } }),
+      check({ id: "pretextual", count: 5, action: { kind: "openGuide" } }),
     );
     expect(items).toHaveLength(1);
-    expect(items[0]?.action).toEqual({ kind: "openMetadata" });
+    expect(items[0]?.action).toEqual({ kind: "openGuide" });
     expect(items[0]?.id).toBe("pretextual");
   });
 
@@ -505,7 +505,7 @@ describe("effectiveItems / pendingItemCount", () => {
 
   it("counts items, not checks", () => {
     const checks: ComplianceCheck[] = [
-      check({ id: "pretextual", count: 5, action: { kind: "openMetadata" } }),
+      check({ id: "pretextual", count: 5, action: { kind: "openGuide" } }),
       check({
         id: "references",
         count: 3,

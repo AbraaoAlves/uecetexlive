@@ -1,5 +1,5 @@
 /**
- * Declarative catalog for the "Dados do Trabalho" wizard (F2). Labels live
+ * Declarative catalog for the work guide. Labels live
  * inline, like the slash-menu COMMANDS. Fields with `verbatim` write their
  * value as-is (enums); free text is escaped by the wizard before applying.
  */

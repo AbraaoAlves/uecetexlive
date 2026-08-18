@@ -1,21 +1,19 @@
 import { expect, test } from "@playwright/test";
 
 /**
- * F2: first-run welcome → wizard → \titulo written surgically into
+ * Guia do trabalho: preenchimento → \titulo escrito cirurgicamente em
  * documento.tex; work type switch swaps the conditional course fields.
  */
-test("welcome → wizard fills title; documento.tex updated; persists", async ({
+test("welcome → guia preenche título; documento.tex atualizado; persiste", async ({
   page,
 }) => {
   await page.goto("/");
   // First boot on a cold preview server (seed + chunk download) can beat the
   // default 5 s expect timeout — clicks elsewhere auto-wait far longer.
   await expect(page.getByTestId("welcome-dialog")).toBeVisible({ timeout: 15_000 });
-  // "Preencher dados" abre o guia em tela cheia (M3 Fase 2); estas specs são
-  // do modal de edição rápida, que se abre pelo painel.
   await page.getByTestId("welcome-later").click();
-  await page.getByTestId("rail-metadata").click();
-  await expect(page.getByTestId("metadata-wizard")).toBeVisible();
+  await page.getByTestId("rail-guide").click();
+  await expect(page.getByTestId("wizard-fs")).toBeVisible();
 
   // Step 1: fill the title; commit on blur.
   const titulo = page.getByTestId("metadata-field-titulo");
@@ -27,15 +25,14 @@ test("welcome → wizard fills title; documento.tex updated; persists", async ({
   await expect(page.getByTestId("save-state")).toHaveAttribute("data-state", "saved");
 
   // Step 2: choose TCC graduação — step 3 must swap mestrado → graduação.
-  await page.getByTestId("wizard-next").click();
+  await page.getByTestId("wizard-fs-next").click();
   await page.getByTestId("metadata-option-tccgraduacao").check();
-  await page.getByTestId("wizard-next").click();
+  await page.getByTestId("wizard-fs-next").click();
   await expect(page.getByTestId("metadata-field-graduacaoem")).toBeVisible();
   await expect(page.getByTestId("metadata-field-programamestrado")).not.toBeVisible();
 
-  // The wizard is a modal (QA §A3) — close it before reaching the shell.
-  await page.getByTestId("wizard-close").click();
-  await expect(page.getByTestId("metadata-wizard")).not.toBeVisible();
+  await page.getByTestId("wizard-fs-close").click();
+  await expect(page.getByTestId("wizard-fs")).not.toBeVisible();
 
   // The write was surgical: documento.tex now carries the new \titulo.
   await page.getByTestId("advanced-toggle").check();
@@ -65,14 +62,12 @@ test("UAB toggle reveals local do polo and clears it when turned off", async ({
 }) => {
   await page.goto("/");
   await expect(page.getByTestId("welcome-dialog")).toBeVisible({ timeout: 15_000 });
-  // "Preencher dados" abre o guia em tela cheia (M3 Fase 2); estas specs são
-  // do modal de edição rápida, que se abre pelo painel.
   await page.getByTestId("welcome-later").click();
-  await page.getByTestId("rail-metadata").click();
-  await expect(page.getByTestId("metadata-wizard")).toBeVisible();
+  await page.getByTestId("rail-guide").click();
+  await expect(page.getByTestId("wizard-fs")).toBeVisible();
 
   // "tipo" is the 2nd step; ehuab defaults to "nao" so localdopolo starts hidden.
-  await page.getByTestId("wizard-step-2").click();
+  await page.getByTestId("wizard-fs-step-tipo").click();
   await expect(page.getByTestId("metadata-field-localdopolo")).not.toBeVisible();
 
   await page.getByTestId("metadata-field-ehuab").selectOption("sim");
@@ -81,8 +76,8 @@ test("UAB toggle reveals local do polo and clears it when turned off", async ({
   await polo.fill("Limoeiro do Norte -- Ceará");
   await polo.blur();
 
-  await page.getByTestId("wizard-close").click();
-  await expect(page.getByTestId("metadata-wizard")).not.toBeVisible();
+  await page.getByTestId("wizard-fs-close").click();
+  await expect(page.getByTestId("wizard-fs")).not.toBeVisible();
 
   await page.getByTestId("advanced-toggle").check();
   await page.getByTestId("rail-file-documento.tex").click();
@@ -93,12 +88,12 @@ test("UAB toggle reveals local do polo and clears it when turned off", async ({
 
   // Reopen, turn UAB back off: the field disappears and its value is cleared
   // surgically in the source, without touching any sibling macro.
-  await page.getByTestId("rail-metadata").click();
-  await expect(page.getByTestId("metadata-wizard")).toBeVisible();
-  await page.getByTestId("wizard-step-2").click();
+  await page.getByTestId("rail-guide").click();
+  await expect(page.getByTestId("wizard-fs")).toBeVisible();
+  await page.getByTestId("wizard-fs-step-tipo").click();
   await page.getByTestId("metadata-field-ehuab").selectOption("nao");
   await expect(page.getByTestId("metadata-field-localdopolo")).not.toBeVisible();
-  await page.getByTestId("wizard-close").click();
+  await page.getByTestId("wizard-fs-close").click();
 
   await expect(page.getByTestId("source-editor-value")).toHaveValue(/\\ehuab\{nao\}/);
   await expect(page.getByTestId("source-editor-value")).toHaveValue(/\\localdopolo\{\}/);
@@ -109,15 +104,13 @@ test("banca slots respect the work-type cap (TCC: 3, dissertação: 4, tese: 5)"
 }) => {
   await page.goto("/");
   await expect(page.getByTestId("welcome-dialog")).toBeVisible({ timeout: 15_000 });
-  // "Preencher dados" abre o guia em tela cheia (M3 Fase 2); estas specs são
-  // do modal de edição rápida, que se abre pelo painel.
   await page.getByTestId("welcome-later").click();
-  await page.getByTestId("rail-metadata").click();
-  await expect(page.getByTestId("metadata-wizard")).toBeVisible();
+  await page.getByTestId("rail-guide").click();
+  await expect(page.getByTestId("wizard-fs")).toBeVisible();
 
-  await page.getByTestId("wizard-step-2").click();
+  await page.getByTestId("wizard-fs-step-tipo").click();
   await page.getByTestId("metadata-option-tccgraduacao").check();
-  await page.getByTestId("wizard-step-6").click();
+  await page.getByTestId("wizard-fs-step-banca").click();
 
   const segundo = page.getByTestId("metadata-field-membrodabancadois");
   const terceiro = page.getByTestId("metadata-field-membrodabancatres");
@@ -136,17 +129,17 @@ test("banca slots respect the work-type cap (TCC: 3, dissertação: 4, tese: 5)"
   await expect(quinto).not.toBeVisible();
   await expect(sexto).not.toBeVisible();
 
-  await page.getByTestId("wizard-step-2").click();
+  await page.getByTestId("wizard-fs-step-tipo").click();
   await page.getByTestId("metadata-option-dissertacao").check();
-  await page.getByTestId("wizard-step-6").click();
+  await page.getByTestId("wizard-fs-step-banca").click();
   await quarto.fill("Membro quatro");
   await quarto.blur();
   await expect(quinto).toBeVisible();
   await expect(sexto).not.toBeVisible();
 
-  await page.getByTestId("wizard-step-2").click();
+  await page.getByTestId("wizard-fs-step-tipo").click();
   await page.getByTestId("metadata-option-tese").check();
-  await page.getByTestId("wizard-step-6").click();
+  await page.getByTestId("wizard-fs-step-banca").click();
   await quinto.fill("Membro cinco");
   await quinto.blur();
   await expect(sexto).toBeVisible();
@@ -157,13 +150,11 @@ test("resumo/abstract step writes surgically into their own files, not documento
 }) => {
   await page.goto("/");
   await expect(page.getByTestId("welcome-dialog")).toBeVisible({ timeout: 15_000 });
-  // "Preencher dados" abre o guia em tela cheia (M3 Fase 2); estas specs são
-  // do modal de edição rápida, que se abre pelo painel.
   await page.getByTestId("welcome-later").click();
-  await page.getByTestId("rail-metadata").click();
-  await expect(page.getByTestId("metadata-wizard")).toBeVisible();
+  await page.getByTestId("rail-guide").click();
+  await expect(page.getByTestId("wizard-fs")).toBeVisible();
 
-  await page.getByTestId("wizard-step-7").click();
+  await page.getByTestId("wizard-fs-step-resumo").click();
   const resumo = page.getByTestId("metadata-field-resumobody");
   await resumo.fill("Este trabalho investiga o uso de jogos digitais no ensino.");
   await resumo.blur();
@@ -171,7 +162,7 @@ test("resumo/abstract step writes surgically into their own files, not documento
   await palavrasChave.fill("jogos digitais; ensino; programação.");
   await palavrasChave.blur();
 
-  await page.getByTestId("wizard-step-8").click();
+  await page.getByTestId("wizard-fs-step-abstract").click();
   const abstract = page.getByTestId("metadata-field-abstractbody");
   await abstract.fill("This work investigates the use of digital games in teaching.");
   await abstract.blur();
@@ -179,7 +170,7 @@ test("resumo/abstract step writes surgically into their own files, not documento
   await keywords.fill("digital games; teaching; programming.");
   await keywords.blur();
 
-  await page.getByTestId("wizard-close").click();
+  await page.getByTestId("wizard-fs-close").click();
 
   await page.getByTestId("advanced-toggle").check();
   await page.getByTestId("rail-file-elementos-pre-textuais/resumo.tex").click();
@@ -207,17 +198,17 @@ test("resumo/abstract step writes surgically into their own files, not documento
   );
 });
 
-test("welcome 'Depois' leaves a pending badge; rail entry reopens the wizard", async ({
+test("welcome 'Depois' leaves a pending badge; rail entry opens the guide", async ({
   page,
 }) => {
   await page.goto("/");
   await page.getByTestId("welcome-later").click();
-  await expect(page.getByTestId("metadata-pending-dot")).toBeVisible();
+  await expect(page.getByTestId("guide-pending-dot")).toBeVisible();
 
-  await page.getByTestId("rail-metadata").click();
-  await expect(page.getByTestId("metadata-wizard")).toBeVisible();
+  await page.getByTestId("rail-guide").click();
+  await expect(page.getByTestId("wizard-fs")).toBeVisible();
 
-  // Escape dismisses the modal (fields commit on blur — nothing is lost).
+  // Escape fecha o guia (os campos gravam no blur — nada se perde).
   await page.keyboard.press("Escape");
-  await expect(page.getByTestId("metadata-wizard")).not.toBeVisible();
+  await expect(page.getByTestId("wizard-fs")).not.toBeVisible();
 });

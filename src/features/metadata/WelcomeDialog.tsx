@@ -1,6 +1,6 @@
 /**
- * First-run invitation (skippable) to fill the work metadata — reuses the
- * wizard panel, so no duplicated form UI. Dismissing persists welcomeSeen.
+ * First-run invitation (skippable) to fill the work metadata in the guide.
+ * Dismissing persists welcomeSeen.
  */
 import { strings } from "@/lib/strings";
 

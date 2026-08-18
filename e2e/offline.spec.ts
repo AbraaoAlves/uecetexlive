@@ -22,11 +22,11 @@ test("second visit boots and keeps the project with zero network access", async 
 
   // A small, network-independent proof that the project survives: rename the
   // work title, which persists to IndexedDB (not the network).
-  await page.getByTestId("rail-metadata").click();
+  await page.getByTestId("rail-guide").click();
   const titulo = page.getByTestId("metadata-field-titulo");
   await titulo.fill("Título Offline");
   await titulo.blur();
-  await page.getByTestId("wizard-close").click();
+  await page.getByTestId("wizard-fs-close").click();
   await expect(page.getByTestId("save-state")).toHaveAttribute("data-state", "saved");
 
   await context.setOffline(true);

@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { dismissWelcome } from "./helpers";
 
-test("a aba reflete lacunas reais e permanece selecionada ao abrir os dados", async ({
+test("a aba reflete lacunas reais e permanece selecionada ao abrir o guia", async ({
   page,
 }) => {
   await page.goto("/");
@@ -23,7 +23,7 @@ test("a aba reflete lacunas reais e permanece selecionada ao abrir os dados", as
   );
 
   await page.getByTestId("compliance-goto-pretextual").click();
-  await expect(page.getByTestId("metadata-wizard")).toBeVisible();
+  await expect(page.getByTestId("wizard-fs")).toBeVisible();
   await expect(page.getByTestId("rail-tab-compliance")).toHaveAttribute(
     "aria-selected",
     "true",
@@ -32,7 +32,7 @@ test("a aba reflete lacunas reais e permanece selecionada ao abrir os dados", as
   const titulo = page.getByTestId("metadata-field-titulo");
   await titulo.fill("Jogos Digitais no Ensino de Programação");
   await titulo.blur();
-  await page.getByTestId("wizard-close").click();
+  await page.getByTestId("wizard-fs-close").click();
 
   await expect(pretextual).toHaveAttribute("data-status", "warn");
   await expect(pretextual).not.toContainText("Faltam preencher 6 dados");
@@ -65,12 +65,12 @@ test("corrigir o próximo percorre verificações sem repetir", async ({ page })
   const next = page.getByTestId("compliance-next-all");
 
   await next.click();
-  await expect(page.getByTestId("metadata-wizard")).toBeVisible();
-  await page.getByTestId("wizard-close").click();
+  await expect(page.getByTestId("wizard-fs")).toBeVisible();
+  await page.getByTestId("wizard-fs-close").click();
 
   await next.click();
-  await expect(page.getByTestId("metadata-wizard")).toBeVisible();
-  await page.getByTestId("wizard-close").click();
+  await expect(page.getByTestId("wizard-fs")).toBeVisible();
+  await page.getByTestId("wizard-fs-close").click();
 
   await next.click();
   await expect(
