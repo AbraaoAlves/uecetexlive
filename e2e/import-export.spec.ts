@@ -96,13 +96,13 @@ test("import opens the entry resolved from a zip without documento.tex", async (
 
   await page.getByTestId("menu-button").click();
   await page.getByTestId("menu-open-guide").click();
-  await page.getByTestId("wizard-fs-step-ficha").click();
-  await page.getByTestId("ficha-input").setInputFiles({
+  await page.getByTestId("wizard-fs-step-anexos").click();
+  await page.getByTestId("attachment-input-ficha").setInputFiles({
     name: "ficha.pdf",
     mimeType: "application/pdf",
     buffer: Buffer.from("%PDF-1.7\n%%EOF"),
   });
-  await expect(page.getByTestId("ficha-state")).toHaveText("Ficha enviada por você.");
+  await expect(page.getByTestId("attachment-state-ficha")).toContainText("Enviado");
   await expect(page.getByTestId("source-editor-value")).toHaveValue(
     /Entrada alternativa/,
   );

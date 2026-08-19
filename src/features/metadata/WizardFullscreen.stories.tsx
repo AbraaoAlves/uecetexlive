@@ -53,8 +53,17 @@ const meta = {
     onClose: () => {},
     toggles: TOGGLES,
     onToggle: () => {},
-    onFicha: () => {},
-    fichaSize: 175_366,
+    attachments: [
+      {
+        path: "elementos-pre-textuais/ficha-catalografica.pdf",
+        sizeBytes: 175_366,
+        kind: "pdf",
+        bytes: new TextEncoder().encode("%PDF-1.7\n%%EOF"),
+      },
+    ],
+    onAddAttachments: () => {},
+    onReplaceAttachment: () => {},
+    onDeleteAttachment: () => {},
     onCompile: () => {},
   },
 } satisfies Meta<typeof WizardFullscreen>;
@@ -63,7 +72,7 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Opcionais: Story = { args: { initialStep: 8 } };
-export const Ficha: Story = { args: { initialStep: 9 } };
+export const Anexos: Story = { args: { initialStep: 9 } };
 export const RevisaoPronta: Story = { args: { initialStep: 10 } };
 export const RevisaoComPendencias: Story = {
   args: { initialStep: 10, fields: fields({ trabalhoacademico: "tccgraduacao" }) },

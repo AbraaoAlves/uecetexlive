@@ -64,6 +64,14 @@ import {
   runPdfImport,
 } from "@/features/import-pdf/run-import";
 import { fetchTemplateFiles } from "@/features/import-pdf/template-files";
+import {
+  ATTACHMENT_EXTENSIONS,
+  type AttachmentItem,
+  type AttachmentUpload,
+  FICHA_PATH,
+  MAX_ATTACHMENT_BYTES,
+  rejectAttachment,
+} from "@/features/metadata/AttachmentsStep";
 import { WelcomeDialog } from "@/features/metadata/WelcomeDialog";
 import { WizardFullscreen } from "@/features/metadata/WizardFullscreen";
 import {
@@ -103,6 +111,10 @@ import {
   RESUMO_PATH,
 } from "@/features/project/resumo-field";
 import { seedTemplate } from "@/features/project/seed";
+import {
+  applySignedApproval,
+  SIGNED_APPROVAL_PATH,
+} from "@/features/project/signed-approval";
 import { ProjectProvider, useProject } from "@/features/project/store";
 import { useTemplateUpdateNotice } from "@/features/project/useTemplateUpdateNotice";
 import {
@@ -173,20 +185,7 @@ const SECTION_RANK: Record<RailSection, number> = {
 };
 
 /** Rail upload allowlist (QA §A4) — mirrors kindOf's image/pdf/code sets. */
-const RAIL_UPLOAD_EXTENSIONS = new Set([
-  "png",
-  "jpg",
-  "jpeg",
-  "pdf",
-  "cpp",
-  "c",
-  "h",
-  "java",
-  "py",
-  "js",
-  "ts",
-]);
-const RAIL_UPLOAD_MAX_BYTES = 10 * 1024 * 1024;
+const RAIL_UPLOAD_EXTENSIONS = new Set<string>(ATTACHMENT_EXTENSIONS);
 
 /** Opções de import comuns ao ZIP e ao caminho PDF→projeto. */
 const UECETEX2_IMPORT_OPTS = {
@@ -194,9 +193,6 @@ const UECETEX2_IMPORT_OPTS = {
   templateSource: "https://github.com/thiagodnf/uecetex2",
   preferredEntry: "documento.tex",
 } as const;
-
-/** Ficha catalográfica do projeto — o guia substitui exatamente este arquivo. */
-const FICHA_PATH = "elementos-pre-textuais/ficha-catalografica.pdf";
 
 /**
  * "Leve o aluno até aqui": arquivo, modo e linha num pedido só. O `nonce`
@@ -237,6 +233,7 @@ function ShellInner() {
     updateFileBytes,
     replaceProject,
     createFile,
+    deleteFile,
   } = useProject();
   const { ui, setUi, ready: uiReady } = useUiSettings();
   const advanced = ui.advancedMode;
@@ -583,30 +580,47 @@ function ShellInner() {
     [baseResources, bibText, bibPath, updateFileText],
   );
 
+  const addAttachmentUploads = useCallback(
+    (uploads: readonly AttachmentUpload[]) => {
+      if (!project) return;
+      const claimed = new Set(project.files.map((f) => f.path));
+      for (const upload of uploads) {
+        const ext = upload.name.split(".").pop()?.toLowerCase() ?? "";
+        const base = slugify(upload.name.replace(/\.[^.]*$/, "")) || "arquivo";
+        let path = `figuras/${base}.${ext}`;
+        for (let n = 2; claimed.has(path); n++) {
+          path = `figuras/${base}-${n}.${ext}`;
+        }
+        claimed.add(path);
+        createFile(path, upload.bytes, { open: false });
+      }
+    },
+    [project, createFile],
+  );
+
   // Rail upload (QA §A4): images, PDFs and code files land in figuras/ —
   // the template's own convention (main.cpp lives there).
   const handleRailUpload = async (uploads: File[]) => {
-    if (!project) return;
-    const claimed = new Set(project.files.map((f) => f.path));
+    const accepted: AttachmentUpload[] = [];
     const rejected: string[] = [];
     for (const file of uploads) {
       const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
       if (
         !RAIL_UPLOAD_EXTENSIONS.has(ext) ||
         file.size === 0 ||
-        file.size > RAIL_UPLOAD_MAX_BYTES
+        file.size > MAX_ATTACHMENT_BYTES
       ) {
         rejected.push(file.name);
         continue;
       }
-      const base = slugify(file.name.replace(/\.[^.]*$/, "")) || "arquivo";
-      let path = `figuras/${base}.${ext}`;
-      for (let n = 2; claimed.has(path); n++) {
-        path = `figuras/${base}-${n}.${ext}`;
-      }
-      claimed.add(path);
-      createFile(path, new Uint8Array(await file.arrayBuffer()), { open: false });
+      const upload = {
+        name: file.name,
+        bytes: new Uint8Array(await file.arrayBuffer()),
+      };
+      if (rejectAttachment(upload.name, upload.bytes)) rejected.push(file.name);
+      else accepted.push(upload);
     }
+    addAttachmentUploads(accepted);
     if (rejected.length) {
       window.alert(`${strings.rail.uploadFileError} ${rejected.join(", ")}`);
     }
@@ -848,15 +862,57 @@ function ShellInner() {
   /** Estado das linhas opcionais, indexado por macro (o guia usa a macro). */
   const guideToggles = useMemo(() => extractImprimirToggles(entrySource), [entrySource]);
 
-  const fichaFile = project?.files.find((f) => f.path === FICHA_PATH);
-  const fichaSize = fichaFile?.bytes.byteLength ?? null;
-  const replaceFicha = useCallback(
-    (bytes: Uint8Array) => {
+  const attachments = useMemo<AttachmentItem[]>(() => {
+    const items: AttachmentItem[] = [];
+    for (const file of project?.files ?? []) {
+      if (file.kind !== "image" && file.kind !== "pdf" && file.kind !== "code") {
+        continue;
+      }
+      items.push({
+        path: file.path,
+        sizeBytes: file.bytes.byteLength,
+        kind: file.kind,
+        bytes: file.bytes,
+      });
+    }
+    return items.sort((a, b) => a.path.localeCompare(b.path));
+  }, [project]);
+
+  const replaceAttachment = useCallback(
+    (path: string, upload: AttachmentUpload) => {
       if (!project) return;
-      if (fichaFile) updateFileBytes(FICHA_PATH, bytes);
-      else createFile(FICHA_PATH, bytes, { open: false });
+      const exists = project.files.some((file) => file.path === path);
+      if (exists) updateFileBytes(path, upload.bytes);
+      else createFile(path, upload.bytes, { open: false });
+
+      const nextSource =
+        path === FICHA_PATH
+          ? applyImprimirToggle(entrySource, "imprimirfichacatalografica", true)
+          : path === SIGNED_APPROVAL_PATH
+            ? applySignedApproval(entrySource, true)
+            : entrySource;
+      if (project.entry && nextSource !== entrySource) {
+        updateFileText(project.entry, nextSource);
+      }
     },
-    [project, fichaFile, updateFileBytes, createFile],
+    [project, entrySource, updateFileBytes, createFile, updateFileText],
+  );
+
+  const removeAttachment = useCallback(
+    (path: string) => {
+      if (!project) return;
+      const nextSource =
+        path === FICHA_PATH
+          ? applyImprimirToggle(entrySource, "imprimirfichacatalografica", false)
+          : path === SIGNED_APPROVAL_PATH
+            ? applySignedApproval(entrySource, false)
+            : entrySource;
+      if (project.entry && nextSource !== entrySource) {
+        updateFileText(project.entry, nextSource);
+      }
+      deleteFile(path);
+    },
+    [project, entrySource, updateFileText, deleteFile],
   );
 
   // Dois tipos de arquivo têm edição visual, e o mesmo botão alterna os dois:
@@ -1743,8 +1799,10 @@ function ShellInner() {
           onClose={() => setGuideOpen(false)}
           toggles={guideToggles}
           onToggle={toggleImprimir}
-          onFicha={replaceFicha}
-          fichaSize={fichaSize}
+          attachments={attachments}
+          onAddAttachments={addAttachmentUploads}
+          onReplaceAttachment={replaceAttachment}
+          onDeleteAttachment={removeAttachment}
           onCompile={() => {
             setGuideOpen(false);
             runCompile();

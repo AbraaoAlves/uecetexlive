@@ -3,7 +3,7 @@ import { expect, type Page, test } from "@playwright/test";
 /**
  * Item 6: no primeiro uso, o guia leva o aluno do título ao PDF sem que ele
  * precise abrir nenhum arquivo .tex — inclusive pelos elementos opcionais e
- * pela ficha catalográfica, que antes só existiam dentro do documento.tex.
+ * pelos anexos do projeto, que antes só existiam dentro do documento.tex.
  */
 
 async function fill(page: Page, macro: string, value: string): Promise<void> {
@@ -111,3 +111,94 @@ test("guia mantém Tab dentro da tela cheia", async ({ page }) => {
   await page.keyboard.press("Tab");
   await expect(first).toBeFocused();
 });
+
+test("anexos: envia, troca e exclui arquivos sem abrir o fonte", async ({ page }) => {
+  page.on("dialog", (dialog) => dialog.accept());
+  await page.goto("/");
+  await page.getByTestId("welcome-later").click();
+  await page.getByTestId("menu-button").click();
+  await page.getByTestId("menu-open-guide").click();
+  await page.getByTestId("wizard-fs-step-anexos").click();
+
+  await page.getByTestId("attachment-delete-ficha").click();
+  await expect(page.getByTestId("attachment-state-ficha")).toHaveText(
+    "Ainda não enviado",
+  );
+  await page.getByTestId("attachment-input-ficha").setInputFiles({
+    name: "ficha-catalografica.pdf",
+    mimeType: "application/pdf",
+    buffer: Buffer.from("%PDF-1.7\n%%EOF"),
+  });
+  await expect(page.getByTestId("attachment-state-ficha")).toContainText("Enviado");
+
+  await page.getByTestId("attachment-input-aprovacao").setInputFiles({
+    name: "folha-assinada.pdf",
+    mimeType: "application/pdf",
+    buffer: Buffer.from("%PDF-1.7\n%%EOF"),
+  });
+  await expect(page.getByTestId("attachment-state-aprovacao")).toContainText("Enviado");
+
+  await page.getByTestId("attachment-add-input").setInputFiles({
+    name: "analise.py",
+    mimeType: "text/x-python",
+    buffer: Buffer.from("print('versao 1')\n"),
+  });
+  const codeRow = page.getByTestId("attachment-row-figuras/analise.py");
+  await expect(codeRow).toBeVisible();
+  await page.getByTestId("attachment-select-figuras/analise.py").click();
+  await expect(page.getByTestId("attachment-preview-code")).toContainText(
+    "print('versao 1')",
+  );
+
+  await page.getByTestId("attachment-replace-input-figuras/analise.py").setInputFiles({
+    name: "analise-atualizada.py",
+    mimeType: "text/x-python",
+    buffer: Buffer.from("print('versao 2 com mais dados')\n"),
+  });
+  await expect(codeRow).toContainText("33 B");
+  await expect(page.getByTestId("attachment-preview-code")).toContainText(
+    "versao 2 com mais dados",
+  );
+
+  await page.getByTestId("attachment-delete-figuras/analise.py").click();
+  await expect(codeRow).toHaveCount(0);
+  await expect(page.getByTestId("attachment-preview-empty")).toBeVisible();
+
+  await expect(page.getByTestId("save-state")).toHaveAttribute("data-state", "saved");
+  expect(await readDocumentoTex(page)).toContain(
+    "\\includepdf[pages=-]{elementos-pre-textuais/folha-de-aprovacao-assinada.pdf}",
+  );
+  expect(await readDocumentoTex(page)).toMatch(/^\s*\\imprimirfichacatalografica/m);
+
+  await page.getByTestId("attachment-delete-aprovacao").click();
+  await expect(page.getByTestId("attachment-state-aprovacao")).toHaveText(
+    "Ainda não enviado",
+  );
+  await expect(page.getByTestId("save-state")).toHaveAttribute("data-state", "saved");
+  expect(await readDocumentoTex(page)).toContain("\\imprimirfolhadeaprovacao");
+});
+
+function readDocumentoTex(page: Page): Promise<string> {
+  return page.evaluate(
+    () =>
+      new Promise<string>((resolve, reject) => {
+        const open = indexedDB.open("uecetexlive");
+        open.onerror = () => reject(open.error);
+        open.onsuccess = () => {
+          const db = open.result;
+          const get = db
+            .transaction("projects", "readonly")
+            .objectStore("projects")
+            .get("uecetex2");
+          get.onerror = () => reject(get.error);
+          get.onsuccess = () => {
+            const project = get.result as {
+              files: { path: string; bytes: Uint8Array }[];
+            };
+            const file = project.files.find((entry) => entry.path === "documento.tex");
+            resolve(new TextDecoder().decode(file?.bytes));
+          };
+        };
+      }),
+  );
+}

@@ -133,13 +133,35 @@ export const strings = {
       },
     },
   },
-  ficha: {
-    missing: "Seu projeto ainda não tem uma ficha catalográfica.",
-    fromTemplate: "Ainda é a ficha de exemplo do modelo.",
-    uploaded: "Ficha enviada por você.",
-    upload: "Enviar a ficha da biblioteca (PDF)",
-    errorType: "Envie o PDF que a biblioteca gerou — o arquivo não parece ser um PDF.",
-    errorSize: "O arquivo passa de 5 MB. A ficha catalográfica tem uma página só.",
+  attachments: {
+    fichaTitle: "Ficha catalográfica",
+    fichaDescription:
+      "PDF emitido pela biblioteca. Ao enviar, ele substitui a ficha de exemplo no trabalho.",
+    approvalTitle: "Folha de aprovação assinada",
+    approvalDescription:
+      "Digitalize a folha assinada pela banca e pelos orientadores. Este PDF substitui a folha gerada pelo modelo.",
+    otherTitle: "Outros anexos do projeto",
+    otherDescription: "Imagens, PDFs e arquivos de código de até 10 MB.",
+    notSent: "Ainda não enviado",
+    sent: "Enviado",
+    templateFile: "Ainda é o arquivo de exemplo do modelo",
+    sendPdf: "Enviar PDF",
+    add: "Adicionar arquivos",
+    replace: "Trocar",
+    remove: "Excluir",
+    none: "Nenhum outro anexo no projeto.",
+    confirmDelete: "Excluir “{name}” do projeto? Esta ação não pode ser desfeita.",
+    typeError: "Use uma imagem PNG/JPG, um PDF ou um arquivo de código compatível.",
+    pdfTypeError: "O arquivo escolhido não parece ser um PDF válido.",
+    sameTypeError:
+      "Escolha outro arquivo .{extension} para manter as referências do trabalho.",
+    emptyError: "O arquivo está vazio.",
+    sizeError: "O arquivo passa de 10 MB.",
+    pdfSizeError: "O PDF passa de 5 MB.",
+    rejectedFiles: "Alguns arquivos não puderam ser adicionados:",
+    previewTitle: "Prévia do anexo",
+    previewEmpty: "Selecione um anexo para ver a prévia.",
+    previewTruncated: "Prévia limitada aos primeiros 100 KB.",
   },
   editor: {
     rawLatexTooltip:

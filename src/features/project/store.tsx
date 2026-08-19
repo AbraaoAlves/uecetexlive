@@ -35,6 +35,7 @@ interface ProjectStore {
   updateFileBytes: (path: string, bytes: Uint8Array) => void;
   replaceProject: (project: Project) => void;
   createFile: (path: string, bytes: Uint8Array, opts?: { open?: boolean }) => void;
+  deleteFile: (path: string) => void;
 }
 
 const ProjectContext = createContext<ProjectStore | null>(null);
@@ -145,6 +146,31 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
     [schedulePersist],
   );
 
+  const deleteFile = useCallback(
+    (path: string) => {
+      setProject((prev) => {
+        if (!prev?.files.some((f) => f.path === path)) return prev;
+        return {
+          ...prev,
+          updatedAt: Date.now(),
+          files: prev.files.filter((f) => f.path !== path),
+        };
+      });
+      setCurrentPath((current) => {
+        if (current !== path) return current;
+        const files = projectRef.current?.files.filter((f) => f.path !== path) ?? [];
+        return (
+          files.find((f) => f.path === "elementos-textuais/introducao.tex")?.path ??
+          files.find((f) => f.kind === "tex")?.path ??
+          null
+        );
+      });
+      setDirtyPaths((prev) => new Set(prev).add(path));
+      schedulePersist();
+    },
+    [schedulePersist],
+  );
+
   const value = useMemo<ProjectStore>(
     () => ({
       project,
@@ -159,6 +185,7 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
       updateFileBytes,
       replaceProject,
       createFile,
+      deleteFile,
     }),
     [
       project,
@@ -172,6 +199,7 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
       updateFileBytes,
       replaceProject,
       createFile,
+      deleteFile,
     ],
   );
 

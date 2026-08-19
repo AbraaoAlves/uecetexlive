@@ -16,7 +16,8 @@
    guia pelo **Menu**, em “Guia do trabalho…”).
 2. O guia percorre título, tipo, autor, orientação, data, banca, resumo e
    abstract; depois oferece os **elementos opcionais** (o que entra ou não
-   no PDF), a **ficha catalográfica** e uma **revisão final**, que lista o
+   no PDF), os **anexos** (ficha catalográfica, folha de aprovação assinada,
+   imagens, PDFs e arquivos de código) e uma **revisão final**, que lista o
    que ainda falta e tem um botão para gerar o PDF. Os dados são salvos
    sozinhos, campo a campo.
 3. No painel de arquivos à esquerda, escolha um capítulo e edite um trecho

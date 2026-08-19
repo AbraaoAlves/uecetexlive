@@ -17,8 +17,10 @@ describe("WizardFullscreen", () => {
         onClose={onClose}
         toggles={new Map()}
         onToggle={vi.fn()}
-        onFicha={vi.fn()}
-        fichaSize={null}
+        attachments={[]}
+        onAddAttachments={vi.fn()}
+        onReplaceAttachment={vi.fn()}
+        onDeleteAttachment={vi.fn()}
         onCompile={vi.fn()}
         initialStep={WIZARD_STEPS_FULL.length - 1}
       />,

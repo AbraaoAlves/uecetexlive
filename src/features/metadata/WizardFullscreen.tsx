@@ -1,7 +1,7 @@
 /**
  * Guia do trabalho em tela cheia.
  *
- * Reúne os metadados, os elementos opcionais e a ficha catalográfica, sem
+ * Reúne os metadados, os elementos opcionais e os anexos do projeto, sem
  * exigir que o aluno abra o `documento.tex`; termina oferecendo a geração do
  * PDF.
  *
@@ -19,7 +19,11 @@ import {
 } from "@/features/project/metadata";
 import { strings } from "@/lib/strings";
 import { cn } from "@/lib/utils";
-import { FichaStep } from "./FichaStep";
+import {
+  type AttachmentItem,
+  AttachmentsStep,
+  type AttachmentUpload,
+} from "./AttachmentsStep";
 import { type FieldDef, type StepDef, WIZARD_STEPS } from "./fields";
 import { OptionalsStep } from "./OptionalsStep";
 import { WizardField } from "./WizardField";
@@ -35,11 +39,11 @@ const EXTRA_STEPS: StepDef[] = [
     fields: [],
   },
   {
-    id: "ficha",
-    title: "Ficha catalográfica",
-    short: "Ficha",
+    id: "anexos",
+    title: "Anexos",
+    short: "Anexos",
     description:
-      "A biblioteca da UECE gera este PDF a partir de um formulário. Envie aqui o arquivo que você receber; até lá fica o exemplo do modelo.",
+      "Envie e gerencie a ficha catalográfica, a folha de aprovação assinada e os demais arquivos usados no trabalho.",
     fields: [],
   },
   {
@@ -60,10 +64,11 @@ export interface WizardFullscreenProps {
   /** Estado das linhas opcionais do documento e como mudá-las. */
   toggles: ReadonlyMap<string, { macro: string; enabled: boolean }>;
   onToggle: (macro: string, enabled: boolean) => void;
-  /** Substitui a ficha catalográfica do projeto. */
-  onFicha: (bytes: Uint8Array) => void;
-  /** Tamanho em bytes da ficha atual, para dizer se ainda é a do modelo. */
-  fichaSize: number | null;
+  /** Imagens, PDFs e códigos gerenciáveis, incluindo os dois PDFs institucionais. */
+  attachments: readonly AttachmentItem[];
+  onAddAttachments: (uploads: readonly AttachmentUpload[]) => void;
+  onReplaceAttachment: (path: string, upload: AttachmentUpload) => void;
+  onDeleteAttachment: (path: string) => void;
   /** Gera o PDF e fecha o guia. */
   onCompile: () => void;
   /** Já há uma geração em curso? O motor recusa duas ao mesmo tempo. */
@@ -104,8 +109,10 @@ export function WizardFullscreen({
   onClose,
   toggles,
   onToggle,
-  onFicha,
-  fichaSize,
+  attachments,
+  onAddAttachments,
+  onReplaceAttachment,
+  onDeleteAttachment,
   onCompile,
   compiling = false,
   persisted = true,
@@ -253,7 +260,12 @@ export function WizardFullscreen({
                 className="min-h-0 flex-1 overflow-y-auto"
                 data-testid="wizard-fs-body"
               >
-                <div className="mx-auto w-full max-w-4xl px-6 py-4">
+                <div
+                  className={cn(
+                    "mx-auto w-full px-6 py-4",
+                    step.id === "anexos" ? "max-w-6xl" : "max-w-4xl",
+                  )}
+                >
                   {step.description && (
                     <p className="text-ink-muted text-sm">{step.description}</p>
                   )}
@@ -283,8 +295,13 @@ export function WizardFullscreen({
                   {step.id === "opcionais" && (
                     <OptionalsStep toggles={toggles} onToggle={onToggle} />
                   )}
-                  {step.id === "ficha" && (
-                    <FichaStep onUpload={onFicha} sizeBytes={fichaSize} />
+                  {step.id === "anexos" && (
+                    <AttachmentsStep
+                      attachments={attachments}
+                      onAdd={onAddAttachments}
+                      onReplace={onReplaceAttachment}
+                      onDelete={onDeleteAttachment}
+                    />
                   )}
                   {step.id === "revisao" && (
                     <div className="mt-2">
