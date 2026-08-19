@@ -28,9 +28,9 @@ jobs:
 
       # Vendored WASM/template/TeX assets are large and content-stable → cache
       # them keyed by the vendor scripts (bump the key when a script changes).
-      - name: Cache vendored assets
+      - name: Restore vendored assets
         id: vendor-cache
-        uses: actions/cache@v4
+        uses: actions/cache/restore@v4
         with:
           path: |
             public/wasm/busytex
@@ -45,11 +45,26 @@ jobs:
           ./scripts/vendor-busytex.sh
           ./scripts/sync-texlive-cache.sh
 
+      - name: Save vendored assets
+        if: steps.vendor-cache.outputs.cache-hit != 'true' && success()
+        continue-on-error: true
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            public/wasm/busytex
+            public/wasm/swiftlatex/texlive
+            public/templates/uecetex2
+          key: ${{ steps.vendor-cache.outputs.cache-primary-key }}
+
       - run: bunx playwright install --with-deps chromium
       - run: bun run build
-      - run: bunx playwright test --project=ui
+      - name: Run UI E2E
+        id: playwright
+        run: bunx playwright test --project=ui
       - uses: actions/upload-artifact@v4
-        if: failure()
+        if: failure() && steps.playwright.outcome == 'failure'
         with:
           name: playwright-report
-          path: playwright-report/
+          path: |
+            playwright-report/
+            test-results/

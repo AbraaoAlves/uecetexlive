@@ -75,7 +75,8 @@ test("wysiwyg roundtrip: type → clean LaTeX → compiled PDF", async ({ page }
   expect(latex).toContain("\\textbf{muito bom}");
   expect(latex).toContain("\\begin{itemize}");
   expect(latex).toContain("\\item primeiro item");
-  expect(latex).toContain("\\cite{lamport1986latex}");
+  // Library references default to a narrative citation ("Lamport (1986)").
+  expect(latex).toContain("\\citeonline{lamport1986latex}");
   // Original content is untouched (identity for unedited blocks).
   expect(latex).toContain("\\chapter{Introdução}");
   expect(latex).toContain("\\begin{alineas}");

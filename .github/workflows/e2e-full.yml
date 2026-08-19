@@ -28,9 +28,9 @@ jobs:
       # Vendored WASM/template/TeX assets are large and content-stable → cache
       # them keyed by the vendor scripts (bump the key when a script changes).
       # Same key as ci.yml so the two workflows share the cache entry.
-      - name: Cache vendored assets
+      - name: Restore vendored assets
         id: vendor-cache
-        uses: actions/cache@v4
+        uses: actions/cache/restore@v4
         with:
           path: |
             public/wasm/busytex
@@ -45,11 +45,29 @@ jobs:
           ./scripts/vendor-busytex.sh
           ./scripts/sync-texlive-cache.sh
 
+      # Save immediately after a successful download. The monolithic
+      # actions/cache post-step was skipped whenever a later E2E assertion
+      # failed, forcing every scheduled run to download the assets again.
+      - name: Save vendored assets
+        if: steps.vendor-cache.outputs.cache-hit != 'true' && success()
+        continue-on-error: true
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            public/wasm/busytex
+            public/wasm/swiftlatex/texlive
+            public/templates/uecetex2
+          key: ${{ steps.vendor-cache.outputs.cache-primary-key }}
+
       - run: bunx playwright install --with-deps chromium
       - run: bun run build
-      - run: bunx playwright test --project=full-compile
+      - name: Run full-compile E2E
+        id: playwright
+        run: bunx playwright test --project=full-compile
       - uses: actions/upload-artifact@v4
-        if: failure()
+        if: failure() && steps.playwright.outcome == 'failure'
         with:
           name: playwright-report-full-compile
-          path: playwright-report/
+          path: |
+            playwright-report/
+            test-results/

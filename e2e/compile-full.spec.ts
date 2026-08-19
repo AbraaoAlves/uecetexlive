@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { expect, test } from "@playwright/test";
+import { expect, type Page, test } from "@playwright/test";
 import { dismissWelcome } from "./helpers";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -15,7 +15,27 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 
 const reference = JSON.parse(
   readFileSync(join(__dirname, "fixtures/reference.json"), "utf-8"),
-) as { pages: number; probes: { bibliography: string; glossaryTerm: string } };
+) as { pages: number; probes: { bibliography: string } };
+
+const GLOSSARY_ENTRY = String.raw`
+\newglossaryentry{termo-e2e}{
+  name={Termo E2E},
+  description={Definicao E2E exclusiva}
+}`;
+
+async function appendToSource(page: Page, path: string, source: string): Promise<void> {
+  await page.getByTestId(`rail-file-${path}`).click();
+
+  const sourceEditor = page.getByTestId("source-editor");
+  if (!(await sourceEditor.isVisible())) await page.getByTestId("view-toggle").click();
+  await expect(sourceEditor).toBeVisible();
+
+  const input = page.getByTestId("source-editor-input");
+  await input.click();
+  await input.press("ControlOrMeta+End");
+  await page.keyboard.insertText(`\n${source}\n`);
+  await expect(page.getByTestId("save-state")).toHaveAttribute("data-state", "saved");
+}
 
 test("full build: uecetex2 with citations + glossary + index resolved", async ({
   page,
@@ -31,6 +51,16 @@ test("full build: uecetex2 with citations + glossary + index resolved", async ({
   await page.goto("/");
   await dismissWelcome(page);
   await expect(page.getByTestId("compile-button")).toBeVisible();
+
+  // Keep the glossary assertion independent from the evolving upstream
+  // template: define and use a term whose description can only appear in the
+  // generated glossary (not merely in the document body or table of contents).
+  await appendToSource(page, "elementos-pos-textuais/glossario.tex", GLOSSARY_ENTRY);
+  await appendToSource(
+    page,
+    "elementos-textuais/introducao.tex",
+    String.raw`O \gls{termo-e2e} valida a geracao do glossario.`,
+  );
 
   await page.getByTestId("engine-full").click();
   await expect(page.getByTestId("engine-full")).toHaveAttribute("aria-checked", "true");
@@ -60,7 +90,8 @@ test("full build: uecetex2 with citations + glossary + index resolved", async ({
     `[compile log tail] bibtex8 section:\n${log.slice(bibtexAt, bibtexAt + 3000)}`,
   );
   expect(log).toContain("bibtex8");
-  expect(log).toContain("makeindex");
+  expect(log).toContain("$ makeindex documento.glo");
+  expect(log).toContain("$ makeindex documento.idx");
   await page.getByTestId("preview-tab-pdf").click();
 
   // Page count within ±2 of the Docker reference build (§10).
@@ -85,5 +116,5 @@ test("full build: uecetex2 with citations + glossary + index resolved", async ({
     ).__uecetexPdf.getText(),
   );
   expect(text).toContain(reference.probes.bibliography);
-  expect(text).toContain(reference.probes.glossaryTerm);
+  expect(text).toContain("Definicao E2E exclusiva");
 });

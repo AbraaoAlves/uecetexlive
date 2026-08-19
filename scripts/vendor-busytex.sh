@@ -52,7 +52,8 @@ echo "$ASSETS" | while read -r name expected; do
   actual="$(size_of "$out")"
   if [ "$actual" != "$expected" ]; then
     echo "fetching $name…"
-    curl -sSfL --retry 3 -o "$out" "$BASE/$name"
+    curl -sSfL --retry 3 --retry-all-errors --connect-timeout 15 --max-time 600 \
+      -o "$out" "$BASE/$name"
     actual="$(size_of "$out")"
   fi
   min=$((expected * 80 / 100))
@@ -70,12 +71,52 @@ done
 # runtime (kpathsea resolves cwd files first).
 INJECT="$DEST/inject"
 mkdir -p "$INJECT"
-CTAN="https://mirror.ctan.org/systems/texlive/tlnet/archive"
+CTAN_MIRRORS=(
+  # Explicit HTTPS mirrors avoid the random redirect behind mirror.ctan.org,
+  # which has returned both invalid certificates and transient 404s in CI.
+  "https://ftp.fau.de/ctan/systems/texlive/tlnet/archive"
+  "https://ctan.math.illinois.edu/systems/texlive/tlnet/archive"
+  "https://mirrors.rit.edu/CTAN/systems/texlive/tlnet/archive"
+)
+
+download_ctan_package() {
+  local pkg="$1"
+  local out="$2"
+  local mirror
+
+  for mirror in "${CTAN_MIRRORS[@]}"; do
+    echo "  trying $mirror/$pkg.tar.xz"
+    rm -f "$out"
+    if curl -sSfL \
+      --retry 3 \
+      --retry-all-errors \
+      --retry-delay 2 \
+      --connect-timeout 15 \
+      --max-time 600 \
+      --proto '=https' \
+      --proto-redir '=https' \
+      -o "$out" \
+      "$mirror/$pkg.tar.xz"; then
+      if tar -tJf "$out" >/dev/null 2>&1; then
+        return 0
+      fi
+      echo "  invalid xz archive from $mirror" >&2
+    fi
+  done
+
+  rm -f "$out"
+  echo "FATAL: unable to download CTAN package $pkg from any mirror" >&2
+  return 1
+}
+
 for pkg in abntex2 tracklang babel-portuges microtype; do
   if [ ! -f "$INJECT/.$pkg.done" ]; then
     echo "fetching CTAN $pkg…"
     tmp="$(mktemp -d)"
-    curl -sSfL --retry 3 -o "$tmp/$pkg.tar.xz" "$CTAN/$pkg.tar.xz"
+    if ! download_ctan_package "$pkg" "$tmp/$pkg.tar.xz"; then
+      rm -rf "$tmp"
+      exit 1
+    fi
     tar -xJf "$tmp/$pkg.tar.xz" -C "$tmp"
     # Flatten runtime files: TeX inputs + BibTeX styles. cwd lookup needs
     # flat names, and none of these packages have name collisions. TL tlnet
@@ -110,9 +151,11 @@ printf '%s\n' '\endinput' > "$INJECT/l3backend-pdfmode.def"
 # $TEXMFDOTDIR first, shadowing the tree map).
 if [ ! -f "$INJECT/.cm-super.done" ]; then
   echo "fetching CTAN cm-super (typewriter subset)…"
-  CMS_CACHE="${TMPDIR:-/tmp}/uecetexlive-vendor/cm-super.tar.xz"
+  CMS_CACHE="${TMPDIR:-/tmp}/uecetexlive-vendor/cm-super-current.tar.xz"
   mkdir -p "$(dirname "$CMS_CACHE")"
-  [ -s "$CMS_CACHE" ] || curl -sSfL --retry 3 -o "$CMS_CACHE" "$CTAN/cm-super.tar.xz"
+  if [ ! -s "$CMS_CACHE" ] || ! tar -tJf "$CMS_CACHE" >/dev/null 2>&1; then
+    download_ctan_package "cm-super" "$CMS_CACHE"
+  fi
   tmp="$(mktemp -d)"
   tar -xJf "$CMS_CACHE" -C "$tmp"
   cp "$tmp"/fonts/type1/public/cm-super/sftt*.pfb "$INJECT/"

@@ -20,10 +20,10 @@ mkdir -p "$OUT" "$WORK"
 
 [ -d "$SRC/.git" ] || { echo "run scripts/vendor-uecetex2.sh first"; exit 1; }
 
-if [ ! -s "$WORK/reference.pdf" ]; then
-  docker run --rm -v "$SRC":/src:ro -v "$WORK":/out texlive/texlive:latest \
-    sh -c "cp -r /src /tmp/build && cd /tmp/build && latexmk -pdf -outdir=/tmp/rb documento.tex && cp /tmp/rb/documento.pdf /out/reference.pdf && cp /tmp/rb/documento.bbl /out/reference.bbl"
-fi
+# Always rebuild: reusing a PDF left in /tmp can silently pair a new template
+# with stale page/text metrics.
+docker run --rm -v "$SRC":/src:ro -v "$WORK":/out texlive/texlive:latest \
+  sh -c "cp -r /src /tmp/build && cd /tmp/build && latexmk -pdf -outdir=/tmp/rb documento.tex && cp /tmp/rb/documento.pdf /out/reference.pdf && cp /tmp/rb/documento.bbl /out/reference.bbl"
 # The Tier-4 .bbl e2e fixture is produced here too (real biber-less bibtex).
 [ -s "$WORK/reference.bbl" ] && cp "$WORK/reference.bbl" "$OUT/documento.bbl"
 
@@ -33,20 +33,26 @@ bun scripts/pdf-metrics.ts "$WORK/reference.pdf" --text > "$OUT/reference-metric
 bun -e '
 const { readFileSync, writeFileSync, rmSync } = require("node:fs");
 const metrics = JSON.parse(readFileSync("'"$OUT"'/reference-metrics.json", "utf-8"));
+const probes = {
+  // Appears only in the resolved bibliography (citations render as
+  // "(Lamport, 1986)"; the reference list renders "LAMPORT, L."):
+  bibliography: "LAMPORT, L.",
+};
+for (const [name, probe] of Object.entries(probes)) {
+  if (!metrics.text.includes(probe)) {
+    throw new Error(`reference probe ${name} is absent from the generated PDF: ${probe}`);
+  }
+}
 writeFileSync("'"$OUT"'/reference.txt", metrics.text);
 writeFileSync(
   "'"$OUT"'/reference.json",
   JSON.stringify(
     {
       pages: metrics.pages,
-      // Strings the e2e asserts inside the compiled PDF text layer
-      // (verified present in reference.txt at generation time):
-      probes: {
-        // Appears only in the resolved bibliography (citations render as
-        // "(Lamport, 1986)"; the reference list renders "LAMPORT, L."):
-        bibliography: "LAMPORT, L.",
-        glossaryTerm: "Ambiguidade",
-      },
+      // Strings the e2e asserts inside the compiled PDF text layer. The loop
+      // above guarantees reference.json cannot claim a probe absent from the
+      // reference build.
+      probes,
       generatedAt: new Date().toISOString(),
     },
     null,

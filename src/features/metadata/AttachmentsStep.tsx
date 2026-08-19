@@ -456,7 +456,10 @@ export function AttachmentsStep({
               {strings.attachments.none}
             </div>
           ) : (
-            <ul className="mt-3 divide-y rounded border" data-testid="attachment-list">
+            <ul
+              className="mt-3 max-h-48 divide-y overflow-y-auto overscroll-contain rounded border"
+              data-testid="attachment-list"
+            >
               {others.map((item) => (
                 <li
                   key={item.path}
