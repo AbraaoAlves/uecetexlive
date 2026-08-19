@@ -29,6 +29,23 @@ test("rail collapses via toggle, reopens via Mod+B, persists collapsed", async (
   await expect(page.getByTestId("rail-section-chapters")).toBeVisible();
 });
 
+test("rail recolhido não deixa seu conteúdo visível fora do contêiner", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await dismissWelcome(page);
+
+  const filesPanel = page.getByTestId("project-files-panel");
+  await expect(filesPanel).toBeVisible();
+  await expect(filesPanel).toBeInViewport();
+
+  await page.getByTestId("rail-toggle").click();
+
+  // Não basta o <aside> ter largura zero: seu filho tem largura fixa e não
+  // pode continuar sendo pintado para fora do contêiner recolhido.
+  await expect(filesPanel).not.toBeInViewport();
+});
+
 test("rail is resizable with the keyboard and keeps the chosen width", async ({
   page,
 }) => {

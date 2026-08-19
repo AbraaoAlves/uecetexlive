@@ -1480,7 +1480,7 @@ function ShellInner() {
       <div className="flex min-h-0 flex-1">
         <aside
           className={cn(
-            "relative shrink-0 overflow-visible border-r bg-surface transition-[width] duration-200 motion-reduce:transition-none",
+            "relative shrink-0 overflow-hidden border-r bg-surface transition-[width] duration-200 motion-reduce:transition-none",
             railCollapsed && "border-r-0",
           )}
           style={{ width: railCollapsed ? 0 : railWidth }}
@@ -1589,7 +1589,7 @@ function ShellInner() {
               aria-valuetext={`${railWidth} pixels`}
               tabIndex={0}
               data-testid="rail-resize-handle"
-              className="absolute top-0 right-[-4px] z-10 h-full w-2 cursor-col-resize touch-none outline-none after:absolute after:top-0 after:left-[3px] after:h-full after:w-px after:bg-transparent hover:after:bg-accent focus-visible:after:bg-accent"
+              className="absolute top-0 right-0 z-10 h-full w-2 cursor-col-resize touch-none outline-none after:absolute after:top-0 after:right-0 after:h-full after:w-px after:bg-transparent hover:after:bg-accent focus-visible:after:bg-accent"
               onPointerDown={handleRailResizeStart}
               onPointerMove={handleRailResizeMove}
               onPointerUp={handleRailResizeEnd}
@@ -1663,6 +1663,7 @@ function ShellInner() {
                 texSources={texSources}
                 focusKey={nav?.path === currentFile.path ? nav.focusKey : undefined}
                 focusNonce={nav?.path === currentFile.path ? nav.nonce : undefined}
+                onFocusApplied={() => setNav(null)}
               />
             ) : showWysiwyg ? (
               <Suspense
