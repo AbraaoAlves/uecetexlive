@@ -20,7 +20,7 @@ import {
   type EntryType,
   type NewEntryInput,
 } from "@papyru/bibliography";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { strings } from "@/lib/strings";
 import {
   type AuthorInput,
@@ -45,6 +45,8 @@ export interface AddReferenceDialogProps {
   /** B2: edit an existing entry instead of creating a new one. */
   editing?: EditingReference;
   onSubmitEdit?: (citationKey: string, patch: EntryPatch) => void;
+  /** Available in edit mode so reviewing an unused entry can lead directly to removal. */
+  onRemove?: () => void;
 }
 
 type Step = "type" | "form";
@@ -62,6 +64,7 @@ export function AddReferenceDialog({
   initialTitle = "",
   editing,
   onSubmitEdit,
+  onRemove,
 }: AddReferenceDialogProps) {
   const editingType =
     editing && typeof editing.entry.entryType === "string"
@@ -78,6 +81,11 @@ export function AddReferenceDialog({
   const [citationKey, setCitationKey] = useState(editing?.citationKey ?? "");
   const [keyTouched, setKeyTouched] = useState(!!editing);
   const [advancedOpen, setAdvancedOpen] = useState(false);
+  const dialogTitleRef = useRef<HTMLHeadingElement>(null);
+
+  useEffect(() => {
+    dialogTitleRef.current?.focus();
+  }, []);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -149,6 +157,7 @@ export function AddReferenceDialog({
       className="fixed inset-0 z-50 flex items-center justify-center bg-ink/30 p-4"
       role="dialog"
       aria-modal="true"
+      aria-labelledby="reference-dialog-title"
       data-testid="add-reference-dialog"
       onClick={onClose}
       onKeyDown={() => {}}
@@ -161,7 +170,14 @@ export function AddReferenceDialog({
       >
         {step === "type" ? (
           <>
-            <div className="font-display text-lg">{strings.references.pickTypeTitle}</div>
+            <h2
+              ref={dialogTitleRef}
+              id="reference-dialog-title"
+              tabIndex={-1}
+              className="font-display text-lg outline-none"
+            >
+              {strings.references.pickTypeTitle}
+            </h2>
             <div className="mt-3 grid grid-cols-1 gap-2">
               {ENTRY_TYPES.map((t) => (
                 <button
@@ -197,10 +213,15 @@ export function AddReferenceDialog({
         ) : (
           type && (
             <>
-              <div className="flex items-center gap-2 font-display text-lg">
+              <h2
+                ref={dialogTitleRef}
+                id="reference-dialog-title"
+                tabIndex={-1}
+                className="flex items-center gap-2 font-display text-lg outline-none"
+              >
                 <EntryTypeIcon type={type} className="size-4" />
                 {editing ? strings.references.editTitle : ENTRY_TYPE_LABELS_PT[type]}
-              </div>
+              </h2>
 
               {hasAuthorField && (
                 <AuthorsField
@@ -275,7 +296,16 @@ export function AddReferenceDialog({
               {error && <p className="mt-3 text-danger text-sm">{error}</p>}
 
               <div className="mt-4 flex justify-between gap-2">
-                {editing ? (
+                {editing && onRemove ? (
+                  <button
+                    type="button"
+                    className="rounded px-3 py-1.5 text-danger text-sm hover:bg-danger/10"
+                    onClick={onRemove}
+                    data-testid="reference-edit-remove"
+                  >
+                    {strings.references.removeFromEdit}
+                  </button>
+                ) : editing ? (
                   <span />
                 ) : (
                   <button

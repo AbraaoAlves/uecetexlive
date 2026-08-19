@@ -277,4 +277,49 @@ describe("ReferencesPanel", () => {
     expect(secondStatus.textContent).toContain("freire1970");
     expect(secondStatus).not.toBe(firstStatus);
   });
+
+  it("selects the requested reference and opens its details for review", () => {
+    HTMLElement.prototype.scrollIntoView = vi.fn();
+    const onFocusApplied = vi.fn();
+    render(
+      <ReferencesPanel
+        bibText={SAMPLE}
+        onWriteBib={vi.fn()}
+        focusKey="lamport1986"
+        focusNonce={1}
+        onFocusApplied={onFocusApplied}
+      />,
+    );
+
+    expect(screen.getByTestId("reference-lamport1986").dataset.selected).toBe("true");
+    expect(screen.getByTestId("add-reference-dialog")).toBeTruthy();
+    expect((screen.getByTestId("reference-field-title") as HTMLInputElement).value).toBe(
+      "LaTeX: User's Guide",
+    );
+    expect(screen.getByTestId("reference-edit-remove").textContent).toContain(
+      "Remover referência",
+    );
+    expect(onFocusApplied).toHaveBeenCalledOnce();
+  });
+
+  it("offers removal while reviewing the selected reference", () => {
+    HTMLElement.prototype.scrollIntoView = vi.fn();
+    const onWriteBib = vi.fn();
+    render(
+      <ReferencesPanel
+        bibText={SAMPLE}
+        onWriteBib={onWriteBib}
+        focusKey="freire1970"
+        focusNonce={1}
+      />,
+    );
+
+    fireEvent.click(screen.getByTestId("reference-edit-remove"));
+    expect(screen.getByTestId("remove-reference-dialog")).toBeTruthy();
+    fireEvent.click(screen.getByTestId("remove-reference-confirm"));
+
+    const next = onWriteBib.mock.calls[0]?.[0] as string;
+    expect(next).not.toContain("freire1970");
+    expect(next).toContain("lamport1986");
+  });
 });

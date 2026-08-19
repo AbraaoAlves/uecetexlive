@@ -150,7 +150,8 @@ describe("computeComplianceChecklist", () => {
     expect(uncited?.items).toEqual([
       {
         id: "uncitedEntries:souza2025",
-        label: "souza2025",
+        label: "Ensino de Programação",
+        detail: "Souza, J. · 2025",
         action: { kind: "openReferences", key: "souza2025", intent: "focus" },
       },
     ]);
@@ -273,6 +274,15 @@ describe("computeComplianceChecklist", () => {
     const uncited = checks.find((c) => c.id === "uncitedEntries");
     expect(uncited?.status).toBe("warn");
     expect(uncited?.count).toBe(1);
+  });
+
+  it("recognizes the generic \\cite command used by the project template", () => {
+    const checks = computeComplianceChecklist(
+      baseInput({ texSources: { "introducao.tex": "Texto \\cite{silva2026}." } }),
+    );
+
+    expect(checks.find((check) => check.id === "orphanCitations")?.status).toBe("ok");
+    expect(checks.find((check) => check.id === "uncitedEntries")?.status).toBe("ok");
   });
 
   it("keeps an unclassified PDF excerpt honest about having no destination", () => {

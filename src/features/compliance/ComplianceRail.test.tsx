@@ -51,7 +51,9 @@ describe("ComplianceRail", () => {
     expect(screen.getByTestId("compliance-item-references-silva2026")).toBeTruthy();
     expect(screen.getByTitle("Faltam: título.")).toBeTruthy();
 
-    fireEvent.click(screen.getByTestId("compliance-goto-references-silva2026"));
+    const review = screen.getByTestId("compliance-goto-references-silva2026");
+    expect(review.textContent).toBe("revisar referência");
+    fireEvent.click(review);
     expect(onAction).toHaveBeenCalledWith({
       kind: "openReferences",
       key: "silva2026",
@@ -77,6 +79,29 @@ describe("ComplianceRail", () => {
       screen.getByTestId("compliance-rail").querySelectorAll("[data-status]"),
     ).map((node) => node.getAttribute("data-testid"));
     expect(rendered).toEqual(["compliance-check-figures", "compliance-check-pretextual"]);
+  });
+
+  it("explica as duas saídas para uma referência nunca citada", () => {
+    render(
+      <ComplianceRail
+        checks={[
+          {
+            id: "uncitedEntries",
+            status: "warn",
+            count: 1,
+            items: [{ id: "a", label: "Um livro" }],
+          },
+        ]}
+        onAction={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByTestId("compliance-uncited-help").textContent).toContain(
+      "cite-a no texto",
+    );
+    expect(screen.getByTestId("compliance-uncited-help").textContent).toContain(
+      "remova-a",
+    );
   });
 
   it("oferece a próxima correção enquanto há pendências", () => {

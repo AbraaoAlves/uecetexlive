@@ -27,9 +27,9 @@ describe("countCitationUsages", () => {
     expect(countCitationUsages(sources, "freire1970", CITE_COMMANDS)).toBe(1);
   });
 
-  it("does not match a different command name", () => {
+  it("counts the generic \\cite command used by the project template", () => {
     const sources = { "a.tex": "\\cite{freire1970}" };
-    expect(countCitationUsages(sources, "freire1970", CITE_COMMANDS)).toBe(0);
+    expect(countCitationUsages(sources, "freire1970", CITE_COMMANDS)).toBe(1);
   });
 
   it("does not false-positive on a key that is a substring of another", () => {
@@ -55,9 +55,13 @@ describe("extractCitedKeys", () => {
     );
   });
 
-  it("ignores a different command name", () => {
-    const sources = { "a.tex": "\\cite{freire1970}" };
-    expect(extractCitedKeys(sources, CITE_COMMANDS)).toEqual(new Set());
+  it("collects generic citations without treating \\nocite as a citation", () => {
+    const sources = {
+      "a.tex": "\\cite{freire1970} \\citep{lamport1986} \\nocite{knuth}",
+    };
+    expect(extractCitedKeys(sources, CITE_COMMANDS)).toEqual(
+      new Set(["freire1970", "lamport1986"]),
+    );
   });
 
   it("returns an empty set for no citations", () => {

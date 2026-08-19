@@ -8,9 +8,17 @@ function escapeRegExp(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
+// The profile only lists institution-specific commands. These three are the
+// generic commands that the LaTeX parser already recognizes in every profile
+// (see packages/latex-mapping/src/parse.ts). Compliance and the removal warning
+// must use the same vocabulary or a plain \cite{...} is incorrectly treated as
+// if it did not exist.
+const GENERIC_CITE_COMMANDS = ["cite", "citep", "citet"] as const;
+
 /** Matches \cmd{key1,key2} and \cmd[opt]{key1,key2} for any given command name. */
 function citationRegex(citeCommands: readonly string[]): RegExp {
-  const cmdAlternation = citeCommands.map(escapeRegExp).join("|");
+  const commands = [...new Set([...GENERIC_CITE_COMMANDS, ...citeCommands])];
+  const cmdAlternation = commands.map(escapeRegExp).join("|");
   return new RegExp(`\\\\(?:${cmdAlternation})(?:\\[[^\\]]*\\])?\\{([^}]*)\\}`, "g");
 }
 

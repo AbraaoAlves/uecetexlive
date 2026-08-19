@@ -38,14 +38,21 @@ test("a aba reflete lacunas reais e permanece selecionada ao abrir o guia", asyn
   await expect(pretextual).not.toContainText("Faltam preencher 6 dados");
 });
 
-test("ir para em uma referência abre o .bib sem sair da aba", async ({ page }) => {
+test("revisar uma referência não citada seleciona a entrada e abre seus detalhes", async ({
+  page,
+}) => {
   await page.goto("/");
   await dismissWelcome(page);
 
   await page.getByTestId("rail-checklist").click();
-  const expand = page.getByTestId("compliance-expand-references");
+  const expand = page.getByTestId("compliance-expand-uncitedEntries");
   if ((await expand.getAttribute("aria-expanded")) === "false") await expand.click();
-  await page.locator('[data-testid^="compliance-goto-references-"]').first().click();
+  const review = page.getByTestId("compliance-goto-uncitedEntries-uncitedEntries:knuth");
+  await expect(
+    page.getByTestId("compliance-item-uncitedEntries-uncitedEntries:knuth"),
+  ).toContainText("The texbook");
+  await expect(review).toHaveText("revisar referência");
+  await review.click();
 
   await expect(page.getByTestId("rail-tab-compliance")).toHaveAttribute(
     "aria-selected",
@@ -55,6 +62,13 @@ test("ir para em uma referência abre o .bib sem sair da aba", async ({ page }) 
     page.getByTestId("editor-pane").getByTestId("references-panel"),
   ).toBeVisible();
   await expect(page.getByTestId("view-toggle")).toHaveText("Fonte BibTeX");
+  await expect(page.getByTestId("reference-knuth")).toHaveAttribute(
+    "data-selected",
+    "true",
+  );
+  await expect(page.getByTestId("add-reference-dialog")).toBeVisible();
+  await expect(page.getByTestId("reference-field-title")).toHaveValue("The texbook");
+  await expect(page.getByTestId("reference-edit-remove")).toBeVisible();
 });
 
 test("corrigir o próximo percorre verificações sem repetir", async ({ page }) => {

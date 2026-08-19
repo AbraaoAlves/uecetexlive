@@ -42,6 +42,8 @@ export interface ReferencesPanelProps {
   focusKey?: string | null;
   /** Muda para repetir o mesmo destaque (ver NavRequest.nonce no AppShell). */
   focusNonce?: number;
+  /** Clears the one-shot navigation request after selection has been applied. */
+  onFocusApplied?: () => void;
 }
 
 type SortMode = "file" | "author" | "year";
@@ -76,6 +78,7 @@ export function ReferencesPanel({
   texSources = {},
   focusKey,
   focusNonce,
+  onFocusApplied,
 }: ReferencesPanelProps) {
   const [sort, setSort] = useState<SortMode>("file");
   const [addOpen, setAddOpen] = useState(false);
@@ -96,6 +99,7 @@ export function ReferencesPanel({
     usageCount: number;
   } | null>(null);
   const [removeError, setRemoveError] = useState<string | null>(null);
+  const [selectedKey, setSelectedKey] = useState<string | null>(null);
   const [focusAnnouncement, setFocusAnnouncement] = useState<{
     text: string;
     sequence: number;
@@ -122,6 +126,7 @@ export function ReferencesPanel({
       }));
       return;
     }
+    setSelectedKey(key);
     row.scrollIntoView({ block: "center" });
     const target =
       row.querySelector<HTMLElement>(`[data-testid="reference-edit-${key}"]`) ?? row;
@@ -138,12 +143,6 @@ export function ReferencesPanel({
       sequence: (previous?.sequence ?? 0) + 1,
     }));
   };
-  // biome-ignore lint/correctness/useExhaustiveDependencies: focusNonce é o sinal de repetição — pedir a mesma chave duas vezes tem de destacar duas vezes
-  useEffect(() => {
-    if (!focusKey) return;
-    focusReference(focusKey);
-  }, [focusKey, focusNonce, focusReference]);
-
   const existingDois = useMemo(() => {
     if (bibText === null) return new Set<string>();
     const file = parseBibFile(bibText);
@@ -214,6 +213,7 @@ export function ReferencesPanel({
     onWriteBib(result.value);
     setRemoveError(null);
     setRemoveTarget(null);
+    setSelectedKey(null);
   };
 
   const citeCommand = ABNT_CITATION_PROFILE.citeCommands[0];
@@ -261,6 +261,48 @@ export function ReferencesPanel({
     }
     return [...incomplete, ...complete];
   }, [rows, sort]);
+
+  // A request coming from compliance is a review, not merely a scroll. Keep
+  // the exact row selected and, when the entry type has a visual form, open
+  // its details immediately. The request id prevents a bib write from
+  // reopening the dialog while the old navigation request is still stored in
+  // AppShell.
+  const appliedFocusRequest = useRef<string | null>(null);
+  useEffect(() => {
+    if (!focusKey) return;
+    const requestId = `${focusNonce ?? 0}:${focusKey}`;
+    if (appliedFocusRequest.current === requestId) return;
+    appliedFocusRequest.current = requestId;
+
+    const requested = rows.find((row) => row.key === focusKey);
+    if (!requested) {
+      setSelectedKey(null);
+      setFocusAnnouncement((previous) => ({
+        text: strings.references.focusNotFound.replace("{key}", focusKey),
+        sequence: (previous?.sequence ?? 0) + 1,
+      }));
+      onFocusApplied?.();
+      return;
+    }
+
+    setSearchOpen(false);
+    setSelectedKey(focusKey);
+    rowRefs.current.get(focusKey)?.scrollIntoView({ block: "center" });
+    setFocusAnnouncement((previous) => ({
+      text: strings.references.focusedAnnouncement.replace("{key}", focusKey),
+      sequence: (previous?.sequence ?? 0) + 1,
+    }));
+    if (onWriteBib && isKnownEntryType(requested.entry.entryType)) {
+      setEditing({ citationKey: focusKey, entry: requested.entry });
+    } else {
+      const row = rowRefs.current.get(focusKey);
+      const target =
+        row?.querySelector<HTMLElement>(`[data-testid="reference-edit-${focusKey}"]`) ??
+        row;
+      target?.focus();
+    }
+    onFocusApplied?.();
+  }, [focusKey, focusNonce, onFocusApplied, onWriteBib, rows]);
 
   if (bibText === null) {
     return (
@@ -473,7 +515,13 @@ export function ReferencesPanel({
                         else rowRefs.current.delete(row.key);
                       }}
                       tabIndex={-1}
-                      className="border-b px-3 py-2 text-sm"
+                      aria-current={selectedKey === row.key ? "true" : undefined}
+                      data-selected={selectedKey === row.key ? "true" : undefined}
+                      className={cn(
+                        "border-b px-3 py-2 text-sm",
+                        selectedKey === row.key &&
+                          "bg-accent-soft/50 ring-2 ring-inset ring-accent",
+                      )}
                       data-testid={`reference-${row.key}`}
                     >
                       <div className="flex items-center gap-1.5 text-ink-muted text-xs">
@@ -492,9 +540,10 @@ export function ReferencesPanel({
                             <button
                               type="button"
                               className="underline hover:no-underline"
-                              onClick={() =>
-                                setEditing({ citationKey: row.key, entry: row.entry })
-                              }
+                              onClick={() => {
+                                setSelectedKey(row.key);
+                                setEditing({ citationKey: row.key, entry: row.entry });
+                              }}
                             >
                               {strings.references.incompleteAction}
                             </button>
@@ -550,9 +599,10 @@ export function ReferencesPanel({
                               type="button"
                               data-testid={`reference-edit-${row.key}`}
                               className="text-ink-muted underline hover:no-underline"
-                              onClick={() =>
-                                setEditing({ citationKey: row.key, entry: row.entry })
-                              }
+                              onClick={() => {
+                                setSelectedKey(row.key);
+                                setEditing({ citationKey: row.key, entry: row.entry });
+                              }}
                             >
                               {strings.references.editButton}
                             </button>
@@ -562,7 +612,10 @@ export function ReferencesPanel({
                               type="button"
                               data-testid={`reference-remove-${row.key}`}
                               className="text-danger underline hover:no-underline"
-                              onClick={() => openRemoveConfirm(row.key)}
+                              onClick={() => {
+                                setSelectedKey(row.key);
+                                openRemoveConfirm(row.key);
+                              }}
                             >
                               {strings.references.removeButton}
                             </button>
@@ -597,6 +650,12 @@ export function ReferencesPanel({
         <AddReferenceDialog
           editing={editing}
           onSubmitEdit={handleEditSubmit}
+          onRemove={() => {
+            const key = editing.citationKey;
+            setEditing(null);
+            setEditError(null);
+            openRemoveConfirm(key);
+          }}
           onClose={() => {
             setEditing(null);
             setEditError(null);

@@ -60,6 +60,13 @@ export function messageFor(check: ComplianceCheck): string {
   );
 }
 
+function actionLabelFor(action: ComplianceAction): string {
+  if (action.kind !== "openReferences") return strings.compliance.gotoItem;
+  return action.intent === "search"
+    ? strings.compliance.searchReference
+    : strings.compliance.reviewReference;
+}
+
 function ComplianceItemIcon({ item }: { item: ComplianceItem }) {
   const className = `mt-0.5 size-4 shrink-0 ${
     item.reason === "sem-legenda-e-fonte" ? "text-danger" : "text-warning"
@@ -146,6 +153,14 @@ function ComplianceCheckRow({
         )}
         <span className="min-w-0 flex-1 text-[15px] leading-5">{messageFor(check)}</span>
       </div>
+      {check.id === "uncitedEntries" && check.status === "warn" && (
+        <p
+          className="mt-2 text-ink-subtle text-xs leading-4"
+          data-testid="compliance-uncited-help"
+        >
+          {strings.compliance.uncitedEntriesHelp}
+        </p>
+      )}
       {hasItems && (
         <div className="mt-2 flex justify-end">
           <button
@@ -191,6 +206,8 @@ function ComplianceCheckRow({
             const danger = item.reason === "sem-legenda-e-fonte";
             const visited = visitedItemIds?.has(item.id) ?? false;
             const itemTestId = `compliance-item-${itemPrefix}${item.id}`;
+            const itemAction = item.action;
+            const itemActionLabel = itemAction ? actionLabelFor(itemAction) : null;
             return (
               <li
                 key={item.id}
@@ -241,18 +258,18 @@ function ComplianceCheckRow({
                   </span>
                 </div>
                 <div className="mt-2 flex flex-wrap justify-end gap-x-3 gap-y-1 border-t pt-2 text-sm">
-                  {item.action ? (
+                  {itemAction && itemActionLabel ? (
                     <button
                       type="button"
                       data-testid={`compliance-goto-${check.id}-${item.id}`}
-                      aria-label={`${strings.compliance.gotoItem}: ${item.label}`}
+                      aria-label={`${itemActionLabel}: ${item.label}`}
                       className="rounded px-1.5 py-0.5 text-accent underline underline-offset-2 hover:bg-accent-soft hover:no-underline"
                       onClick={() => {
                         onItemAction?.(item);
-                        onAction(item.action as ComplianceAction);
+                        onAction(itemAction);
                       }}
                     >
-                      {strings.compliance.gotoItem}
+                      {itemActionLabel}
                     </button>
                   ) : (
                     <span className="px-1.5 py-0.5 text-ink-subtle text-xs">

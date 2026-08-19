@@ -4,8 +4,13 @@
  * `id`+`status`+`count` onto PT copy (strings.compliance), the same
  * aggregate-message pattern the incomplete-references lint uses.
  */
-import { isParseFailure, parseBibFile } from "@papyru/bibliography";
+import {
+  type BibliographyEntry,
+  isParseFailure,
+  parseBibFile,
+} from "@papyru/bibliography";
 import { extractCitedKeys } from "@/features/bibliography/citation-usage";
+import { formatAuthorsList } from "@/features/bibliography/format-authors";
 import { incompleteEntriesOf } from "@/features/bibliography/missing-fields";
 import { scanPendencyMarkers } from "@/features/import-pdf/pendency-markers";
 import { pendencyLabelFor } from "@/features/import-pdf/report-summary";
@@ -274,15 +279,19 @@ function checkFiguresAcrossProject(
   };
 }
 
-function bibKeysOf(bibText: string | null): Set<string> {
-  if (bibText === null) return new Set();
-  const keys = new Set<string>();
+function bibEntriesOf(bibText: string | null): Map<string, BibliographyEntry> {
+  if (bibText === null) return new Map();
+  const entries = new Map<string, BibliographyEntry>();
   for (const chunk of parseBibFile(bibText).chunks) {
     if (chunk.kind === "entry" && !isParseFailure(chunk.parsed)) {
-      keys.add(chunk.parsed.citationKey);
+      entries.set(chunk.parsed.citationKey, chunk.parsed);
     }
   }
-  return keys;
+  return entries;
+}
+
+function bibKeysOf(bibText: string | null): Set<string> {
+  return new Set(bibEntriesOf(bibText).keys());
 }
 
 function checkOrphanCitations(
@@ -324,21 +333,24 @@ function checkUncitedEntries(
   bibText: string | null,
 ): ComplianceCheck {
   const cited = extractCitedKeys(texSources, citeCommands);
-  const known = bibKeysOf(bibText);
-  const uncited = [...known].filter((k) => !cited.has(k));
-  const items: ComplianceItem[] = uncited.map((key) => ({
-    id: `uncitedEntries:${key}`,
-    label: key,
-    ...(bibText === null
-      ? {}
-      : {
-          action: {
-            kind: "openReferences" as const,
-            key,
-            intent: "focus" as const,
-          },
-        }),
-  }));
+  const known = bibEntriesOf(bibText);
+  const uncited = [...known].filter(([key]) => !cited.has(key));
+  const items: ComplianceItem[] = uncited.map(([key, entry]) => {
+    const title = entry.fields.get("title")?.value.trim();
+    const authors = formatAuthorsList(entry.fields.get("author")?.value);
+    const year = entry.fields.get("year")?.value.trim();
+    const detail = [authors, year].filter(Boolean).join(" · ");
+    return {
+      id: `uncitedEntries:${key}`,
+      label: title || key,
+      ...(detail ? { detail } : {}),
+      action: {
+        kind: "openReferences" as const,
+        key,
+        intent: "focus" as const,
+      },
+    };
+  });
   return {
     id: "uncitedEntries",
     status: items.length === 0 ? "ok" : "warn",
