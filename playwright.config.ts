@@ -12,6 +12,8 @@ import { defineConfig, devices } from "@playwright/test";
  */
 const FULL_COMPILE_TITLES =
   /full build: uecetex2 with citations|wysiwyg roundtrip: type|import \.bbl activates the Tier-4/;
+const E2E_PORT = 41730;
+const E2E_BASE_URL = `http://127.0.0.1:${E2E_PORT}`;
 
 export default defineConfig({
   testDir: "./e2e",
@@ -23,7 +25,7 @@ export default defineConfig({
     : "list",
   timeout: 120_000,
   use: {
-    baseURL: "http://localhost:4173",
+    baseURL: E2E_BASE_URL,
     trace: "retain-on-failure",
   },
   projects: [
@@ -39,9 +41,14 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: "bun run preview --strictPort --port 4173",
-    url: "http://localhost:4173",
-    reuseExistingServer: !process.env.CI,
-    timeout: 30_000,
+    // Keep direct invocations (`bunx playwright test ...`) self-contained.
+    // Otherwise preview serves whichever ignored `dist/` happens to exist and
+    // source/test changes can be exercised against an older service worker.
+    command: `bun run build && bun run preview --host 127.0.0.1 --strictPort --port ${E2E_PORT}`,
+    url: E2E_BASE_URL,
+    // Keep the dedicated port exclusive too: concurrent suites should fail
+    // clearly instead of testing the other run's build and service worker.
+    reuseExistingServer: false,
+    timeout: 60_000,
   },
 });

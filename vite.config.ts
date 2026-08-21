@@ -42,7 +42,9 @@ export default defineConfig({
       srcDir: "src",
       filename: "sw.ts",
       injectManifest: {
-        globPatterns: ["**/*.{js,css,html,svg,woff2}"],
+        // Include every emitted webfont fallback so offline rendering keeps
+        // the same metrics even in browsers that cannot use WOFF2.
+        globPatterns: ["**/*.{js,css,html,svg,woff2,woff,ttf}"],
         // The app shell is small; the WASM/TeX trees are handled at runtime.
         globIgnores: ["**/wasm/**", "**/templates/**"],
         maximumFileSizeToCacheInBytes: 8 * 1024 * 1024,

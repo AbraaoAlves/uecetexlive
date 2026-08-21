@@ -28,6 +28,9 @@ test("nenhuma etapa do guia aberto pelo painel rola em 1366x768", async ({ page 
   await dismissWelcome(page);
   await page.getByTestId("rail-guide").click();
   await expect(page.getByTestId("wizard-fs")).toBeVisible();
+  // The assertion is about the production typography, whose self-hosted web
+  // fonts can finish after the React shell becomes visible on a cold context.
+  await page.evaluate(() => document.fonts.ready);
 
   const wizard = page.getByTestId("wizard-fs");
   expect(

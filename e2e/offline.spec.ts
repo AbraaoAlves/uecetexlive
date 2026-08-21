@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { dismissWelcome } from "./helpers";
+import { dismissWelcome, waitForAppShellPrecache } from "./helpers";
 
 /**
  * 3.4 — "funciona no avião" (§11.3, src/sw.ts doc comment): once the SW has
@@ -16,9 +16,7 @@ test("second visit boots and keeps the project with zero network access", async 
 }) => {
   await page.goto("/");
   await dismissWelcome(page);
-  await page.waitForFunction(() => navigator.serviceWorker?.controller != null, {
-    timeout: 20_000,
-  });
+  await waitForAppShellPrecache(page);
 
   // A small, network-independent proof that the project survives: rename the
   // work title, which persists to IndexedDB (not the network).
@@ -26,8 +24,12 @@ test("second visit boots and keeps the project with zero network access", async 
   const titulo = page.getByTestId("metadata-field-titulo");
   await titulo.fill("Título Offline");
   await titulo.blur();
+  const saveState = page.getByTestId("save-state");
+  // Observe the full transition. Waiting only for "saved" can succeed against
+  // the initial state before React schedules the debounced IndexedDB write.
+  await expect(saveState).toHaveAttribute("data-state", "saving");
   await page.getByTestId("wizard-fs-close").click();
-  await expect(page.getByTestId("save-state")).toHaveAttribute("data-state", "saved");
+  await expect(saveState).toHaveAttribute("data-state", "saved");
 
   await context.setOffline(true);
   await page.reload();

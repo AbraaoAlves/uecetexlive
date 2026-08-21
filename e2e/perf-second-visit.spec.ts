@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { dismissWelcome } from "./helpers";
+import { dismissWelcome, waitForAppShellPrecache } from "./helpers";
 
 /**
  * 3.4's actual gate for the 1.1 microcopy ("nas próximas visitas será
@@ -14,9 +14,7 @@ test("second visit reaches an interactive editor under 3s on throttled 3G", asyn
 }) => {
   await page.goto("/");
   await dismissWelcome(page);
-  await page.waitForFunction(() => navigator.serviceWorker?.controller != null, {
-    timeout: 20_000,
-  });
+  await waitForAppShellPrecache(page);
 
   const client = await page.context().newCDPSession(page);
   await client.send("Network.enable");

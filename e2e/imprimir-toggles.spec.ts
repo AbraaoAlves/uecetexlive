@@ -2,11 +2,14 @@ import { expect, type Page, test } from "@playwright/test";
 import { makeToggledOffZip } from "./fixtures/make-emitted-fixture";
 import { dismissWelcome } from "./helpers";
 
+interface PdfDebugHook {
+  generation: number;
+  getText: () => Promise<string>;
+}
+
 function pdfText(page: Page): Promise<string> {
   return page.evaluate(() =>
-    (
-      window as unknown as { __uecetexPdf: { getText: () => Promise<string> } }
-    ).__uecetexPdf.getText(),
+    (window as unknown as { __uecetexPdf: PdfDebugHook }).__uecetexPdf.getText(),
   );
 }
 
@@ -23,15 +26,24 @@ async function compileAndExpectText(
   present: boolean,
 ): Promise<void> {
   const button = page.getByTestId("compile-button");
+  const previousGeneration = await page.evaluate(
+    () =>
+      (window as unknown as { __uecetexPdf?: PdfDebugHook }).__uecetexPdf?.generation ??
+      0,
+  );
   await button.click();
   await expect(button).not.toHaveAttribute("data-status", "ok", { timeout: 15_000 });
   await expect(button).toHaveAttribute("data-status", "ok", { timeout: 200_000 });
-  await expect(page.getByTestId("pdf-pane")).toHaveAttribute("data-pages", /^[1-9]\d*$/, {
-    timeout: 60_000,
-  });
-  const poll = expect.poll(() => pdfText(page), { timeout: 60_000 });
-  if (present) await poll.toContain(term);
-  else await poll.not.toContain(term);
+  const pane = page.getByTestId("pdf-pane");
+  await expect(pane).toHaveAttribute("data-pages", /^[1-9]\d*$/, { timeout: 60_000 });
+  await expect
+    .poll(async () => Number((await pane.getAttribute("data-generation")) ?? 0), {
+      timeout: 60_000,
+    })
+    .toBeGreaterThan(previousGeneration);
+  const text = await pdfText(page);
+  if (present) expect(text).toContain(term);
+  else expect(text).not.toContain(term);
 }
 
 /**

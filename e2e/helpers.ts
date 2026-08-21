@@ -9,6 +9,28 @@ export async function dismissWelcome(page: Page): Promise<void> {
 }
 
 /**
+ * Wait until the active service worker has atomically finished precaching the
+ * app shell. A controller alone is not a sufficient test oracle when another
+ * worker previously controlled the page: it may still be the old worker while
+ * the new one is installing.
+ */
+export async function waitForAppShellPrecache(page: Page): Promise<void> {
+  await page.waitForFunction(
+    async () => {
+      if (!navigator.serviceWorker?.controller || !("caches" in globalThis)) {
+        return false;
+      }
+      const registration = await navigator.serviceWorker.ready;
+      if (!registration.active) return false;
+      const indexUrl = new URL("index.html", document.baseURI);
+      return (await caches.match(indexUrl, { ignoreSearch: true })) !== undefined;
+    },
+    undefined,
+    { timeout: 20_000 },
+  );
+}
+
+/**
  * Marca o projeto aberto como vindo de uma importação de PDF.
  *
  * A conformidade só abre a revisão de importação quando existe relatório

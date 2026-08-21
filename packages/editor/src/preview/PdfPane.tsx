@@ -54,6 +54,8 @@ const BASE_SCALE = 1.4;
 const PAGE_GAP = 16;
 /** Horizontal breathing room inside the scroll gutter (p-4 both sides). */
 const PAGE_MARGIN = 32;
+/** Monotonic id used by E2E to distinguish a newly parsed PDF from the old one. */
+let nextDebugGeneration = 0;
 
 export function PdfPane({ pdf, compiling, debugHook = true }: PdfPaneProps) {
   const { preview: strings } = useEditorStrings();
@@ -61,6 +63,7 @@ export function PdfPane({ pdf, compiling, debugHook = true }: PdfPaneProps) {
   const docRef = useRef<PdfDoc | null>(null);
   const taskRef = useRef<PdfLoadingTask | null>(null);
   const [numPages, setNumPages] = useState(0);
+  const [debugGeneration, setDebugGeneration] = useState(0);
   const [base, setBase] = useState<{ w: number; h: number } | null>(null);
   const [zoom, setZoom] = useState(1);
   const [currentPage, setCurrentPage] = useState(1);
@@ -95,6 +98,12 @@ export function PdfPane({ pdf, compiling, debugHook = true }: PdfPaneProps) {
   useEffect(() => {
     if (!pdf) return;
     let cancelled = false;
+    if (debugHook) {
+      // Do not let consumers start a long text extraction against the old
+      // worker while this replacement document is still being parsed.
+      Reflect.deleteProperty(window, "__uecetexPdf");
+      setDebugGeneration(0);
+    }
     (async () => {
       const pdfjs = await loadPdfjs();
       // pdf.js transfers the buffer to its worker — hand it a copy.
@@ -123,7 +132,9 @@ export function PdfPane({ pdf, compiling, debugHook = true }: PdfPaneProps) {
 
       // e2e/debug hook: page count + text-layer extraction (Gate G2).
       if (debugHook) {
+        const generation = ++nextDebugGeneration;
         (window as unknown as Record<string, unknown>).__uecetexPdf = {
+          generation,
           numPages: doc.numPages,
           getText: async () => {
             let text = "";
@@ -137,10 +148,12 @@ export function PdfPane({ pdf, compiling, debugHook = true }: PdfPaneProps) {
             return text;
           },
         };
+        setDebugGeneration(generation);
       }
     })();
     return () => {
       cancelled = true;
+      if (debugHook) Reflect.deleteProperty(window, "__uecetexPdf");
     };
   }, [pdf, debugHook]);
 
@@ -212,6 +225,7 @@ export function PdfPane({ pdf, compiling, debugHook = true }: PdfPaneProps) {
       className="relative flex h-full flex-col"
       data-testid="pdf-pane"
       data-pages={numPages}
+      data-generation={debugGeneration}
     >
       <div className="flex h-9 shrink-0 items-center justify-center gap-1 border-b bg-surface text-xs">
         <Tooltip content={strings.prevPage}>

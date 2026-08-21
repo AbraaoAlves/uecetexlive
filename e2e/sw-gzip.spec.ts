@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { waitForAppShellPrecache } from "./helpers";
 
 /**
  * D12: the service worker must deliver the big busytex binaries byte-perfect
@@ -11,9 +12,7 @@ test("service worker serves busytex .data byte-perfect (sidecar or raw)", async 
   page,
 }) => {
   await page.goto("/");
-  await page.waitForFunction(() => navigator.serviceWorker?.controller != null, {
-    timeout: 20_000,
-  });
+  await waitForAppShellPrecache(page);
 
   const result = await page.evaluate(async () => {
     const manifest = (await (await fetch("/wasm/busytex/manifest.json")).json()) as {
