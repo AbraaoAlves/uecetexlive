@@ -1,7 +1,10 @@
 blank_issues_enabled: true
 contact_links:
+  - name: Ideia ou feedback
+    url: https://github.com/AbraaoAlves/uecetexlive/discussions/categories/ideas
+    about: Compartilhe experiências e converse sobre melhorias antes de transformá-las em trabalho rastreável.
   - name: Dúvida de uso
-    url: https://github.com/AbraaoAlves/uecetexlive/discussions/categories/ajuda
+    url: https://github.com/AbraaoAlves/uecetexlive/discussions/categories/q-a
     about: Para perguntas, use as Discussions — a comunidade toda vê a resposta.
   - name: Regra específica da UECE ou do modelo uecetex2
     url: https://github.com/thiagodnf/uecetex2/issues
