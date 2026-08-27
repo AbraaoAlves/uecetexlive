@@ -32,11 +32,9 @@ Sua dúvida chega ao canal certo na primeira tentativa.
 
 ## Se algo der errado
 
-- **Não tenho certeza de qual camada é o problema.** Abra uma issue no
-  UeceTexLive mesmo assim — ajudamos a redirecionar.
-- **As Discussions não estão disponíveis.** Ainda não foram habilitadas
-  neste repositório; enquanto isso, use uma issue normal para dúvidas de
-  uso.
+- **Não tenho certeza de qual camada é o problema.** Comece pela categoria
+  [Q&A das Discussions](https://github.com/AbraaoAlves/uecetexlive/discussions/categories/q-a)
+  — ajudamos a redirecionar.
 
 ## Próximo passo
 
@@ -45,5 +43,5 @@ Sua dúvida chega ao canal certo na primeira tentativa.
 ---
 
 *Verificado com UeceTexLive (branch `main`, sem release publicada) em
-2026-07-18. Fonte: `SUPPORT.md`.*
+2026-08-27. Fonte: `SUPPORT.md`.*
 *Encontrou um erro nesta página? [Abra uma issue](https://github.com/AbraaoAlves/uecetexlive/issues/new?template=documentacao.yml).*

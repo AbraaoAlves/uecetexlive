@@ -6,6 +6,10 @@ checks de qualidade e as convenções do repositório.
 
 ## 1. Formas de contribuir sem escrever código
 
+- **Compartilhar uma ideia ou experiência de uso.** Abra uma conversa na
+  categoria [Ideas das Discussions](https://github.com/AbraaoAlves/uecetexlive/discussions/categories/ideas).
+  Quando a proposta estiver clara e pronta para implementação, ela poderá ser
+  transformada em uma issue rastreável.
 - **Relatar um bug.** Abra uma issue com o template "Relatar um problema" —
   inclua passos de reprodução e o modo de compilação (Rascunho/Completa).
 - **Melhorar a documentação.** README, Wiki (`docs/wiki/`) e `docs/` são

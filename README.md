@@ -8,6 +8,7 @@ Iniciativa extraoficial, sem vínculo institucional com a UECE.
 **[Abrir o UeceTexLive](https://abraaoalves.me/uecetexlive/)** ·
 [Começar pela Wiki](https://github.com/AbraaoAlves/uecetexlive/wiki) ·
 [Pedir ajuda](SUPPORT.md) ·
+[Conversar nas Discussions](https://github.com/AbraaoAlves/uecetexlive/discussions) ·
 [Contribuir](CONTRIBUTING.md)
 
 ## Para quem é
@@ -87,6 +88,7 @@ Lista completa e evidências: [`Limitacoes-conhecidas.md`](docs/wiki/Limitacoes-
 ## Comunidade
 
 [Wiki](https://github.com/AbraaoAlves/uecetexlive/wiki) (manual de uso) ·
+[Discussions](https://github.com/AbraaoAlves/uecetexlive/discussions) (ajuda, ideias e feedback) ·
 [`CONTRIBUTING.md`](CONTRIBUTING.md) ·
 [`SUPPORT.md`](SUPPORT.md) ·
 [`SECURITY.md`](SECURITY.md) ·
